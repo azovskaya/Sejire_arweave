@@ -5,7 +5,7 @@ import { type GuideState, saveGuide } from "../lib/guide";
 import { pickDefaultFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
 import { PedigreeView } from "./PedigreeView";
 import { PersonPanel } from "./PersonPanel";
-import { AddPersonModal } from "./AddPersonModal";
+import { AddPersonModal, type AddPersonPayload } from "./AddPersonModal";
 import { PublishSeedModal } from "./PublishSeedModal";
 import {
   activePersons,
@@ -13,7 +13,6 @@ import {
   removeDraftPerson,
   setDraftPerson,
 } from "../lib/treeEngine";
-import type { AddPersonPayload } from "./AddPersonModal";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
