@@ -13,13 +13,14 @@ export default defineConfig({
   build: {
     cssCodeSplit: false,
     modulePreload: false,
-    codeSplitting: false,
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
     rollupOptions: {
       output: {
+        // Keep one JS file for GitHub Pages reliability.
+        inlineDynamicImports: true,
         entryFileNames: "assets/app.js",
         assetFileNames: "assets/[name][extname]",
       },
