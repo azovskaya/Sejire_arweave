@@ -10,7 +10,7 @@
 | [PROTOCOL.md](./PROTOCOL.md) | Спецификация протокола (нормативная) |
 | [GLOSSARY.ru.md](./GLOSSARY.ru.md) | Термины |
 | [VERIFICATION.ru.md](./VERIFICATION.ru.md) | Сверка с экосистемой Arweave/AO (2026) |
-| [REPO_STRUCTURE.md](./REPO_STRUCTURE.md) | Карта репозитория |
+| [LIVE.md](./LIVE.md) | Публичные ссылки на работающее приложение |
 | [CHECKLIST.md](./CHECKLIST.md) | Синхронизация код ↔ docs |
 | [processes/](./processes/) | Логика каждого AO-процесса и хендлера |
 | [flows/](./flows/) | Пользовательские и системные сценарии |

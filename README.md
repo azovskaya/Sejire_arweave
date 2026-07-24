@@ -7,6 +7,9 @@
 
 ## Пользовательский путь
 
+**Открыть сейчас:** https://cdn.jsdelivr.net/gh/azovskaya/Sejire_arweave@gh-pages/index.html  
+(зеркало: https://raw.githack.com/azovskaya/Sejire_arweave/gh-pages/index.html · детали: [`docs/LIVE.md`](./docs/LIVE.md))
+
 1. Создать сейф → записать 12 слов  
 2. Добавить предков → «Зафиксировать версию» (история не стирается)  
 3. «Экспорт» (файл) или «В вечность» (Arweave, нужен небольшой AR)  
