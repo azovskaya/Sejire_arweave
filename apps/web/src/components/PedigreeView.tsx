@@ -11,8 +11,10 @@ import {
 type Props = {
   snapshot: Snapshot;
   focusId: string | null;
+  homeFocusId: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onSetFocus: (id: string) => void;
   onAddRelative: (slot: AddMeSlot) => void;
   onEmptyStart?: () => void;
 };
@@ -32,6 +34,8 @@ function cardTooltip(person: {
 }) {
   return [
     person.name,
+    "Клик — открыть профиль",
+    "Двойной клик — смотреть предков отсюда",
     person.maidenName ? `девичья: ${person.maidenName}` : "",
     person.born ? `рождение: ${person.born}` : "",
     person.birthPlace || person.place?.label
@@ -50,8 +54,10 @@ function cardTooltip(person: {
 export function PedigreeView({
   snapshot,
   focusId,
+  homeFocusId,
   selectedId,
   onSelect,
+  onSetFocus,
   onAddRelative,
   onEmptyStart,
 }: Props) {
@@ -61,6 +67,8 @@ export function PedigreeView({
 
   const { items, edges, width, height } = buildPedigree(snapshot, focusId, 4);
   const empty = items.length === 0;
+  const focusPerson = focusId ? snapshot.persons[focusId] : null;
+  const showHome = Boolean(homeFocusId && focusId && homeFocusId !== focusId);
 
   useEffect(() => {
     setPan({ x: 28, y: 28 });
@@ -94,7 +102,7 @@ export function PedigreeView({
           <h2>Начните с себя</h2>
           <p>
             Добавьте себя на схему, затем маму и папу карточками «+». Полные сведения — в панели
-            справа: рождение, смерть, захоронение и заметки.
+            справа.
           </p>
           <button className="btn" type="button" onClick={onEmptyStart}>
             Добавить себя
@@ -114,24 +122,36 @@ export function PedigreeView({
         drag.current = null;
       }}
     >
-      <div className="pedigree-toolbar" aria-label="Масштаб">
-        <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}>
-          +
-        </button>
-        <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.max(0.55, s - 0.1))}>
-          −
-        </button>
-        <button
-          type="button"
-          className="tool-btn wide"
-          onClick={() => {
-            setScale(1);
-            setPan({ x: 28, y: 28 });
-          }}
-        >
-          Reset
-        </button>
+      <div className="pedigree-chrome">
+        <div className="focus-chip" title="Схема строится от этого человека влево направо — к предкам">
+          <span className="focus-chip-label">Схема от</span>
+          <strong className="clamp-1">{focusPerson?.name || "—"}</strong>
+          {showHome && homeFocusId ? (
+            <button type="button" className="chip-action" onClick={() => onSetFocus(homeFocusId)}>
+              К себе
+            </button>
+          ) : null}
+        </div>
+        <div className="pedigree-toolbar" aria-label="Масштаб">
+          <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}>
+            +
+          </button>
+          <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.max(0.55, s - 0.1))}>
+            −
+          </button>
+          <button
+            type="button"
+            className="tool-btn wide"
+            onClick={() => {
+              setScale(1);
+              setPan({ x: 28, y: 28 });
+            }}
+          >
+            Сброс вида
+          </button>
+        </div>
       </div>
+      <p className="pedigree-hint">Клик — профиль · двойной клик — смотреть предков отсюда</p>
 
       <div
         className="pedigree-world"
@@ -191,6 +211,7 @@ export function PedigreeView({
               }`}
               style={{ left: item.x, top: item.y, width: PEDIGREE_CARD.w, height: PEDIGREE_CARD.h }}
               onClick={() => onSelect(item.id)}
+              onDoubleClick={() => onSetFocus(item.id)}
             >
               <span className="card-inner">
                 <span className="card-title">{item.person.name}</span>

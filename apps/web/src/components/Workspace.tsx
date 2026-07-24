@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Person, TreeStore } from "../lib/types";
 import { saveDraftTree } from "../lib/draftStorage";
 import { type GuideState, saveGuide } from "../lib/guide";
@@ -11,6 +11,7 @@ import {
   activePersons,
   commitDraft,
   removeDraftPerson,
+  restoreDraftPerson,
   setDraftPerson,
 } from "../lib/treeEngine";
 
@@ -31,12 +32,18 @@ type PendingAdd =
   | { type: "parent"; childId: string; role: "father" | "mother" }
   | { type: "child"; parentId: string };
 
+type ToastState = {
+  message: string;
+  undo?: () => void;
+};
+
 export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }: Props) {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAdd | null>(null);
   const [showPublish, setShowPublish] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
   useEffect(() => {
     saveDraftTree(store);
@@ -52,8 +59,15 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     if (!selectedId && id) setSelectedId(id);
   }, [store.draft, guide.selfId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
+  }, []);
+
   const people = activePersons(store.draft);
   const selected = selectedId ? store.draft.persons[selectedId] ?? null : null;
+  const homeFocusId = guide.selfId ?? pickDefaultFocus(store.draft, null);
 
   const relatives = useMemo(() => {
     if (!selected) return [];
@@ -73,9 +87,10 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     onStoreChange(next);
   }
 
-  function flash(msg: string) {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 3200);
+  function flash(message: string, undo?: () => void) {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast({ message, undo });
+    toastTimer.current = window.setTimeout(() => setToast(null), undo ? 7000 : 3200);
   }
 
   function onSavePerson(person: Person) {
@@ -112,7 +127,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       nextGuide = { ...guide, selfId: id, step: "mother" };
       setFocusId(id);
       setSelectedId(id);
-      flash("Теперь добавьте маму или папу карточками на древе");
+      flash("Добавьте маму или папу карточками «+» на схеме");
     } else if (pending.type === "parent") {
       person.sex = pending.role === "father" ? "M" : "F";
       next = setDraftPerson(store, person);
@@ -144,7 +159,14 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   function onCommit() {
     const next = commitDraft(store, "Обновление древа");
     persist(next);
-    flash(`Версия v${next.meta.next_version - 1} зафиксирована`);
+    flash(`Сохранена версия v${next.meta.next_version - 1}`);
+  }
+
+  function setFocus(id: string) {
+    setFocusId(id);
+    setSelectedId(id);
+    const name = store.draft.persons[id]?.name;
+    flash(name ? `Смотрим предков от «${name}»` : "Схема перестроена");
   }
 
   const modalTitle =
@@ -170,29 +192,47 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         </div>
         <nav className="top-actions">
           <span className="chip soft">
-            {people.length} чел. · v{Math.max(0, store.meta.next_version - 1)}
-            {store.dirty ? " · черновик" : ""}
+            {people.length} чел.
+            {store.dirty ? " · не сохранено" : ""}
           </span>
           <button type="button" className="btn ghost" onClick={onCommit} disabled={!store.dirty && !people.length}>
-            Сохранить версию
+            Сохранить
           </button>
           <button type="button" className="btn" onClick={() => setShowPublish(true)}>
             В Arweave
           </button>
           <button type="button" className="btn ghost" onClick={onHome}>
-            Выход
+            На главную
           </button>
         </nav>
       </header>
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div className="toast" role="status">
+          <span>{toast.message}</span>
+          {toast.undo ? (
+            <button
+              type="button"
+              className="toast-undo"
+              onClick={() => {
+                toast.undo?.();
+                setToast(null);
+              }}
+            >
+              Вернуть
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <div className="workspace-main">
         <PedigreeView
           snapshot={store.draft}
           focusId={focusId}
+          homeFocusId={homeFocusId}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          onSetFocus={setFocus}
           onEmptyStart={() => setPending({ type: "self" })}
           onAddRelative={(slot: AddMeSlot) =>
             setPending({ type: "parent", childId: slot.childId, role: slot.role })
@@ -204,12 +244,26 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           relatives={relatives}
           onClose={() => setSelectedId(null)}
           onSave={onSavePerson}
-          onFocus={() => selected && setFocusId(selected.id)}
-          onRemove={() => {
+          onSelectRelative={(id) => setSelectedId(id)}
+          onDelete={() => {
             if (!selected) return;
-            persist(removeDraftPerson(store, selected.id));
+            const removedId = selected.id;
+            const removedName = selected.name;
+            const wasFocus = focusId === removedId;
+            // Capture store snapshot for reliable undo after async toast
+            const afterRemove = removeDraftPerson(store, removedId);
+            persist(afterRemove);
             setSelectedId(null);
-            flash("Скрыто в этой версии (история сохраняется)");
+            if (wasFocus) {
+              setFocusId(pickDefaultFocus(afterRemove.draft, homeFocusId));
+            }
+            flash(`«${removedName}» убран(а) с древа`, () => {
+              const restored = restoreDraftPerson(afterRemove, removedId);
+              persist(restored);
+              setSelectedId(removedId);
+              if (wasFocus) setFocusId(removedId);
+              flash("Человек возвращён на древо");
+            });
           }}
           onAdd={(role) => {
             if (!selected) return;

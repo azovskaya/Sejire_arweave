@@ -9,6 +9,7 @@ import {
   getCommit,
   listHistory,
   removeDraftPerson,
+  restoreDraftPerson,
   upsertPersonFields,
 } from "./treeEngine";
 
@@ -42,6 +43,10 @@ assert(old && activePersons(old.snapshot).length === 1, "v1 unchanged after v2")
 assert(activePersons(store.draft).length === 2, "head has two");
 
 // tombstone soft-delete → new commit; old version intact
+store = removeDraftPerson(store, parentId);
+assert(activePersons(store.draft).length === 1, "tombstoned hidden before commit");
+store = restoreDraftPerson(store, parentId);
+assert(activePersons(store.draft).length === 2, "restore undoes tombstone in draft");
 store = removeDraftPerson(store, parentId);
 store = commitDraft(store, "tombstone ancestor");
 assert(activePersons(store.draft).length === 1, "tombstoned hidden in active set");

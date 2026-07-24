@@ -84,6 +84,15 @@ export function removeDraftPerson(store: TreeStore, personId: string): TreeStore
   return { ...store, draft, dirty: true };
 }
 
+/** Undo soft-delete while still in the same draft. */
+export function restoreDraftPerson(store: TreeStore, personId: string): TreeStore {
+  const draft = cloneSnapshot(store.draft);
+  const current = draft.persons[personId];
+  if (!current?.tombstone) return store;
+  draft.persons[personId] = { ...current, tombstone: false };
+  return { ...store, draft, dirty: true };
+}
+
 export function upsertPersonFields(
   store: TreeStore,
   partial: Partial<Person> & { id?: string; name: string }

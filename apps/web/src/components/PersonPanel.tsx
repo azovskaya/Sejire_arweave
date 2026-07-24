@@ -9,8 +9,8 @@ type Props = {
   onClose: () => void;
   onSave: (person: Person) => void;
   onAdd: (role: "father" | "mother" | "child") => void;
-  onFocus: () => void;
-  onRemove: () => void;
+  onSelectRelative: (id: string) => void;
+  onDelete: () => void;
 };
 
 function emptyPerson(): Person {
@@ -32,11 +32,21 @@ function emptyPerson(): Person {
   };
 }
 
-export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus, onRemove }: Props) {
+export function PersonPanel({
+  person,
+  relatives,
+  onClose,
+  onSave,
+  onAdd,
+  onSelectRelative,
+  onDelete,
+}: Props) {
   const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setDraft(person ?? emptyPerson());
+    setConfirmDelete(false);
   }, [person]);
 
   if (!person) {
@@ -196,7 +206,7 @@ export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus
         </section>
 
         <button className="btn full" type="submit">
-          Сохранить профиль
+          Сохранить
         </button>
       </form>
 
@@ -218,20 +228,43 @@ export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus
             {relatives.map((r) => (
               <li key={`${r.relation}-${r.id}`}>
                 <span>{r.relation}</span>
-                <strong className="clamp-1">{r.name}</strong>
+                <button type="button" className="rel-link clamp-1" onClick={() => onSelectRelative(r.id)}>
+                  {r.name}
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div className="panel-section actions-col">
-        <button type="button" className="btn ghost" onClick={onFocus}>
-          Центр древа
-        </button>
-        <button type="button" className="btn ghost danger-text" onClick={onRemove}>
-          Скрыть в этой версии
-        </button>
+      <div className="panel-section delete-zone">
+        {!confirmDelete ? (
+          <button type="button" className="btn ghost danger-text" onClick={() => setConfirmDelete(true)}>
+            Удалить с древа
+          </button>
+        ) : (
+          <div className="delete-confirm">
+            <p>
+              Убрать <strong>{draft.name || "этого человека"}</strong> со схемы? Сразу после этого можно
+              нажать «Вернуть».
+            </p>
+            <div className="actions">
+              <button type="button" className="btn ghost" onClick={() => setConfirmDelete(false)}>
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  setConfirmDelete(false);
+                  onDelete();
+                }}
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
