@@ -56,12 +56,13 @@ Arweave tags:
 
 ## Recovery algorithm
 
-1. User enters 12 words
-2. Client derives `encKey` + `vaultId` (+ wallet)
-3. Load local envelope for `vaultId` if present
-4. Else GraphQL: transactions with `App-Name=SEJIRE` and `Vault-Id=vaultId`, newest first
-5. Decrypt envelope → restore trees + history
-6. Without the 12 words, ciphertext is noise
+1. User opens app and builds tree **without** seed (local draft + guide)
+2. On **Publish to Arweave**, user creates/enters 12 words
+3. Client derives `encKey` + `vaultId` (+ wallet)
+4. Encrypt vault envelope and publish with tag `Vault-Id`
+5. Later / other device: enter 12 words → GraphQL by vaultId → decrypt
+
+Draft trees live in `localStorage` unencrypted until publish.
 
 ## Security notes
 
