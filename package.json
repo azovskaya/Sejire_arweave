@@ -1,13 +1,13 @@
 {
   "name": "sejire",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SEJIRE — versioned decentralized genealogy on Arweave + AO",
   "scripts": {
     "present": "python3 -m http.server 4173 --directory .",
     "web": "npm run dev --prefix apps/web",
     "web:build": "npm run build --prefix apps/web",
     "test": "npm test --prefix apps/web",
-    "test:engine": "npm run test:engine --prefix apps/web"
+    "deploy:pages": "bash scripts/deploy-pages.sh"
   }
 }

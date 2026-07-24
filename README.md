@@ -3,37 +3,36 @@
 **Создание неизменяемой ткани человеческой истории.**
 
 Протокол вечного версионного хранения родовых деревьев.  
-**Доступ с любой точки мира — по 12 словам BIP-39.**
+Сначала собираете древо (я → мама/папа → бабушки/дедушки).  
+**12 слов — только при отправке в Arweave.**
 
-## Пользовательский путь
+## Открыть приложение
 
-**Открыть сейчас:** https://cdn.jsdelivr.net/gh/azovskaya/Sejire_arweave@gh-pages/index.html  
-(зеркало: https://raw.githack.com/azovskaya/Sejire_arweave/gh-pages/index.html · детали: [`docs/LIVE.md`](./docs/LIVE.md))
+**https://azovskaya.github.io/Sejire_arweave/**
 
-1. Создать сейф → записать 12 слов  
-2. Добавить предков → «Зафиксировать версию» (история не стирается)  
-3. «Экспорт» (файл) или «В вечность» (Arweave, нужен небольшой AR)  
-4. На другом устройстве: ввести те же 12 слов → древо открывается  
+Репозиторий: https://github.com/azovskaya/Sejire_arweave
+
+## Локально
 
 ```bash
 cd apps/web && npm install && npm run dev
+```
+
+Обновить GitHub Pages из этого репо:
+
+```bash
+npm run deploy:pages
 ```
 
 ## Структура
 
 | Путь | Содержание |
 |------|------------|
-| `docs/` | Протокол, процессы, flows, ADR, security |
-| `docs/security/SEED_ACCESS.md` | Деривация 12 слов → ключи / vaultId |
-| `apps/web` | Клиент: onboarding + editor + publish |
-| `ao/processes` | Lua Tree / Factory (Phase 3 on-chain wiring) |
+| `apps/web` | Клиент (сбор древа + публикация) |
+| `docs/` | Протокол, процессы, flows |
+| `ao/processes` | Lua Tree / Factory |
 | `packages/schema` | JSON Schema |
 | `presentation/` | Презентация |
+| ветка `gh-pages` | Собранный сайт для Pages |
 
-## Статус
-
-- ✅ Phase 0–1: docs + versioned local engine  
-- ✅ Phase 2: BIP-39, AES-GCM vault, Arweave envelope publish/fetch  
-- ⏳ Phase 3: live AO process commits, ArNS, Shamir  
-
-Подробнее: [`docs/roadmap/PHASES.ru.md`](./docs/roadmap/PHASES.ru.md)
+Подробнее: [`docs/LIVE.md`](./docs/LIVE.md) · [`docs/README.md`](./docs/README.md)

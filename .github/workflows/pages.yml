@@ -1,24 +1,26 @@
-name: Deploy SEJIRE app to GitHub Pages
+name: Deploy SEJIRE to gh-pages
+
+# Publishes apps/web build to the gh-pages branch of THIS repository.
+# GitHub Pages serves: https://azovskaya.github.io/Sejire_arweave/
 
 on:
   push:
-    branches: [main, cursor/sejire-presentation-5d33]
+    branches: [main]
     paths:
       - "apps/web/**"
       - ".github/workflows/pages.yml"
+      - "scripts/deploy-pages.sh"
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: gh-pages-deploy
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,22 +29,15 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Install & build
+      - name: Build
         working-directory: apps/web
         run: |
           npm ci
           npm run build
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: apps/web/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: apps/web/dist
+          force_orphan: true
+          enable_jekyll: false
