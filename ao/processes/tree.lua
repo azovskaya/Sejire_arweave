@@ -1,6 +1,9 @@
 -- SEJIRE Tree Process (AO / aos)
--- Invariant: every mutation is a new immutable commit. History is never erased.
--- Deploy: load into aos connected to HyperBEAM, then use as family tree process.
+-- Spec:       docs/processes/TREE.md
+-- Messages:   docs/processes/MESSAGE_CATALOG.md
+-- Protocol:   docs/PROTOCOL.md
+-- Invariant:  every mutation is a new immutable commit. History is never erased.
+-- Deploy:     see ao/README.md (aos + HyperBEAM)
 
 local json = require("json")
 
@@ -227,6 +230,35 @@ Handlers.add(
     Tree.owners[addr] = true
     patch_http()
     reply(msg, { Action = "AddOwner-Response" }, json.encode({ owners = Tree.owners }))
+  end
+)
+
+Handlers.add(
+  "RemoveOwner",
+  Handlers.utils.hasMatchingTag("Action", "RemoveOwner"),
+  function(msg)
+    if not is_owner(msg.From) then
+      reply(msg, { Action = "Error", ["Error-Code"] = "Unauthorized" }, "Only owners can remove owners")
+      return
+    end
+    local addr = msg.Tags.Address
+    if not addr or #addr == 0 then
+      reply(msg, { Action = "Error", ["Error-Code"] = "BadAddress" }, "Address tag required")
+      return
+    end
+
+    local count = 0
+    for _ in pairs(Tree.owners) do
+      count = count + 1
+    end
+    if count <= 1 and Tree.owners[addr] then
+      reply(msg, { Action = "Error", ["Error-Code"] = "LastOwner" }, "Cannot remove the last owner")
+      return
+    end
+
+    Tree.owners[addr] = nil
+    patch_http()
+    reply(msg, { Action = "RemoveOwner-Response" }, json.encode({ owners = Tree.owners }))
   end
 )
 

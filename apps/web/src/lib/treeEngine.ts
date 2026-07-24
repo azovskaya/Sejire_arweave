@@ -1,3 +1,7 @@
+/**
+ * SEJIRE local tree engine — mirrors ao/processes/tree.lua
+ * Spec: docs/processes/TREE.md, docs/PROTOCOL.md
+ */
 import type { Commit, HistoryItem, Person, Snapshot, TreeStore } from "./types";
 
 const AUTHOR = "local:draft-author";
@@ -18,6 +22,7 @@ function personCount(s: Snapshot) {
   return Object.keys(s.persons).length;
 }
 
+/** Create empty tree store (local stand-in for SpawnTree + Init). */
 export function createTree(title: string): TreeStore {
   return {
     meta: {
@@ -35,6 +40,7 @@ export function createTree(title: string): TreeStore {
   };
 }
 
+/** Newest-first history summaries (UI convenience; AO History is ascending). */
 export function listHistory(store: TreeStore): HistoryItem[] {
   const items: HistoryItem[] = [];
   for (let v = 1; v < store.meta.next_version; v += 1) {
@@ -69,6 +75,7 @@ export function setDraftPerson(store: TreeStore, person: Person): TreeStore {
   return { ...store, draft, dirty: true };
 }
 
+/** Soft-delete in draft; history erasure is forbidden — needs a new commit. */
 export function removeDraftPerson(store: TreeStore, personId: string): TreeStore {
   const draft = cloneSnapshot(store.draft);
   const current = draft.persons[personId];
@@ -97,6 +104,10 @@ export function upsertPersonFields(
   return setDraftPerson(store, person);
 }
 
+/**
+ * Create immutable commit from draft (mirrors Action=Commit).
+ * Parent is always current HEAD (linear history, ADR-0004).
+ */
 export function commitDraft(store: TreeStore, message: string): TreeStore {
   const version = store.meta.next_version;
   const commit_id = `c_${version}_${Date.now().toString(36)}`;
@@ -125,6 +136,7 @@ export function commitDraft(store: TreeStore, message: string): TreeStore {
   };
 }
 
+/** Load historical snapshot into draft as a base for a *new* future commit. */
 export function loadDraftFromCommit(store: TreeStore, commitId: string): TreeStore {
   const c = store.commits[commitId];
   if (!c) return store;

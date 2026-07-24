@@ -2,46 +2,55 @@
 
 **Создание неизменяемой ткани человеческой истории.**
 
-Децентрализованный AO-протокол версионных генеалогических деревьев на **Arweave + AO (HyperBEAM)**.
+Децентрализованный AO-протокол **версионных** генеалогических деревьев  
+(Arweave + AO / HyperBEAM).
 
-Инвариант: **каждое дополнение = новый immutable commit**; прошлые версии всегда читаемы.
+> Каждое дополнение = новый immutable commit. Прошлое всегда читаемо.
 
-## Репозиторий
+## Структура репозитория
 
-| Путь | Содержание |
-|------|------------|
-| [`presentation/`](./presentation/) | Инвесторская презентация |
-| [`docs/VERIFICATION.ru.md`](./docs/VERIFICATION.ru.md) | Сверка тезисов с экосистемой (2026) |
-| [`docs/ARCHITECTURE.ru.md`](./docs/ARCHITECTURE.ru.md) | AO-first архитектура |
-| [`ao/processes/tree.lua`](./ao/processes/tree.lua) | AO process: Commit / History / GetHead |
-| [`apps/web/`](./apps/web/) | MVP-редактор с версионностью (local engine) |
-| [`packages/schema/`](./packages/schema/) | JSON Schema commit/v1 |
+```
+docs/                 Техническая документация (старт: docs/README.md)
+  PROTOCOL.md         Норматив протокола
+  processes/          Логика Tree / Factory + message catalog
+  flows/              Сценарии пользователя
+  adr/                Architecture Decision Records
+  security/           Threat model, ключи
+  roadmap/            Фазы
+ao/processes/         Lua AO processes (код = docs/processes/*)
+apps/web/             MVP-редактор (local engine = зеркало протокола)
+packages/schema/      JSON Schema + messages.catalog.json
+presentation/         Инвесторская презентация
+```
+
+## Документация
+
+| Раздел | Ссылка |
+|--------|--------|
+| Индекс | [docs/README.md](./docs/README.md) |
+| Протокол | [docs/PROTOCOL.md](./docs/PROTOCOL.md) |
+| Tree process | [docs/processes/TREE.md](./docs/processes/TREE.md) |
+| Factory process | [docs/processes/FACTORY.md](./docs/processes/FACTORY.md) |
+| Чеклист синхронизации | [docs/CHECKLIST.md](./docs/CHECKLIST.md) |
+| Верификация экосистемы | [docs/VERIFICATION.ru.md](./docs/VERIFICATION.ru.md) |
 
 ## Быстрый старт
 
 ```bash
-# Презентация
+# Документация / презентация
 python3 -m http.server 4173 --directory .
 # http://localhost:4173/presentation/
+# http://localhost:4173/docs/
 
-# Редактор древа
+# Редактор
 cd apps/web && npm install && npm run dev
+npm run test:engine
 ```
 
-## Стек
+## Процессы (кратко)
 
-- **Логика:** AO Process (Lua) — без Node/Postgres бэкенда
-- **Сообщения:** HyperBEAM (дешёвые апдейты, HTTP state)
-- **Медиа:** Arweave TX, в AO только ссылки
-- **Имена:** ArNS (`family.ar.io`)
-- **Кошелёк:** ArConnect / Wander (Phase 2)
+1. **Factory** — `SpawnTree` / `ListTrees`
+2. **Tree** — `Init` → `Commit` → `History` / `GetCommit`
+3. Медиа — upload на Arweave, в commit только `media.tx`
 
-## Протокол версий
-
-```
-v1 ──► v2 ──► v3 (HEAD)
- ▲      ▲
- └── всегда можно открыть и увидеть, что было раньше
-```
-
-Удаление персоны = tombstone в **новом** commit, история не стирается.
+Подробности и коды ошибок — в `docs/processes/`.

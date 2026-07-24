@@ -5,18 +5,27 @@
   <title>SEJIRE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0c0f; color: #e8edf4; padding: 2rem; }
+    :root { color-scheme: dark; }
+    body { font-family: Georgia, "Times New Roman", serif; background: #0a0c0f; color: #e8edf4; padding: 2.5rem; max-width: 42rem; margin: 0 auto; line-height: 1.55; }
+    h1 { font-family: system-ui, sans-serif; letter-spacing: 0.12em; font-size: 1.4rem; }
     a { color: #e09a5f; }
-    li { margin: 0.5rem 0; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.45rem 0; }
+    .muted { color: #9aa6b5; font-size: 0.95rem; }
   </style>
 </head>
 <body>
   <h1>SEJIRE</h1>
+  <p class="muted">Протокол вечной версионной памяти рода.</p>
   <ul>
     <li><a href="./presentation/">Презентация</a></li>
-    <li><a href="./docs/ARCHITECTURE.ru.md">Архитектура</a></li>
-    <li><a href="./docs/VERIFICATION.ru.md">Верификация тезисов</a></li>
-    <li><a href="./apps/web/">Редактор (нужен Vite: <code>cd apps/web && npm run dev</code>)</a></li>
+    <li><a href="./docs/README.md">Документация (индекс)</a></li>
+    <li><a href="./docs/PROTOCOL.md">Спецификация протокола</a></li>
+    <li><a href="./docs/processes/TREE.md">Логика Tree Process</a></li>
+    <li><a href="./docs/processes/FACTORY.md">Логика Factory Process</a></li>
+    <li><a href="./docs/flows/">Потоки (flows)</a></li>
+    <li><a href="./ao/README.md">AO deploy notes</a></li>
+    <li>Редактор: <code>cd apps/web && npm run dev</code></li>
   </ul>
 </body>
 </html>
