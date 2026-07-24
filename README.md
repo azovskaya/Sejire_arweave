@@ -2,37 +2,46 @@
 
 **Создание неизменяемой ткани человеческой истории.**
 
-Децентрализованный протокол вечного хранения генеалогических структур на **Arweave** и **AO Computer**.
+Децентрализованный AO-протокол версионных генеалогических деревьев на **Arweave + AO (HyperBEAM)**.
 
-## Что в репозитории
+Инвариант: **каждое дополнение = новый immutable commit**; прошлые версии всегда читаемы.
+
+## Репозиторий
 
 | Путь | Содержание |
 |------|------------|
-| [`presentation/`](./presentation/) | Интерактивная презентация (11 слайдов + MVP-план) |
-| [`docs/ARCHITECTURE.ru.md`](./docs/ARCHITECTURE.ru.md) | Как развернуть проект дёшево и децентрализованно |
+| [`presentation/`](./presentation/) | Инвесторская презентация |
+| [`docs/VERIFICATION.ru.md`](./docs/VERIFICATION.ru.md) | Сверка тезисов с экосистемой (2026) |
+| [`docs/ARCHITECTURE.ru.md`](./docs/ARCHITECTURE.ru.md) | AO-first архитектура |
+| [`ao/processes/tree.lua`](./ao/processes/tree.lua) | AO process: Commit / History / GetHead |
+| [`apps/web/`](./apps/web/) | MVP-редактор с версионностью (local engine) |
+| [`packages/schema/`](./packages/schema/) | JSON Schema commit/v1 |
 
-## Открыть презентацию
-
-Локально:
+## Быстрый старт
 
 ```bash
-cd presentation
-python3 -m http.server 4173
+# Презентация
+python3 -m http.server 4173 --directory .
+# http://localhost:4173/presentation/
+
+# Редактор древа
+cd apps/web && npm install && npm run dev
 ```
 
-Затем откройте `http://localhost:4173`.
+## Стек
 
-Навигация: ← →, пробел, свайп, точки внизу.
+- **Логика:** AO Process (Lua) — без Node/Postgres бэкенда
+- **Сообщения:** HyperBEAM (дешёвые апдейты, HTTP state)
+- **Медиа:** Arweave TX, в AO только ссылки
+- **Имена:** ArNS (`family.ar.io`)
+- **Кошелёк:** ArConnect / Wander (Phase 2)
 
-## Принцип продукта
+## Протокол версий
 
-1. **Черновик** — бесплатно в браузере (IndexedDB), без серверов.
-2. **Фиксация** — разовая оплата endowment на Arweave (~$0.005 за текстовое дерево).
-3. **Суверенитет** — BIP-39 seed, шифрование на устройстве.
-4. **Формат** — только JSON UTF-8 («цифровой гранит»), без медиа в протоколе.
+```
+v1 ──► v2 ──► v3 (HEAD)
+ ▲      ▲
+ └── всегда можно открыть и увидеть, что было раньше
+```
 
-Подробный план MVP: [docs/ARCHITECTURE.ru.md](./docs/ARCHITECTURE.ru.md).
-
-## Контактный тезис
-
-Протокол SEJIRE — защищено математикой. Сохранено вечностью.
+Удаление персоны = tombstone в **новом** commit, история не стирается.

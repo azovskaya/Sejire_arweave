@@ -1,10 +1,12 @@
 {
   "name": "sejire",
   "private": true,
-  "version": "0.1.0",
-  "description": "SEJIRE — immutable fabric of human history (presentation + architecture)",
+  "version": "0.2.0",
+  "description": "SEJIRE — versioned decentralized genealogy on Arweave + AO",
   "scripts": {
     "present": "python3 -m http.server 4173 --directory .",
-    "present:slides": "python3 -m http.server 4173 --directory presentation"
+    "web": "npm run dev --prefix apps/web",
+    "web:build": "npm run build --prefix apps/web",
+    "test:engine": "npm run test:engine --prefix apps/web"
   }
 }

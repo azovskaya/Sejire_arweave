@@ -133,7 +133,7 @@
             <p>Миллиарды родословных одновременно без потери скорости.</p>
           </li>
           <li>
-            <h3>Gologram State</h3>
+            <h3>Holographic State</h3>
             <p>Состояние дерева не зависит от серверов SEJIRE. Восстанавливается из сети автоматически.</p>
           </li>
           <li>
@@ -202,22 +202,22 @@
       <div class="slide-stage">
         <p class="eyebrow animate-in">Слайд 07</p>
         <h2 class="animate-in delay-1">Продукт — «Цифровой гранит»</h2>
-        <p class="lede animate-in delay-2">Мы сознательно отказались от фото и видео внутри протокола в пользу текста.</p>
+        <p class="lede animate-in delay-2">Граф родства — текст навечно. Медиа — опциональные ссылки на Arweave TX. Каждое дополнение — новый commit.</p>
         <div class="two-col animate-in delay-3">
           <article class="feature-panel">
-            <h3>Формат JSON (UTF-8)</h3>
-            <p>Текст — самый долговечный формат. Он был читаем 50 лет назад и будет читаем через 500 лет.</p>
+            <h3>JSON UTF-8 + AO state</h3>
+            <p>Имена, даты, связи. Читаемо через 500 лет. История версий никогда не стирается.</p>
           </article>
           <article class="feature-panel">
-            <h3>Чистота данных</h3>
-            <p>Имена, даты, связи, координаты. Без «шума». Максимально лёгкая и вечная база.</p>
+            <h3>Медиа отдельно</h3>
+            <p>Фото и сканы — в Permaweb. В процессе хранятся только TX-ссылки. Граф остаётся лёгким.</p>
           </article>
         </div>
         <pre class="code-sample animate-in delay-3" aria-hidden="true"><code>{
+  "version": 3,
+  "parent_commit_id": "c_2_…",
   "person": "Ayan Bekmuratov",
-  "born": "1894-03-12",
-  "place": [43.238, 76.945],
-  "parent_tx": "ar://…"
+  "media": [{ "tx": "ar://…" }]
 }</code></pre>
       </div>
     </section>
@@ -331,27 +331,27 @@
     <section class="slide" data-title="Реализация">
       <div class="slide-stage">
         <p class="eyebrow animate-in">Бонус · Развёртывание</p>
-        <h2 class="animate-in delay-1">Дешёвый децентрализованный MVP</h2>
-        <p class="lede animate-in delay-2">Без серверов, без подписок на инфраструктуру. Платите только за фиксацию на Arweave.</p>
+        <h2 class="animate-in delay-1">AO-first · HyperBEAM · версионные деревья</h2>
+        <p class="lede animate-in delay-2">Без своего бэкенда. Каждое дополнение — новый immutable commit с полным snapshot.</p>
         <ul class="point-grid dense animate-in delay-3">
           <li>
-            <h3>UI</h3>
-            <p>Статический фронт (Vite + React) → хостинг на Arweave / GitHub Pages. $0/мес.</p>
+            <h3>AO Process</h3>
+            <p>Lua-актор на каждое древо: Commit / History / GetHead. Holographic state.</p>
           </li>
           <li>
-            <h3>Черновик</h3>
-            <p>IndexedDB в браузере. Без бэкенда до момента «зафиксировать».</p>
+            <h3>HyperBEAM</h3>
+            <p>Дешёвые сообщения вместо L1 TX на каждое имя. HTTP-доступ к state.</p>
           </li>
           <li>
-            <h3>Ключи</h3>
-            <p>BIP-39 + WebCrypto на клиенте. Команда не видит plaintext.</p>
+            <h3>Медиа</h3>
+            <p>Permaweb TX + ссылки в AO. ArNS для семейных имён (name.ar.io).</p>
           </li>
           <li>
-            <h3>Вечность</h3>
-            <p>Irys/Turbo → Arweave JSON. AO-процесс на дерево. ~$0.005–0.05 за фиксацию.</p>
+            <h3>MVP сейчас</h3>
+            <p><a href="../apps/web/">apps/web</a> — локальный engine с той же git-логикой.</p>
           </li>
         </ul>
-        <p class="doc-note animate-in delay-3">Подробный план: <a href="../docs/ARCHITECTURE.ru.md">docs/ARCHITECTURE.ru.md</a></p>
+        <p class="doc-note animate-in delay-3">Сверка с реальностью: <a href="../docs/VERIFICATION.ru.md">docs/VERIFICATION.ru.md</a></p>
       </div>
     </section>
   </main>
