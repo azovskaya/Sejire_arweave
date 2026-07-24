@@ -6,15 +6,36 @@ import {
   normalizeMnemonic,
   splitWords,
 } from "../lib/crypto/bip39";
-import { deriveKeysFromMnemonic } from "../lib/crypto/keys";
+import { deriveKeysFromMnemonic, fingerprintVaultId } from "../lib/crypto/keys";
 import type { TreeStore } from "../lib/types";
-import { emptyVault, putTree, sealVault, downloadEnvelope } from "../lib/crypto/vault";
+import {
+  downloadEnvelope,
+  emptyVault,
+  openEnvelope,
+  openLocalVault,
+  putTree,
+  sealVault,
+  type VaultV1,
+} from "../lib/crypto/vault";
+import { fetchLatestEnvelope } from "../lib/arweave/fetch";
 
 type Props = {
   store: TreeStore;
   onClose: () => void;
-  onPublished: (info: { txId?: string; mode: "export" | "arweave" }) => void;
+  onPublished: (info: { txId?: string; mode: "export" | "arweave"; address?: string }) => void;
 };
+
+async function loadVault(keys: ReturnType<typeof deriveKeysFromMnemonic>): Promise<VaultV1> {
+  const local = await openLocalVault(keys);
+  if (local) return local;
+  try {
+    const remote = await fetchLatestEnvelope(keys.vaultId);
+    if (remote) return await openEnvelope(keys, remote.envelope);
+  } catch {
+    // offline / GraphQL unavailable — start fresh vault
+  }
+  return emptyVault(keys.vaultId);
+}
 
 export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   const [mode, setMode] = useState<"intro" | "create-show" | "create-confirm" | "existing" | "busy">(
@@ -25,14 +46,19 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   const [existing, setExisting] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [txId, setTxId] = useState<string | null>(null);
   const words = useMemo(() => (mnemonic ? splitWords(mnemonic) : []), [mnemonic]);
 
   async function runPublish(phrase: string, preferArweave: boolean) {
     setMode("busy");
     setError(null);
+    setTxId(null);
+    setWalletAddress(null);
     try {
       const keys = deriveKeysFromMnemonic(phrase);
-      let vault = emptyVault(keys.vaultId);
+      setStatus(`Сейф ${fingerprintVaultId(keys.vaultId)}…`);
+      let vault = await loadVault(keys);
       vault = putTree(vault, store);
       setStatus("Шифруем сейф ключом из 12 слов…");
       const envelope = await sealVault(keys, vault);
@@ -44,19 +70,25 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       }
 
       setStatus("Готовим Arweave-ключ из фразы (10–40 сек)…");
-      const { jwkFromSeed } = await import("../lib/arweave/wallet");
+      const { jwkFromSeed, addressFromJwk } = await import("../lib/arweave/wallet");
       const { publishEnvelope, getWalletBalanceAr } = await import("../lib/arweave/publish");
       const jwk = await jwkFromSeed(keys.seed);
+      const address = await addressFromJwk(jwk);
+      setWalletAddress(address);
       const balance = await getWalletBalanceAr(jwk);
-      setStatus(`Баланс ${balance} AR. Отправляем в Arweave…`);
+      setStatus(`Адрес ${address.slice(0, 8)}… · баланс ${balance} AR. Отправляем…`);
       const result = await publishEnvelope(jwk, envelope);
       if (!result.ok) {
         downloadEnvelope(envelope);
-        setError(`${result.error} Зашифрованный файл всё же скачан.`);
+        const fundHint = result.needsFunds
+          ? ` Пополните адрес ${address} (нужен небольшой баланс AR).`
+          : "";
+        setError(`${result.error}${fundHint} Зашифрованный файл скачан как запасной вариант.`);
         setMode("intro");
         return;
       }
-      onPublished({ mode: "arweave", txId: result.txId });
+      setTxId(result.txId);
+      onPublished({ mode: "arweave", txId: result.txId, address });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setMode("intro");
@@ -92,22 +124,23 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal panel">
-        <h2>Отправка древа в Arweave</h2>
+        <h2>Сохранить в Arweave</h2>
         <p className="sub">
-          Древо уже собрано. Теперь нужны <strong>12 слов</strong> — ими шифруется сейф. Без фразы
-          опубликованные данные не прочитать.
+          Это единственное место, куда древо уходит навсегда. Нужны <strong>12 слов</strong> — ими
+          шифруется сейф. Без фразы данные не прочитать. На кошельке из фразы должен быть небольшой
+          баланс AR для оплаты записи.
         </p>
 
         {mode === "intro" && (
           <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
             <button className="btn" type="button" onClick={startCreate}>
-              Создать 12 слов и продолжить
+              Создать 12 слов и отправить
             </button>
             <button className="btn ghost" type="button" onClick={() => setMode("existing")}>
               У меня уже есть 12 слов
             </button>
             <button className="btn ghost" type="button" onClick={onClose}>
-              Отмена — вернуться к древу
+              Отмена
             </button>
           </div>
         )}
@@ -171,8 +204,32 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
           </form>
         )}
 
-        {mode === "busy" && <p className="sub">{status || "Работаем…"}</p>}
-        {error && <p className="form-error">{error}</p>}
+        {mode === "busy" && (
+          <div>
+            <p className="sub">{status || "Работаем…"}</p>
+            {walletAddress && (
+              <p className="sub mono publish-meta">
+                Кошелёк: {walletAddress}
+              </p>
+            )}
+            {txId && (
+              <p className="sub">
+                TX:{" "}
+                <a href={`https://viewblock.io/arweave/tx/${txId}`} target="_blank" rel="noreferrer">
+                  {txId.slice(0, 12)}…
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+        {error && (
+          <div className="form-error-block">
+            <p className="form-error">{error}</p>
+            {walletAddress && (
+              <p className="sub mono publish-meta">Адрес для пополнения: {walletAddress}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

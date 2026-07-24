@@ -1,5 +1,4 @@
-import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Person } from "../lib/types";
 import { lifespan } from "../lib/pedigree";
 
@@ -7,7 +6,7 @@ type Props = {
   person: Person | null;
   relatives: { id: string; name: string; relation: string }[];
   onClose: () => void;
-  onSave: (person: Person) => void;
+  onChange: (person: Person) => void;
   onAdd: (role: "father" | "mother" | "child") => void;
   onSelectRelative: (id: string) => void;
   onDelete: () => void;
@@ -32,22 +31,74 @@ function emptyPerson(): Person {
   };
 }
 
+function buildPerson(base: Person, draft: Person): Person {
+  return {
+    ...base,
+    ...draft,
+    id: base.id,
+    name: draft.name.trim(),
+    maidenName: draft.maidenName?.trim() || null,
+    birthPlace: draft.birthPlace?.trim() || null,
+    deathPlace: draft.deathPlace?.trim() || null,
+    burialPlace: draft.burialPlace?.trim() || null,
+    occupation: draft.occupation?.trim() || null,
+    notes: draft.notes?.trim() || "",
+    born: draft.born || null,
+    died: draft.died || null,
+    burialDate: draft.burialDate || null,
+    parents: base.parents,
+    media: base.media ?? [],
+    tombstone: base.tombstone ?? false,
+  };
+}
+
+function sameProfile(a: Person, b: Person) {
+  return (
+    a.name === b.name &&
+    a.sex === b.sex &&
+    a.maidenName === b.maidenName &&
+    a.born === b.born &&
+    a.died === b.died &&
+    a.birthPlace === b.birthPlace &&
+    a.deathPlace === b.deathPlace &&
+    a.burialDate === b.burialDate &&
+    a.burialPlace === b.burialPlace &&
+    a.occupation === b.occupation &&
+    (a.notes ?? "") === (b.notes ?? "")
+  );
+}
+
 export function PersonPanel({
   person,
   relatives,
   onClose,
-  onSave,
+  onChange,
   onAdd,
   onSelectRelative,
   onDelete,
 }: Props) {
   const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const ready = useRef(false);
 
   useEffect(() => {
     setDraft(person ?? emptyPerson());
     setConfirmDelete(false);
+    ready.current = false;
+    const t = window.setTimeout(() => {
+      ready.current = true;
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [person]);
+
+  useEffect(() => {
+    if (!person || !ready.current) return;
+    const next = buildPerson(person, draft);
+    if (sameProfile(person, next)) return;
+    if (!next.name.trim()) return;
+    const timer = window.setTimeout(() => onChange(next), 350);
+    return () => window.clearTimeout(timer);
+  }, [draft, person, onChange]);
 
   if (!person) {
     return (
@@ -57,39 +108,15 @@ export function PersonPanel({
     );
   }
 
-  const current = person;
-
   function setField<K extends keyof Person>(key: K, value: Person[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    onSave({
-      ...current,
-      ...draft,
-      id: current.id,
-      name: draft.name.trim(),
-      maidenName: draft.maidenName?.trim() || null,
-      birthPlace: draft.birthPlace?.trim() || null,
-      deathPlace: draft.deathPlace?.trim() || null,
-      burialPlace: draft.burialPlace?.trim() || null,
-      occupation: draft.occupation?.trim() || null,
-      notes: draft.notes?.trim() || "",
-      born: draft.born || null,
-      died: draft.died || null,
-      burialDate: draft.burialDate || null,
-      parents: current.parents,
-      media: current.media ?? [],
-      tombstone: current.tombstone ?? false,
-    });
   }
 
   return (
     <aside className="person-panel">
       <header className="person-panel-head">
         <div className="person-panel-head-text">
-          <p className="eyebrow">Профиль</p>
+          <p className="eyebrow">Профиль · сохраняется сам</p>
           <h2 className="clamp-2">{draft.name || "Без имени"}</h2>
           <p className="sub mono">{lifespan(draft) || "даты не указаны"}</p>
         </div>
@@ -98,12 +125,12 @@ export function PersonPanel({
         </button>
       </header>
 
-      <form className="person-panel-form" onSubmit={submit}>
+      <div className="person-panel-form">
         <section className="field-block">
           <h3>Личные данные</h3>
           <label>
             Полное имя
-            <input value={draft.name} onChange={(e) => setField("name", e.target.value)} required />
+            <input value={draft.name} onChange={(e) => setField("name", e.target.value)} />
           </label>
           <label>
             Девичья фамилия
@@ -204,11 +231,7 @@ export function PersonPanel({
             />
           </label>
         </section>
-
-        <button className="btn full" type="submit">
-          Сохранить
-        </button>
-      </form>
+      </div>
 
       <div className="panel-section">
         <h3>Родственники</h3>

@@ -49,7 +49,7 @@ export default function App() {
             onRestoreSeed={() => setScreen("restore")}
           />
           <p className="footer-note">
-            Светлый интерфейс в духе Arweave. Pedigree + панель профиля. 12 слов — только при публикации.
+            Черновик живёт в браузере сам. Вечное хранение — только кнопка «В Arweave» (12 слов).
           </p>
         </>
       )}
@@ -62,7 +62,12 @@ export default function App() {
         <Workspace
           store={store}
           guide={guide}
-          onStoreChange={setStore}
+          onStoreChange={(next) => {
+            setStore((prev) => {
+              if (!prev) return prev;
+              return typeof next === "function" ? next(prev) : next;
+            });
+          }}
           onGuideChange={setGuide}
           onHome={() => setScreen("welcome")}
         />

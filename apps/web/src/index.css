@@ -976,6 +976,17 @@ a {
   font-size: 0.9rem;
 }
 
+.form-error-block {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.publish-meta {
+  word-break: break-all;
+  font-size: 0.78rem !important;
+}
+
 .hero-create {
   width: min(640px, calc(100% - 2rem));
   margin: 0 auto;

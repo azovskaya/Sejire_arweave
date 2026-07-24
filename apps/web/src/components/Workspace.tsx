@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Person, TreeStore } from "../lib/types";
 import { saveDraftTree } from "../lib/draftStorage";
 import { type GuideState, saveGuide } from "../lib/guide";
@@ -22,7 +22,7 @@ function uid() {
 type Props = {
   store: TreeStore;
   guide: GuideState;
-  onStoreChange: (store: TreeStore) => void;
+  onStoreChange: (store: TreeStore | ((prev: TreeStore) => TreeStore)) => void;
   onGuideChange: (guide: GuideState) => void;
   onHome: () => void;
 };
@@ -42,6 +42,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAdd | null>(null);
   const [showPublish, setShowPublish] = useState(false);
+  const [publishStore, setPublishStore] = useState<TreeStore | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -93,10 +94,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     toastTimer.current = window.setTimeout(() => setToast(null), undo ? 7000 : 3200);
   }
 
-  function onSavePerson(person: Person) {
-    persist(setDraftPerson(store, person));
-    flash("Сохранено");
-  }
+  const onPersonChange = useCallback(
+    (person: Person) => {
+      onStoreChange((prev) => setDraftPerson(prev, person));
+    },
+    [onStoreChange]
+  );
 
   function completeAdd(data: AddPersonPayload) {
     if (!pending) return;
@@ -156,10 +159,18 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     setPending(null);
   }
 
-  function onCommit() {
-    const next = commitDraft(store, "Обновление древа");
-    persist(next);
-    flash(`Сохранена версия v${next.meta.next_version - 1}`);
+  function openPublish() {
+    if (!people.length) {
+      flash("Сначала добавьте хотя бы одного человека");
+      return;
+    }
+    let next = store;
+    if (store.dirty) {
+      next = commitDraft(store, "Снимок перед Arweave");
+      persist(next);
+    }
+    setPublishStore(next);
+    setShowPublish(true);
   }
 
   function setFocus(id: string) {
@@ -191,14 +202,10 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           </div>
         </div>
         <nav className="top-actions">
-          <span className="chip soft">
-            {people.length} чел.
-            {store.dirty ? " · не сохранено" : ""}
+          <span className="chip soft" title="Черновик хранится только в этом браузере">
+            {people.length} чел. · в браузере
           </span>
-          <button type="button" className="btn ghost" onClick={onCommit} disabled={!store.dirty && !people.length}>
-            Сохранить
-          </button>
-          <button type="button" className="btn" onClick={() => setShowPublish(true)}>
+          <button type="button" className="btn" onClick={openPublish}>
             В Arweave
           </button>
           <button type="button" className="btn ghost" onClick={onHome}>
@@ -243,14 +250,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           person={selected}
           relatives={relatives}
           onClose={() => setSelectedId(null)}
-          onSave={onSavePerson}
+          onChange={onPersonChange}
           onSelectRelative={(id) => setSelectedId(id)}
           onDelete={() => {
             if (!selected) return;
             const removedId = selected.id;
             const removedName = selected.name;
             const wasFocus = focusId === removedId;
-            // Capture store snapshot for reliable undo after async toast
             const afterRemove = removeDraftPerson(store, removedId);
             persist(afterRemove);
             setSelectedId(null);
@@ -284,15 +290,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         />
       )}
 
-      {showPublish && (
+      {showPublish && publishStore && (
         <PublishSeedModal
-          store={store}
-          onClose={() => setShowPublish(false)}
+          store={publishStore}
+          onClose={() => {
+            setShowPublish(false);
+            setPublishStore(null);
+          }}
           onPublished={({ mode, txId }) => {
             setShowPublish(false);
+            setPublishStore(null);
             flash(
               mode === "arweave"
-                ? `Опубликовано в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
+                ? `Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
                 : "Файл сейфа скачан. Храните вместе с 12 словами."
             );
           }}
