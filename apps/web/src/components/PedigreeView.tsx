@@ -131,6 +131,11 @@ export function PedigreeView({
               К себе
             </button>
           ) : null}
+          {selectedId && selectedId !== focusId ? (
+            <button type="button" className="chip-action" onClick={() => onSetFocus(selectedId)}>
+              От выбранного
+            </button>
+          ) : null}
         </div>
         <div className="pedigree-toolbar" aria-label="Масштаб">
           <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}>
