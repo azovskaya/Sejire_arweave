@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
-import { loadGuide } from "../lib/guide";
 
 type Props = {
   onStartNew: (title: string) => void;
@@ -11,7 +10,6 @@ type Props = {
 
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const hasDraft = Boolean(loadDraftTree());
-  const guide = loadGuide();
   const [title, setTitle] = useState("Мой род");
 
   function onSubmit(e: FormEvent) {
@@ -20,42 +18,52 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   }
 
   return (
-    <section className="hero-create" style={{ maxWidth: 640, margin: "0 auto" }}>
-      <h1>SEJIRE</h1>
-      <p>
-        Сначала соберите древо: вы → мама и папа → бабушки и дедушки.  
-        <strong style={{ color: "#e09a5f", fontWeight: 600 }}>12 слов понадобятся только когда отправите древо в Arweave.</strong>
-      </p>
+    <div className="welcome-screen">
+      <div className="welcome-hero">
+        <p className="eyebrow">SEJIRE · вечная семейная память</p>
+        <h1>Соберите древо предков</h1>
+        <p className="lede">
+          Как на FamilySearch и MyHeritage: начните с себя, затем добавляйте маму и папу прямо на схеме.
+          Двенадцать слов понадобятся только когда отправите древо в Arweave.
+        </p>
 
-      <form className="panel" style={{ textAlign: "left", width: "100%" }} onSubmit={onSubmit}>
-        <h2>Новое древо предков</h2>
-        <p className="sub">Название можно изменить позже. Начнём с записи о вас.</p>
-        <label className="full">
-          Название рода
-          <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-        </label>
-        <div className="actions" style={{ marginTop: "0.85rem" }}>
+        <form className="welcome-form" onSubmit={onSubmit}>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            aria-label="Название рода"
+            placeholder="Название рода"
+          />
           <button className="btn" type="submit">
             Начать с себя
           </button>
-        </div>
-      </form>
+        </form>
 
-      {hasDraft && (
-        <div className="actions" style={{ marginTop: "1rem", justifyContent: "center" }}>
-          <button className="btn ghost" type="button" onClick={onContinueDraft}>
+        {hasDraft && (
+          <button className="btn ghost welcome-continue" type="button" onClick={onContinueDraft}>
             Продолжить черновик
-            {guide && guide.step !== "done" ? ` (шаг: ${guide.step})` : ""}
           </button>
-        </div>
-      )}
+        )}
 
-      <p className="sub" style={{ marginTop: "1.5rem" }}>
-        Уже публиковали в Arweave?{" "}
-        <button type="button" className="linkish" onClick={onRestoreSeed}>
-          Открыть по 12 словам
+        <button type="button" className="linkish welcome-restore" onClick={onRestoreSeed}>
+          Уже публиковали? Открыть по 12 словам
         </button>
-      </p>
-    </section>
+      </div>
+
+      <ul className="welcome-points">
+        <li>
+          <strong>Схема в центре</strong>
+          <span>Pedigree-вид с карточками «Добавить маму / папу»</span>
+        </li>
+        <li>
+          <strong>Панель профиля</strong>
+          <span>Клик по человеку — факты и родственные действия</span>
+        </li>
+        <li>
+          <strong>Вечная фиксация</strong>
+          <span>В Arweave уходит зашифрованный снимок, не аккаунт сервиса</span>
+        </li>
+      </ul>
+    </div>
   );
 }

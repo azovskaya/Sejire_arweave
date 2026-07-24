@@ -93,6 +93,7 @@ export function upsertPersonFields(
   const person: Person = {
     id,
     name: partial.name,
+    sex: partial.sex ?? existing?.sex ?? "U",
     born: partial.born ?? existing?.born ?? null,
     died: partial.died ?? existing?.died ?? null,
     place: partial.place ?? existing?.place ?? null,

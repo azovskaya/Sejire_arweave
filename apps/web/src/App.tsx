@@ -40,22 +40,23 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={screen === "work" ? "app-shell is-work" : "app-shell"}>
       {screen === "welcome" && (
-        <Welcome
-          onStartNew={startNew}
-          onContinueDraft={continueDraft}
-          onRestoreSeed={() => setScreen("restore")}
-        />
+        <>
+          <Welcome
+            onStartNew={startNew}
+            onContinueDraft={continueDraft}
+            onRestoreSeed={() => setScreen("restore")}
+          />
+          <p className="footer-note">
+            Интерфейс: pedigree + панель профиля (как FamilySearch / MyHeritage). 12 слов — только при публикации в
+            Arweave.
+          </p>
+        </>
       )}
 
       {screen === "restore" && (
-        <RestoreSeed
-          onBack={() => setScreen("welcome")}
-          onRestored={() => {
-            continueDraft();
-          }}
-        />
+        <RestoreSeed onBack={() => setScreen("welcome")} onRestored={continueDraft} />
       )}
 
       {screen === "work" && store && (
@@ -66,12 +67,6 @@ export default function App() {
           onGuideChange={setGuide}
           onHome={() => setScreen("welcome")}
         />
-      )}
-
-      {screen === "welcome" && (
-        <p className="footer-note">
-          Сначала древо предков. 12 слов — только при отправке в Arweave. docs/flows/07-seed-access.md
-        </p>
       )}
     </div>
   );

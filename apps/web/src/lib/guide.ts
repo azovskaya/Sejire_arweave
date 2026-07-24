@@ -132,6 +132,7 @@ export function applyGuidePerson(
   const person: Person = {
     id,
     name: data.name.trim(),
+    sex: "U",
     born: data.born || null,
     died: data.died || null,
     parents: [],

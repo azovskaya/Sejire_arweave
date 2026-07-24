@@ -7,6 +7,7 @@ export type MediaRef = {
 export type Person = {
   id: string;
   name: string;
+  sex?: "M" | "F" | "U";
   born?: string | null;
   died?: string | null;
   place?: { lat?: number; lon?: number; label?: string } | null;

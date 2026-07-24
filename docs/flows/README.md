@@ -12,3 +12,4 @@
 | Восстановление | [06-recover-tree.md](./06-recover-tree.md) |
 | Доступ по 12 словам | [07-seed-access.md](./07-seed-access.md) |
 | Проводник сбора рода | [08-guided-tree.md](./08-guided-tree.md) |
+| Pedigree UX | [09-pedigree-ux.md](./09-pedigree-ux.md) |
