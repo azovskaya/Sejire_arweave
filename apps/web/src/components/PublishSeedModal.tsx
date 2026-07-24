@@ -69,19 +69,19 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         return;
       }
 
-      setStatus("Готовим Arweave-ключ из фразы (10–40 сек)…");
+      setStatus("Из 12 слов создаём адрес Arweave (без стороннего кошелька, 10–40 сек)…");
       const { jwkFromSeed, addressFromJwk } = await import("../lib/arweave/wallet");
       const { publishEnvelope, getWalletBalanceAr } = await import("../lib/arweave/publish");
       const jwk = await jwkFromSeed(keys.seed);
       const address = await addressFromJwk(jwk);
       setWalletAddress(address);
       const balance = await getWalletBalanceAr(jwk);
-      setStatus(`Адрес ${address.slice(0, 8)}… · баланс ${balance} AR. Отправляем…`);
+      setStatus(`Адрес из фразы ${address.slice(0, 8)}… · баланс ${balance} AR. Отправляем…`);
       const result = await publishEnvelope(jwk, envelope);
       if (!result.ok) {
         downloadEnvelope(envelope);
         const fundHint = result.needsFunds
-          ? ` Пополните адрес ${address} (нужен небольшой баланс AR).`
+          ? ` Переведите немного AR на адрес, который получился из ваших 12 слов (ниже). Отдельный кошелёк подключать не нужно.`
           : "";
         setError(`${result.error}${fundHint} Зашифрованный файл скачан как запасной вариант.`);
         setMode("intro");
@@ -126,9 +126,10 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       <div className="modal panel">
         <h2>Сохранить в Arweave</h2>
         <p className="sub">
-          Это единственное место, куда древо уходит навсегда. Нужны <strong>12 слов</strong> — ими
-          шифруется сейф. Без фразы данные не прочитать. На кошельке из фразы должен быть небольшой
-          баланс AR для оплаты записи.
+          Отдельный кошелёк (ArConnect и т.п.) <strong>не нужен</strong>. Достаточно{" "}
+          <strong>12 слов</strong>: ими шифруется сейф и из них же получается адрес в Arweave для
+          оплаты одной записи. Без фразы данные не прочитать; на этом адресе должен быть небольшой
+          баланс AR.
         </p>
 
         {mode === "intro" && (
@@ -147,7 +148,10 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
         {mode === "create-show" && (
           <div>
-            <p className="sub">Запишите фразу на бумаге. Это единственный ключ к вечному сейфу.</p>
+            <p className="sub">
+              Запишите фразу на бумаге. Это и ключ шифрования, и доступ к адресу Arweave — сторонний
+              кошелёк не подключается.
+            </p>
             <ol className="seed-grid">
               {words.map((w, i) => (
                 <li key={`${w}-${i}`}>
@@ -209,7 +213,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
             <p className="sub">{status || "Работаем…"}</p>
             {walletAddress && (
               <p className="sub mono publish-meta">
-                Кошелёк: {walletAddress}
+                Адрес из 12 слов: {walletAddress}
               </p>
             )}
             {txId && (
@@ -226,7 +230,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
           <div className="form-error-block">
             <p className="form-error">{error}</p>
             {walletAddress && (
-              <p className="sub mono publish-meta">Адрес для пополнения: {walletAddress}</p>
+              <p className="sub mono publish-meta">Адрес из ваших 12 слов: {walletAddress}</p>
             )}
           </div>
         )}
