@@ -1,28 +1,34 @@
 # Управление ключами
 
-## Phase 1 (local MVP)
+## Продуктовая модель (цель)
 
-- Авторство локальное (`local:draft-author`)
-- Данные в `localStorage` — только для прототипа UX
+**12 слов BIP-39 = единственный ключ доступа** к зашифрованному сейфу с любой точки мира.
 
-## Phase 2 (on-chain)
+Подробности деривации: [`SEED_ACCESS.md`](./SEED_ACCESS.md).
 
-- Arweave wallet: **Wander** / **ArConnect**
-- Подпись каждого `Commit` / ACL сообщения
-- Seed/JSON keyfile NEVER leaves device / extension
+## Что выводится из фразы
 
-## Рекомендации пользователю
+| Материал | Назначение |
+|----------|------------|
+| `encKey` | AES-256-GCM шифрование vault |
+| `vaultId` | Публичный локатор (тег Arweave / local key) |
+| Arweave JWK | Подпись публикации (детерминированный RSA из seed) |
 
-1. Записать seed offline
-2. Сразу добавить второго owner (доверенный родственник)
-3. Хранить `tree_id` в семейном сейфе / ArNS
-4. Не использовать browser пароль-менеджер как единственную копию seed
+## Правила UX
 
-## Будущее
+1. Показать seed один раз при создании + подтверждение вводом
+2. Никогда не отправлять seed на сервер (сервер не нужен)
+3. После unlock держать в памяти только derived keys, не plaintext seed в UI state дольше необходимого
+4. Предупреждение: потеря 12 слов = потеря расшифровки
 
-| Механизм | Зачем |
-|----------|-------|
-| BIP-39 + AES-GCM encrypt snapshot | Приватность графа |
-| Shamir 2-of-3 | Семейное восстановление |
-| Hardware wallet | High-value trees |
-| Session keys | UX без подписи каждого клика (ограниченные права) |
+## Multi-owner (позже)
+
+`AddOwner` на Tree Process дополняет модель «семейного доступа», но **шифрование сейфа** по-прежнему от мастер-фразы владельца vault. Shared decryption keys / Shamir — Phase 3+.
+
+## Phase notes
+
+| Phase | Состояние |
+|-------|-----------|
+| 1 | Local engine без seed |
+| 2 (сейчас) | BIP-39 + encrypt + Arweave envelope publish/fetch |
+| 3 | Shamir, session keys, hardware |

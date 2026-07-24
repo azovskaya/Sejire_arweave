@@ -2,55 +2,35 @@
 
 **Создание неизменяемой ткани человеческой истории.**
 
-Децентрализованный AO-протокол **версионных** генеалогических деревьев  
-(Arweave + AO / HyperBEAM).
+Протокол вечного версионного хранения родовых деревьев.  
+**Доступ с любой точки мира — по 12 словам BIP-39.**
 
-> Каждое дополнение = новый immutable commit. Прошлое всегда читаемо.
+## Пользовательский путь
 
-## Структура репозитория
-
-```
-docs/                 Техническая документация (старт: docs/README.md)
-  PROTOCOL.md         Норматив протокола
-  processes/          Логика Tree / Factory + message catalog
-  flows/              Сценарии пользователя
-  adr/                Architecture Decision Records
-  security/           Threat model, ключи
-  roadmap/            Фазы
-ao/processes/         Lua AO processes (код = docs/processes/*)
-apps/web/             MVP-редактор (local engine = зеркало протокола)
-packages/schema/      JSON Schema + messages.catalog.json
-presentation/         Инвесторская презентация
-```
-
-## Документация
-
-| Раздел | Ссылка |
-|--------|--------|
-| Индекс | [docs/README.md](./docs/README.md) |
-| Протокол | [docs/PROTOCOL.md](./docs/PROTOCOL.md) |
-| Tree process | [docs/processes/TREE.md](./docs/processes/TREE.md) |
-| Factory process | [docs/processes/FACTORY.md](./docs/processes/FACTORY.md) |
-| Чеклист синхронизации | [docs/CHECKLIST.md](./docs/CHECKLIST.md) |
-| Верификация экосистемы | [docs/VERIFICATION.ru.md](./docs/VERIFICATION.ru.md) |
-
-## Быстрый старт
+1. Создать сейф → записать 12 слов  
+2. Добавить предков → «Зафиксировать версию» (история не стирается)  
+3. «Экспорт» (файл) или «В вечность» (Arweave, нужен небольшой AR)  
+4. На другом устройстве: ввести те же 12 слов → древо открывается  
 
 ```bash
-# Документация / презентация
-python3 -m http.server 4173 --directory .
-# http://localhost:4173/presentation/
-# http://localhost:4173/docs/
-
-# Редактор
 cd apps/web && npm install && npm run dev
-npm run test:engine
 ```
 
-## Процессы (кратко)
+## Структура
 
-1. **Factory** — `SpawnTree` / `ListTrees`
-2. **Tree** — `Init` → `Commit` → `History` / `GetCommit`
-3. Медиа — upload на Arweave, в commit только `media.tx`
+| Путь | Содержание |
+|------|------------|
+| `docs/` | Протокол, процессы, flows, ADR, security |
+| `docs/security/SEED_ACCESS.md` | Деривация 12 слов → ключи / vaultId |
+| `apps/web` | Клиент: onboarding + editor + publish |
+| `ao/processes` | Lua Tree / Factory (Phase 3 on-chain wiring) |
+| `packages/schema` | JSON Schema |
+| `presentation/` | Презентация |
 
-Подробности и коды ошибок — в `docs/processes/`.
+## Статус
+
+- ✅ Phase 0–1: docs + versioned local engine  
+- ✅ Phase 2: BIP-39, AES-GCM vault, Arweave envelope publish/fetch  
+- ⏳ Phase 3: live AO process commits, ArNS, Shamir  
+
+Подробнее: [`docs/roadmap/PHASES.ru.md`](./docs/roadmap/PHASES.ru.md)

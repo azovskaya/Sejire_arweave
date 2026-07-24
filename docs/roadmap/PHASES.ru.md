@@ -6,34 +6,42 @@
 - Protocol + ADR + flows + process docs
 - Verification vs ecosystem
 
-## Phase 1 — Local versioned engine ✅ (in progress)
+## Phase 1 — Local versioned engine ✅
 
 - `apps/web` editor with commit history
 - `treeEngine` mirrors protocol rules
 - Schemas + Lua Tree/Factory blueprints
 - Tests: `npm run test:engine`
 
-## Phase 2 — On-chain wiring
+## Phase 2 — Seed access + eternal envelope ✅ (product path)
 
-- Deploy Factory + Tree via `aos` / HyperBEAM
-- ArConnect/Wander connect in UI
-- Real `Commit` messages
-- Media upload helper (Turbo/Irys)
-- Encryption option (opt-in)
+- BIP-39 create / restore (12 words)
+- AES-GCM vault encryption on device
+- Deterministic `vaultId` recovery
+- Local encrypted cache
+- Arweave publish/fetch by `Vault-Id` tag
+- Export/import envelope file (works offline / without AR)
+- Docs: `SEED_ACCESS.md`, flow 07
+- Tests: `npm run test:crypto`
 
 ## Phase 3 — Product hardening
 
-- Kinship query handlers in AO
+- Live AO Tree/Factory wiring via aoconnect (process commits on-chain)
+- Media upload helper (Turbo/Irys)
 - ArNS family names
-- Multi-owner UX + recovery
+- Multi-owner UX + Shamir recovery
 - Permaweb deploy of UI
-- Partner read API (gateway-only)
+- Kinship query handlers in AO
 
 ## Phase 4 — Ecosystem
 
 - Import from GEDCOM
-- Public heritage trees
-- Indexer for discovery (optional AO process)
+- Public heritage trees (opt-in)
+- Indexer for discovery
 - Mobile wallet deep links
 
-Критерий готовности каждой фазы: обновлённые docs + тесты + работающий flow из `docs/flows/`.
+Критерий «готово для пользователя с 12 словами»:
+1. Создать сейф и записать фразу
+2. Добавить людей, зафиксировать версии
+3. Опубликовать / экспортировать
+4. На другом устройстве открыть **только** фразой (или фраза + envelope файл)

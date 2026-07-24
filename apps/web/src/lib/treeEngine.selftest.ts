@@ -10,7 +10,7 @@ import {
   listHistory,
   removeDraftPerson,
   upsertPersonFields,
-} from "./treeEngine.ts";
+} from "./treeEngine";
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
