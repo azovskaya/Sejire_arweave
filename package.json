@@ -1,0 +1,10 @@
+{
+  "name": "sejire",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SEJIRE — immutable fabric of human history (presentation + architecture)",
+  "scripts": {
+    "present": "python3 -m http.server 4173 --directory .",
+    "present:slides": "python3 -m http.server 4173 --directory presentation"
+  }
+}
