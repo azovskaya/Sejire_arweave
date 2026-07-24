@@ -13,34 +13,75 @@ type Props = {
   onRemove: () => void;
 };
 
+function emptyPerson(): Person {
+  return {
+    id: "",
+    name: "",
+    sex: "U",
+    born: null,
+    died: null,
+    birthPlace: null,
+    deathPlace: null,
+    burialDate: null,
+    burialPlace: null,
+    occupation: null,
+    maidenName: null,
+    parents: [],
+    media: [],
+    notes: "",
+  };
+}
+
 export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus, onRemove }: Props) {
-  const [draft, setDraft] = useState<Person | null>(person);
+  const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
 
   useEffect(() => {
-    setDraft(person);
+    setDraft(person ?? emptyPerson());
   }, [person]);
 
-  if (!person || !draft) {
+  if (!person) {
     return (
       <aside className="person-panel is-empty">
-        <p>Выберите человека на древе или добавьте себя, чтобы начать.</p>
+        <p>Выберите карточку на схеме или добавьте себя, чтобы заполнить сведения.</p>
       </aside>
     );
   }
 
+  const current = person;
+
+  function setField<K extends keyof Person>(key: K, value: Person[K]) {
+    setDraft((prev) => ({ ...prev, [key]: value }));
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (!draft) return;
-    onSave(draft);
+    onSave({
+      ...current,
+      ...draft,
+      id: current.id,
+      name: draft.name.trim(),
+      maidenName: draft.maidenName?.trim() || null,
+      birthPlace: draft.birthPlace?.trim() || null,
+      deathPlace: draft.deathPlace?.trim() || null,
+      burialPlace: draft.burialPlace?.trim() || null,
+      occupation: draft.occupation?.trim() || null,
+      notes: draft.notes?.trim() || "",
+      born: draft.born || null,
+      died: draft.died || null,
+      burialDate: draft.burialDate || null,
+      parents: current.parents,
+      media: current.media ?? [],
+      tombstone: current.tombstone ?? false,
+    });
   }
 
   return (
     <aside className="person-panel">
       <header className="person-panel-head">
-        <div>
+        <div className="person-panel-head-text">
           <p className="eyebrow">Профиль</p>
-          <h2>{draft.name || "Без имени"}</h2>
-          <p className="sub">{lifespan(draft)}</p>
+          <h2 className="clamp-2">{draft.name || "Без имени"}</h2>
+          <p className="sub mono">{lifespan(draft) || "даты не указаны"}</p>
         </div>
         <button type="button" className="tool-btn" onClick={onClose} aria-label="Закрыть">
           ×
@@ -48,58 +89,119 @@ export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus
       </header>
 
       <form className="person-panel-form" onSubmit={submit}>
-        <label>
-          Имя
-          <input
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            required
-          />
-        </label>
-        <label>
-          Пол
-          <select
-            value={draft.sex ?? "U"}
-            onChange={(e) => setDraft({ ...draft, sex: e.target.value as Person["sex"] })}
-          >
-            <option value="U">не указан</option>
-            <option value="F">женский</option>
-            <option value="M">мужской</option>
-          </select>
-        </label>
-        <div className="row-2">
+        <section className="field-block">
+          <h3>Личные данные</h3>
           <label>
-            Рождение
+            Полное имя
+            <input value={draft.name} onChange={(e) => setField("name", e.target.value)} required />
+          </label>
+          <label>
+            Девичья фамилия
+            <input
+              value={draft.maidenName ?? ""}
+              onChange={(e) => setField("maidenName", e.target.value || null)}
+              placeholder="если применимо"
+            />
+          </label>
+          <label>
+            Пол
+            <select
+              value={draft.sex ?? "U"}
+              onChange={(e) => setField("sex", e.target.value as Person["sex"])}
+            >
+              <option value="U">не указан</option>
+              <option value="F">женский</option>
+              <option value="M">мужской</option>
+            </select>
+          </label>
+          <label>
+            Род занятий
+            <input
+              value={draft.occupation ?? ""}
+              onChange={(e) => setField("occupation", e.target.value || null)}
+            />
+          </label>
+        </section>
+
+        <section className="field-block">
+          <h3>Рождение</h3>
+          <label>
+            Дата рождения
             <input
               type="date"
               value={draft.born ?? ""}
-              onChange={(e) => setDraft({ ...draft, born: e.target.value || null })}
+              onChange={(e) => setField("born", e.target.value || null)}
             />
           </label>
           <label>
-            Смерть
+            Место рождения
+            <input
+              value={draft.birthPlace ?? ""}
+              onChange={(e) => setField("birthPlace", e.target.value || null)}
+              placeholder="город, страна"
+            />
+          </label>
+        </section>
+
+        <section className="field-block">
+          <h3>Смерть</h3>
+          <label>
+            Дата смерти
             <input
               type="date"
               value={draft.died ?? ""}
-              onChange={(e) => setDraft({ ...draft, died: e.target.value || null })}
+              onChange={(e) => setField("died", e.target.value || null)}
             />
           </label>
-        </div>
-        <label>
-          Заметки
-          <textarea
-            rows={3}
-            value={draft.notes ?? ""}
-            onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
-          />
-        </label>
-        <button className="btn" type="submit">
-          Сохранить
+          <label>
+            Место смерти
+            <input
+              value={draft.deathPlace ?? ""}
+              onChange={(e) => setField("deathPlace", e.target.value || null)}
+              placeholder="город, страна"
+            />
+          </label>
+        </section>
+
+        <section className="field-block">
+          <h3>Захоронение</h3>
+          <label>
+            Дата захоронения
+            <input
+              type="date"
+              value={draft.burialDate ?? ""}
+              onChange={(e) => setField("burialDate", e.target.value || null)}
+            />
+          </label>
+          <label>
+            Место захоронения
+            <input
+              value={draft.burialPlace ?? ""}
+              onChange={(e) => setField("burialPlace", e.target.value || null)}
+              placeholder="кладбище, город"
+            />
+          </label>
+        </section>
+
+        <section className="field-block">
+          <h3>Заметки</h3>
+          <label>
+            Биография / примечания
+            <textarea
+              rows={4}
+              value={draft.notes ?? ""}
+              onChange={(e) => setField("notes", e.target.value)}
+            />
+          </label>
+        </section>
+
+        <button className="btn full" type="submit">
+          Сохранить профиль
         </button>
       </form>
 
       <div className="panel-section">
-        <h3>Добавить родственника</h3>
+        <h3>Родственники</h3>
         <div className="rel-actions">
           <button type="button" className="btn ghost" onClick={() => onAdd("father")}>
             + Папа
@@ -111,28 +213,24 @@ export function PersonPanel({ person, relatives, onClose, onSave, onAdd, onFocus
             + Ребёнок
           </button>
         </div>
-      </div>
-
-      {relatives.length > 0 && (
-        <div className="panel-section">
-          <h3>Близкие</h3>
+        {relatives.length > 0 && (
           <ul className="rel-list">
             {relatives.map((r) => (
               <li key={`${r.relation}-${r.id}`}>
                 <span>{r.relation}</span>
-                <strong>{r.name}</strong>
+                <strong className="clamp-1">{r.name}</strong>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="panel-section actions-col">
         <button type="button" className="btn ghost" onClick={onFocus}>
-          Сделать центром древа
+          Центр древа
         </button>
         <button type="button" className="btn ghost danger-text" onClick={onRemove}>
-          Скрыть из текущей версии
+          Скрыть в этой версии
         </button>
       </div>
     </aside>

@@ -33,10 +33,10 @@ export type PedigreeEdge = {
   y2: number;
 };
 
-const CARD_W = 168;
-const CARD_H = 78;
-const GAP_X = 56;
-const GAP_Y = 28;
+const CARD_W = 208;
+const CARD_H = 122;
+const GAP_X = 44;
+const GAP_Y = 20;
 
 export const PEDIGREE_CARD = { w: CARD_W, h: CARD_H, gapX: GAP_X, gapY: GAP_Y };
 
@@ -50,9 +50,36 @@ export function lifespan(p: Person) {
   const b = yearOf(p.born);
   const d = yearOf(p.died);
   if (b && d) return `${b}–${d}`;
-  if (b) return `р. ${b}`;
-  if (d) return `† ${d}`;
+  if (b) return `род. ${b}`;
+  if (d) return `ум. ${d}`;
   return "";
+}
+
+export function birthPlaceLabel(p: Person) {
+  return (p.birthPlace || p.place?.label || "").trim();
+}
+
+export function cardSubtitle(p: Person) {
+  const life = lifespan(p);
+  const place = birthPlaceLabel(p);
+  if (life && place) return `${life} · ${place}`;
+  return life || place || "даты не указаны";
+}
+
+/** Compact lines for pedigree cards — order matters for overflow budget. */
+export function cardFactLines(p: Person): { label: string; value: string }[] {
+  const lines: { label: string; value: string }[] = [];
+  const life = lifespan(p);
+  if (life) lines.push({ label: "годы", value: life });
+  const birth = birthPlaceLabel(p);
+  if (birth) lines.push({ label: "род.", value: birth });
+  const death = (p.deathPlace || "").trim();
+  if (death) lines.push({ label: "ум.", value: death });
+  const burial = (p.burialPlace || "").trim();
+  if (burial) lines.push({ label: "погр.", value: burial });
+  const job = (p.occupation || "").trim();
+  if (job && lines.length < 4) lines.push({ label: "зан.", value: job });
+  return lines.slice(0, 4);
 }
 
 /** Guess mother/father among parents by sex (fallback: order). */

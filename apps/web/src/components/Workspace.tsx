@@ -12,8 +12,8 @@ import {
   commitDraft,
   removeDraftPerson,
   setDraftPerson,
-  upsertPersonFields,
 } from "../lib/treeEngine";
+import type { AddPersonPayload } from "./AddPersonModal";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -84,13 +84,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash("Сохранено");
   }
 
-  function completeAdd(data: {
-    name: string;
-    sex: Person["sex"];
-    born: string;
-    died: string;
-    notes: string;
-  }) {
+  function completeAdd(data: AddPersonPayload) {
     if (!pending) return;
     const id = uid();
     const person: Person = {
@@ -99,9 +93,15 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       sex: data.sex ?? "U",
       born: data.born || null,
       died: data.died || null,
+      birthPlace: data.birthPlace.trim() || null,
+      deathPlace: data.deathPlace.trim() || null,
+      burialDate: data.burialDate || null,
+      burialPlace: data.burialPlace.trim() || null,
+      occupation: data.occupation.trim() || null,
+      maidenName: data.maidenName.trim() || null,
       parents: [],
       media: [],
-      notes: data.notes,
+      notes: data.notes.trim() || "",
       tombstone: false,
     };
 
@@ -248,6 +248,3 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     </div>
   );
 }
-
-// keep upsert available for future bulk edits
-void upsertPersonFields;

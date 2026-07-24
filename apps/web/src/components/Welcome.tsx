@@ -20,11 +20,12 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   return (
     <div className="welcome-screen">
       <div className="welcome-hero">
-        <p className="eyebrow">SEJIRE · вечная семейная память</p>
-        <h1>Соберите древо предков</h1>
+        <p className="eyebrow">SEJIRE · permanent family memory</p>
+        <h1>SEJIRE</h1>
         <p className="lede">
-          Как на FamilySearch и MyHeritage: начните с себя, затем добавляйте маму и папу прямо на схеме.
-          Двенадцать слов понадобятся только когда отправите древо в Arweave.
+          Соберите древо предков в светлом стиле вечного хранилища. Начните с себя, добавьте маму и
+          папу на схеме. Двенадцать слов понадобятся только когда отправите зашифрованный сейф в
+          Arweave.
         </p>
 
         <form className="welcome-form" onSubmit={onSubmit}>

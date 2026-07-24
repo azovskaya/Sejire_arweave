@@ -8,9 +8,18 @@ export type Person = {
   id: string;
   name: string;
   sex?: "M" | "F" | "U";
+  /** Birth date ISO yyyy-mm-dd */
   born?: string | null;
+  /** Death date ISO yyyy-mm-dd */
   died?: string | null;
+  /** @deprecated use birthPlace */
   place?: { lat?: number; lon?: number; label?: string } | null;
+  birthPlace?: string | null;
+  deathPlace?: string | null;
+  burialDate?: string | null;
+  burialPlace?: string | null;
+  occupation?: string | null;
+  maidenName?: string | null;
   parents: string[];
   media: MediaRef[];
   notes?: string;

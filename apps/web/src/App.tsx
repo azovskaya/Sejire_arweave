@@ -49,8 +49,7 @@ export default function App() {
             onRestoreSeed={() => setScreen("restore")}
           />
           <p className="footer-note">
-            Интерфейс: pedigree + панель профиля (как FamilySearch / MyHeritage). 12 слов — только при публикации в
-            Arweave.
+            Светлый интерфейс в духе Arweave. Pedigree + панель профиля. 12 слов — только при публикации.
           </p>
         </>
       )}
