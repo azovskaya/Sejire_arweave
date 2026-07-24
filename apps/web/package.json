@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test:engine": "tsx src/lib/treeEngine.selftest.ts",
     "test:crypto": "tsx src/lib/crypto/crypto.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto"
+    "test:kinship": "tsx src/lib/kinship.selftest.ts",
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",

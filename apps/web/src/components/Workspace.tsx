@@ -6,6 +6,8 @@ import type { SejireKeys } from "../lib/crypto/keys";
 import { fingerprintVaultId } from "../lib/crypto/keys";
 import type { VaultV1 } from "../lib/crypto/vault";
 import { downloadEnvelope, putTree, sealVault } from "../lib/crypto/vault";
+import { relationshipLabel } from "../lib/kinship";
+import { TreeCanvas } from "./TreeCanvas";
 import {
   activePersons,
   commitDraft,
@@ -38,7 +40,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
     name: "",
     born: "",
     died: "",
-    parents: "",
+    parentIds: [] as string[],
     notes: "",
     mediaTx: "",
   });
@@ -46,6 +48,9 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
   const [notice, setNotice] = useState<string | null>(null);
   const [jwk, setJwk] = useState<JWKInterface | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [kinA, setKinA] = useState("");
+  const [kinB, setKinB] = useState("");
 
   const store = vault.active_tree_id ? vault.trees[vault.active_tree_id] ?? null : null;
 
@@ -61,11 +66,15 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
   const isHistorical = Boolean(viewing && head && viewing.commit_id !== head.commit_id);
   const visibleSnapshot = viewing?.snapshot ?? store?.draft;
   const people = visibleSnapshot ? activePersons(visibleSnapshot) : [];
+  const draftPeople = store ? activePersons(store.draft) : [];
   const diff = useMemo(() => {
     if (!store || !viewing || !head) return null;
     if (viewing.commit_id === head.commit_id) return null;
     return diffPersonIds(viewing.snapshot, head.snapshot);
   }, [store, viewing, head]);
+
+  const kinLabel =
+    visibleSnapshot && kinA && kinB ? relationshipLabel(visibleSnapshot, kinA, kinB) : null;
 
   async function onCreateTree(e: FormEvent) {
     e.preventDefault();
@@ -74,15 +83,21 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
     setViewCommitId(null);
   }
 
+  function toggleParent(id: string) {
+    setForm((prev) => {
+      const has = prev.parentIds.includes(id);
+      return {
+        ...prev,
+        parentIds: has ? prev.parentIds.filter((x) => x !== id) : [...prev.parentIds, id],
+      };
+    });
+  }
+
   async function onAddPerson(e: FormEvent) {
     e.preventDefault();
     if (!store || isHistorical) return;
     const name = form.name.trim();
     if (!name) return;
-    const parents = form.parents
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
     const media = form.mediaTx.trim()
       ? [{ tx: form.mediaTx.trim(), kind: "image" as const, caption: "Архив" }]
       : [];
@@ -91,13 +106,14 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
       name,
       born: form.born || null,
       died: form.died || null,
-      parents,
+      parents: form.parentIds,
       media,
       notes: form.notes,
       tombstone: false,
     };
     await persist(upsertPersonFields(store, person));
-    setForm({ name: "", born: "", died: "", parents: "", notes: "", mediaTx: "" });
+    setForm({ name: "", born: "", died: "", parentIds: [], notes: "", mediaTx: "" });
+    setSelectedId(person.id);
   }
 
   async function onCommit() {
@@ -106,6 +122,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
     await persist(next);
     setViewCommitId(next.meta.head);
     setCommitMessage("");
+    setNotice(`Версия v${next.meta.next_version - 1} зафиксирована. Прошлое сохранено.`);
   }
 
   async function ensureWallet() {
@@ -126,7 +143,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
     try {
       const envelope = await sealVault(keys, vault);
       downloadEnvelope(envelope);
-      setNotice("Envelope сохранён. Его можно открыть на другом устройстве вместе с 12 словами.");
+      setNotice("Файл сейфа скачан. На другом устройстве: 12 слов + этот файл.");
     } finally {
       setBusy(false);
     }
@@ -146,7 +163,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
         setNotice(result.error);
         return;
       }
-      setNotice(`Опубликовано в Arweave. TX: ${result.txId}. Сейф доступен из любой точки по 12 словам.`);
+      setNotice(`В вечности: https://arweave.net/${result.txId} — откроется по 12 словам с любого устройства.`);
     } catch (e) {
       setNotice(e instanceof Error ? e.message : String(e));
     } finally {
@@ -169,8 +186,8 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
         </header>
         <section className="hero-create">
           <h1>Новое древо</h1>
-          <p>Сейф открыт. Создайте первое семейное древо — каждое дополнение станет новой версией.</p>
-          <form className="create-row" onSubmit={onCreateTree}>
+          <p>Сейф открыт по 12 словам. Создайте род — каждое дополнение станет новой вечной версией.</p>
+          <form className="create-row" onSubmit={(e) => void onCreateTree(e)}>
             <input
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
@@ -178,7 +195,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
               required
             />
             <button className="btn" type="submit">
-              Создать
+              Создать древо
             </button>
           </form>
         </section>
@@ -197,14 +214,14 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <div className="badge">
             <em />
-            vault {fingerprintVaultId(keys.vaultId)} · HEAD v{Math.max(0, store.meta.next_version - 1)}
+            {fingerprintVaultId(keys.vaultId)} · v{Math.max(0, store.meta.next_version - 1)}
             {store.dirty ? " · черновик" : ""}
           </div>
           <button className="btn ghost" type="button" disabled={busy} onClick={() => void onExport()}>
             Экспорт
           </button>
           <button className="btn" type="button" disabled={busy} onClick={() => void onPublish()}>
-            В вечность (Arweave)
+            В вечность
           </button>
           <button className="btn ghost" type="button" onClick={onLock}>
             Lock
@@ -235,10 +252,18 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
 
       <div className="layout">
         <section className="panel">
-          <h2>Древо</h2>
-          <p className="sub">Данные шифруются на устройстве ключом из 12 слов. В сеть уходит только ciphertext.</p>
+          <h2>Схема рода</h2>
+          <p className="sub">Нажмите на человека, чтобы выделить. Связи — по родителям.</p>
+          {visibleSnapshot && (
+            <TreeCanvas
+              snapshot={visibleSnapshot}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          )}
 
-          {!isHistorical && (
+          <h2 style={{ marginTop: "1.25rem" }}>Добавить человека</h2>
+          {!isHistorical ? (
             <>
               <form onSubmit={(e) => void onAddPerson(e)}>
                 <div className="form-grid">
@@ -247,6 +272,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
                     <input
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Аян Бекмуратов"
                       required
                     />
                   </label>
@@ -266,16 +292,26 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
                       onChange={(e) => setForm({ ...form, died: e.target.value })}
                     />
                   </label>
+                  <fieldset className="full parent-pick">
+                    <legend>Родители (отметьте из уже добавленных)</legend>
+                    {draftPeople.length === 0 && (
+                      <p className="empty">Пока никого нет — сначала добавьте старших.</p>
+                    )}
+                    <div className="parent-list">
+                      {draftPeople.map((p) => (
+                        <label key={p.id} className="check">
+                          <input
+                            type="checkbox"
+                            checked={form.parentIds.includes(p.id)}
+                            onChange={() => toggleParent(p.id)}
+                          />
+                          {p.name}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                   <label className="full">
-                    ID родителей
-                    <input
-                      value={form.parents}
-                      onChange={(e) => setForm({ ...form, parents: e.target.value })}
-                      placeholder="p_abc, p_def"
-                    />
-                  </label>
-                  <label className="full">
-                    Медиа TX (Arweave)
+                    Медиа TX (Arweave, опционально)
                     <input
                       value={form.mediaTx}
                       onChange={(e) => setForm({ ...form, mediaTx: e.target.value })}
@@ -301,7 +337,7 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
                   style={{ flex: 1 }}
                   value={commitMessage}
                   onChange={(e) => setCommitMessage(e.target.value)}
-                  placeholder="Сообщение коммита"
+                  placeholder="Что изменилось в этой версии?"
                 />
                 <button
                   className="btn"
@@ -313,12 +349,17 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
                 </button>
               </div>
             </>
+          ) : (
+            <p className="empty">Вернитесь к HEAD, чтобы редактировать.</p>
           )}
 
           <div className="people">
-            {people.length === 0 && <p className="empty">Добавьте предка и зафиксируйте версию.</p>}
             {people.map((p) => (
-              <article className="person" key={p.id}>
+              <article
+                className={`person ${selectedId === p.id ? "is-selected" : ""}`}
+                key={p.id}
+                onClick={() => setSelectedId(p.id)}
+              >
                 <h3>{p.name}</h3>
                 <p>
                   {p.born || "—"} → {p.died || "…"}
@@ -326,17 +367,23 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
                 </p>
                 <div className="meta">
                   <span className="chip">id: {p.id}</span>
-                  {p.parents.map((pid) => (
-                    <span className="chip" key={pid}>
-                      parent: {pid}
-                    </span>
-                  ))}
+                  {p.parents.map((pid) => {
+                    const parent = people.find((x) => x.id === pid) ?? draftPeople.find((x) => x.id === pid);
+                    return (
+                      <span className="chip" key={pid}>
+                        родитель: {parent?.name ?? pid}
+                      </span>
+                    );
+                  })}
                   {!isHistorical && (
                     <button
                       className="btn ghost"
                       type="button"
                       style={{ padding: "0.2rem 0.45rem", fontSize: "0.75rem" }}
-                      onClick={() => void persist(removeDraftPerson(store, p.id))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void persist(removeDraftPerson(store, p.id));
+                      }}
                     >
                       tombstone
                     </button>
@@ -349,9 +396,9 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
 
         <aside className="panel">
           <h2>История версий</h2>
-          <p className="sub">Каждый commit — полное дерево. Удалить прошлое нельзя.</p>
+          <p className="sub">Каждое дополнение = новый commit. Удалить прошлое нельзя.</p>
           {history.length === 0 ? (
-            <p className="empty">Коммитов ещё нет.</p>
+            <p className="empty">Зафиксируйте первую версию.</p>
           ) : (
             <ul className="history">
               {history.map((h) => (
@@ -380,6 +427,35 @@ export function Workspace({ keys, vault, onVaultChange, onLock }: Props) {
               <strong>-{diff.removed.length}</strong>
             </div>
           )}
+
+          <h2 style={{ marginTop: "1.4rem" }}>Родство</h2>
+          <p className="sub">Кто кому приходится в текущем снимке.</p>
+          <div className="form-grid">
+            <label>
+              Человек A
+              <select value={kinA} onChange={(e) => setKinA(e.target.value)}>
+                <option value="">—</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Человек B
+              <select value={kinB} onChange={(e) => setKinB(e.target.value)}>
+                <option value="">—</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {kinLabel && <p className="kin-result">{kinLabel}</p>}
+
           {address && (
             <p className="sub" style={{ marginTop: "1rem" }}>
               Arweave: {address}

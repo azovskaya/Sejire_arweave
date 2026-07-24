@@ -243,6 +243,11 @@ label {
 .person {
   border-top: 1px solid var(--line);
   padding-top: 0.7rem;
+  cursor: pointer;
+}
+
+.person.is-selected {
+  border-color: var(--copper);
 }
 
 .person h3 {
@@ -262,6 +267,54 @@ label {
   flex-wrap: wrap;
   gap: 0.45rem;
   margin-top: 0.4rem;
+}
+
+.parent-pick {
+  border: 1px solid var(--line);
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+}
+
+.parent-pick legend {
+  padding: 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.parent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.9rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.tree-canvas-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: rgba(8, 10, 12, 0.55);
+  margin-bottom: 1rem;
+}
+
+.tree-canvas {
+  width: 100%;
+  min-width: 480px;
+  height: auto;
+  display: block;
+}
+
+.kin-result {
+  margin: 0.5rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 2px solid var(--copper);
+  background: rgba(197, 122, 69, 0.08);
+  color: var(--stone-soft, #b7c0cc);
 }
 
 .chip {
