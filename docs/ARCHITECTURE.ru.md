@@ -37,9 +37,10 @@
 | Логика древа | AO Tree Process (Lua) | [processes/TREE.md](./processes/TREE.md) |
 | Реестр деревьев | AO Factory | [processes/FACTORY.md](./processes/FACTORY.md) |
 | Сообщения | HyperBEAM | [VERIFICATION.ru.md](./VERIFICATION.ru.md) |
-| Медиа | Arweave TX refs | [flows/04-attach-media.md](./flows/04-attach-media.md) |
+| Медиа / vault blobs | Arweave via Turbo | [flows/04-attach-media.md](./flows/04-attach-media.md), [ADR-0006](./adr/0006-sponsored-fiat-publish.md) |
+| Fiat publish sponsor | Thin edge (Stripe + Turbo) | [SPONSOR_AND_PERMAWEB.ru.md](./SPONSOR_AND_PERMAWEB.ru.md) |
 | Имена | ArNS | verification + roadmap |
-| UI | React Vite | `apps/web` |
+| UI | React Vite (Pages mirror + permaweb) | `apps/web` |
 
 ## Фазы
 

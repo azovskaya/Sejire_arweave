@@ -33,6 +33,17 @@
 - Permaweb deploy of UI
 - Kinship query handlers in AO
 
+## Phase 3.5 — Fiat sponsor + permaweb site (in progress)
+
+See [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
+
+- [ ] Stripe Checkout $3 → sponsor edge verifies payment
+- [ ] Turbo upload of **sealed** envelope (seed never on server)
+- [ ] Wire PublishSeedModal to sponsor path (flag + fallback to self-fund)
+- [ ] Project treasury wallet + initial Turbo credits
+- [ ] Permaweb deploy of SPA + ArNS name
+- [ ] Keep GitHub Pages as mirror
+
 ## Phase 4 — Ecosystem
 
 - Import from GEDCOM
