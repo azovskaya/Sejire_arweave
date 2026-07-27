@@ -14,6 +14,8 @@ import {
   restoreDraftPerson,
   setDraftPerson,
 } from "../lib/treeEngine";
+import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
+import { downloadShezhirePdf } from "../lib/pdf/shezhirePdf";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -180,6 +182,45 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash(name ? `Смотрим предков от «${name}»` : "Схема перестроена");
   }
 
+  async function exportClassicPdf() {
+    const id = focusId ?? homeFocusId ?? selectedId;
+    if (!id || !people.length) {
+      flash("Сначала добавьте человека на древо");
+      return;
+    }
+    try {
+      await downloadClassicTreePdf({
+        snapshot: store.draft,
+        focusId: id,
+        meta: store.meta,
+        locale: "ru",
+      });
+      flash("PDF древа скачан");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function exportShezhirePdf() {
+    const id = selectedId ?? homeFocusId ?? focusId;
+    if (!id || !people.length) {
+      flash("Сначала добавьте человека на древо");
+      return;
+    }
+    try {
+      await downloadShezhirePdf({
+        snapshot: store.draft,
+        startId: id,
+        meta: store.meta,
+        locale: "ru",
+        maxGenerations: 7,
+      });
+      flash("Шежіре PDF скачан");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   const modalTitle =
     pending?.type === "self"
       ? "Добавить себя"
@@ -205,6 +246,16 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <span className="chip soft" title="Черновик хранится только в этом браузере">
             {people.length} чел. · в браузере
           </span>
+          {people.length >= 1 && (
+            <>
+              <button type="button" className="btn ghost" onClick={() => void exportClassicPdf()}>
+                Древо в PDF
+              </button>
+              <button type="button" className="btn ghost" onClick={() => void exportShezhirePdf()}>
+                Шежіре PDF
+              </button>
+            </>
+          )}
           <button type="button" className="btn" onClick={openPublish}>
             В Arweave
           </button>

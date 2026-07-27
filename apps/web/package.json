@@ -12,12 +12,14 @@
     "test:crypto": "tsx src/lib/crypto/crypto.selftest.ts",
     "test:kinship": "tsx src/lib/kinship.selftest.ts",
     "test:pedigree": "tsx src/lib/pedigree.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree"
+    "test:lineage": "tsx src/lib/pdf/lineage.selftest.ts",
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
     "@scure/bip39": "^2.2.0",
     "arweave": "^1.15.7",
+    "jspdf": "^4.0.0",
     "node-forge": "^1.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

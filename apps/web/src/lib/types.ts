@@ -49,6 +49,10 @@ export type TreeMeta = {
   next_version: number;
   created_at: string;
   author: string;
+  /** Optional clan / ру name for Шежіре header (future UI). */
+  clanName?: string | null;
+  /** Optional tamga image as data URL or https URL (future UI). */
+  tamgaUrl?: string | null;
 };
 
 export type TreeStore = {
