@@ -2,7 +2,14 @@ import type { Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { maleLineUp, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
-import { drawCornerOrnaments, drawPosterFrame, drawTitleRule, fitText, safeFilename } from "./poster";
+import {
+  drawCornerOrnaments,
+  drawPosterFrame,
+  drawTitleRule,
+  fitText,
+  safeFilename,
+  wrapName,
+} from "./poster";
 
 async function loadJsPdf() {
   const mod = await import("jspdf");
@@ -10,7 +17,7 @@ async function loadJsPdf() {
 }
 
 /**
- * Wall-ready Шежіре poster: male line, parchment, no overlapping ornament/title.
+ * Wall-ready Шежіре poster: male line, parchment, full names wrapped.
  */
 export async function downloadShezhirePdf(opts: {
   snapshot: Snapshot;
@@ -36,17 +43,14 @@ export async function downloadShezhirePdf(opts: {
   const ink: [number, number, number] = [110, 65, 28];
   const soft: [number, number, number] = [175, 125, 60];
 
-  // Parchment field
   doc.setFillColor(245, 232, 205);
   doc.rect(0, 0, pageW, pageH, "F");
-  // Soft top wash (does not fight the title)
   doc.setFillColor(238, 220, 180);
   doc.rect(0, 0, pageW, 18, "F");
 
   drawPosterFrame(doc, pageW, pageH, ink);
   drawCornerOrnaments(doc, pageW, pageH, soft);
 
-  // Title block in clear space — ornaments stay in corners only
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
   doc.setFontSize(24);
@@ -57,7 +61,6 @@ export async function downloadShezhirePdf(opts: {
   const hasTamga = Boolean(opts.meta.tamgaUrl);
   let contentTop = 36;
 
-  // Clan / tamga only when data exists — no empty "—" / placeholder noise
   if (clan || hasTamga) {
     const slotY = 34;
     const slotH = 18;
@@ -74,7 +77,8 @@ export async function downloadShezhirePdf(opts: {
       setPdfFont(doc, "normal");
       doc.setFontSize(11);
       doc.setTextColor(60, 40, 15);
-      doc.text(fitText(doc, clan, pageW - 60, 11), 22, slotY + 13);
+      const { lines } = wrapName(doc, clan, pageW - 60, 2, 11, 8);
+      doc.text(lines[0], 22, slotY + 13);
     }
 
     if (hasTamga) {
@@ -87,23 +91,33 @@ export async function downloadShezhirePdf(opts: {
       try {
         doc.addImage(opts.meta.tamgaUrl!, "PNG", tamgaX + 0.8, tamgaY + 0.8, tamgaSize - 1.6, tamgaSize - 1.6);
       } catch {
-        // leave empty frame if image fails
+        // empty frame
       }
     }
     contentTop = slotY + slotH + 8;
   }
 
-  // Vertical male line — compact, numbered, no "Поколение N" labels
-  const boxH = 16;
   const boxW = pageW - 40;
   const boxX = 20;
+  const nameAreaW = boxW - 22;
   const available = pageH - contentTop - 16;
-  const step = Math.min(22, available / Math.max(line.length, 1));
-  let y = contentTop;
 
+  // Pre-measure row heights so long FIO get more vertical room
+  const rowHeights = line.map((person) => {
+    setPdfFont(doc, "bold");
+    const { lines } = wrapName(doc, person.name || "—", nameAreaW, 3, 11, 7.5);
+    const hasMeta = Boolean(yearSpan(person) || (person.birthPlace || "").trim());
+    return Math.max(16, 6 + lines.length * 5 + (hasMeta ? 5 : 2));
+  });
+  const totalH = rowHeights.reduce((a, b) => a + b, 0);
+  const gaps = Math.max(0, line.length - 1);
+  const scale = totalH + gaps * 4 > available ? available / (totalH + gaps * 4) : 1;
+
+  let y = contentTop;
   for (let i = 0; i < line.length; i += 1) {
     const person = line[i];
     const genNumber = line.length - i;
+    const boxH = rowHeights[i] * scale;
     const boxY = y;
 
     doc.setFillColor(251, 243, 222);
@@ -111,35 +125,42 @@ export async function downloadShezhirePdf(opts: {
     doc.setLineWidth(0.4);
     doc.roundedRect(boxX, boxY, boxW, boxH, 1.1, 1.1, "FD");
 
-    // generation disc
     doc.setFillColor(...ink);
-    doc.circle(boxX + 8, boxY + boxH / 2, 3.8, "F");
+    doc.circle(boxX + 8, boxY + Math.min(boxH / 2, 8), 3.8, "F");
     setPdfFont(doc, "bold");
     doc.setTextColor(255, 250, 240);
     doc.setFontSize(9);
-    doc.text(String(genNumber), boxX + 8, boxY + boxH / 2 + 1.05, { align: "center" });
+    doc.text(String(genNumber), boxX + 8, boxY + Math.min(boxH / 2, 8) + 1.05, { align: "center" });
 
     setPdfFont(doc, "bold");
     doc.setTextColor(50, 32, 14);
-    doc.setFontSize(11);
-    doc.text(fitText(doc, person.name || "—", boxW - 55, 11), boxX + 15, boxY + 6.8);
+    const { lines: nameLines, fontSize } = wrapName(doc, person.name || "—", nameAreaW, 3, 11, 7.5);
+    doc.setFontSize(fontSize);
+    let ty = boxY + 5.5;
+    const lineH = fontSize * 0.42 + 0.55;
+    for (const nl of nameLines) {
+      doc.text(nl, boxX + 15, ty);
+      ty += lineH;
+    }
 
     const metaBits = [yearSpan(person), (person.birthPlace || "").trim()].filter(Boolean);
     if (metaBits.length) {
       setPdfFont(doc, "normal");
-      doc.setFontSize(7.2);
+      doc.setFontSize(7);
       doc.setTextColor(115, 85, 45);
-      doc.text(fitText(doc, metaBits.join("  ·  "), boxW - 55, 7.2), boxX + 15, boxY + 12.2);
+      doc.text(fitText(doc, metaBits.join("  ·  "), nameAreaW, 7), boxX + 15, Math.min(ty + 1.2, boxY + boxH - 2.5));
     }
 
     if (i < line.length - 1) {
+      const connectorGap = 4 * scale;
       doc.setDrawColor(...soft);
       doc.setLineWidth(0.45);
       const cx = boxX + 8;
-      doc.line(cx, boxY + boxH, cx, boxY + step);
+      doc.line(cx, boxY + boxH, cx, boxY + boxH + connectorGap);
+      y += boxH + connectorGap;
+    } else {
+      y += boxH;
     }
-
-    y += step;
   }
 
   setPdfFont(doc, "normal");

@@ -3,7 +3,14 @@ import type { Person, Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { ancestorGenerations, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
-import { drawCornerOrnaments, drawPosterFrame, drawTitleRule, fitText, safeFilename } from "./poster";
+import {
+  drawCornerOrnaments,
+  drawPosterFrame,
+  drawTitleRule,
+  fitText,
+  safeFilename,
+  wrapName,
+} from "./poster";
 
 async function loadJsPdf() {
   const mod = await import("jspdf");
@@ -26,30 +33,41 @@ function drawPersonCard(
   doc.setFillColor(...accent);
   doc.rect(x, y, 1.5, h, "F");
 
-  const pad = 3.2;
-  doc.setTextColor(34, 35, 38);
+  const padX = 3.4;
+  const textW = w - padX * 2 - 1.2;
+  const life = yearSpan(p);
+  const place = (p.birthPlace || "").trim();
+  const metaLines = [life, place].filter(Boolean).length;
+  const nameMaxLines = metaLines >= 2 ? 2 : metaLines === 1 ? 3 : 4;
+
   setPdfFont(doc, "bold");
-  const name = fitText(doc, p.name || "—", w - pad * 2 - 1, 8.2);
-  doc.text(name, x + pad + 1, y + 6.2);
+  doc.setTextColor(34, 35, 38);
+  const { lines: nameLines, fontSize } = wrapName(doc, p.name || "—", textW, nameMaxLines, 8.4, 5.8);
+  const lineH = fontSize * 0.42;
+  let ty = y + 4.6;
+  doc.setFontSize(fontSize);
+  for (const line of nameLines) {
+    doc.text(line, x + padX + 1, ty);
+    ty += lineH + 0.6;
+  }
 
   setPdfFont(doc, "normal");
   doc.setTextColor(95, 90, 82);
-  const life = yearSpan(p);
-  const place = (p.birthPlace || "").trim();
-  let metaY = y + 11.2;
-  if (life) {
-    doc.setFontSize(6.8);
-    doc.text(fitText(doc, life, w - pad * 2 - 1, 6.8), x + pad + 1, metaY);
-    metaY += 4;
-  }
-  if (place && metaY < y + h - 2) {
+  ty += 0.8;
+  if (life && ty < y + h - 2) {
     doc.setFontSize(6.4);
-    doc.text(fitText(doc, place, w - pad * 2 - 1, 6.4), x + pad + 1, metaY);
+    doc.text(fitText(doc, life, textW, 6.4), x + padX + 1, ty);
+    ty += 3.6;
+  }
+  if (place && ty < y + h - 2) {
+    doc.setFontSize(6);
+    doc.text(fitText(doc, place, textW, 6), x + padX + 1, ty);
   }
 }
 
 /**
  * Wall-ready classic family poster: quiet header, roots-down layout.
+ * Names wrap fully — never clipped to «Азовский Владими…».
  */
 export async function downloadClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -74,7 +92,6 @@ export async function downloadClassicTreePdf(opts: {
   drawPosterFrame(doc, pageW, pageH, ink);
   drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
 
-  // Quiet centered title only — no layout instructions, no "От:"
   const title = (opts.meta.title || t.classicTitle).trim() || t.classicTitle;
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
@@ -82,13 +99,16 @@ export async function downloadClassicTreePdf(opts: {
   doc.text(title, pageW / 2, 16.5, { align: "center" });
   drawTitleRule(doc, pageW, 20.5, [175, 140, 90]);
 
-  const marginX = 14;
-  const cardW = 40;
-  const cardH = 18;
-  const topY = 27;
-  const bottomY = pageH - 12;
-  const usableH = bottomY - topY - cardH;
+  const marginX = 12;
+  const topY = 26;
+  const bottomY = pageH - 11;
   const genCount = gens.length;
+  const maxInRow = Math.max(...gens.map((g) => g.length), 1);
+  const gap = maxInRow >= 6 ? 3.2 : 4.5;
+  const usableW = pageW - marginX * 2;
+  const cardW = Math.min(52, Math.max(34, (usableW - gap * (maxInRow - 1)) / maxInRow));
+  const cardH = cardW >= 44 ? 26 : 24;
+  const usableH = bottomY - topY - cardH;
   const rowGap = genCount > 1 ? usableH / (genCount - 1) : 0;
 
   type Pos = { id: string; x: number; y: number; cx: number };
@@ -98,7 +118,6 @@ export async function downloadClassicTreePdf(opts: {
     const people = gens[gi];
     const visualRow = genCount - 1 - gi;
     const y = topY + visualRow * rowGap;
-    const gap = 5;
     const totalW = people.length * cardW + Math.max(0, people.length - 1) * gap;
     let x0 = Math.max(marginX, (pageW - totalW) / 2);
     for (const p of people) {
