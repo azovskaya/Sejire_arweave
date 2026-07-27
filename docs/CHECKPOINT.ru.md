@@ -72,7 +72,7 @@
 
 Порядок из [`PERMAWEB_ROLLOUT.ru.md`](./PERMAWEB_ROLLOUT.ru.md) §5 + решения владельца:
 
-1. **Владелец:** купить ArNS `sejire` **навсегда** (ARIO), завести **казну** (отдельный ArConnect).
+1. **Владелец:** купить ArNS `sejire` **навсегда** — инструкция [`BUY_SEJIRE.ru.md`](./BUY_SEJIRE.ru.md) (ArConnect + лучше карта на arns.ar.io; AR с Binance → казна).
 2. **Код:** dual-base Vite (`/` для ArNS, `/Sejire_arweave/` для Pages) + CI permaweb-deploy.
 3. **Привязать** `sejire.ar.io` → TX манифеста; Pages оставить зеркалом.
 4. **Kaspi:** после ИП/ТОО + мерчант — тонкий кассир (оплата → Turbo upload ciphertext). До этого не блокировать бесплатный слой.
