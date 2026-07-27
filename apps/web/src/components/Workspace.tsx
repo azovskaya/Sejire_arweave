@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Person, TreeStore } from "../lib/types";
 import { saveDraftTree } from "../lib/draftStorage";
 import { type GuideState, saveGuide } from "../lib/guide";
-import { pickDefaultFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
+import { pickDefaultFocus, pickHomeFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
 import { PedigreeView } from "./PedigreeView";
 import { PersonPanel } from "./PersonPanel";
 import { AddPersonModal, type AddPersonPayload } from "./AddPersonModal";
@@ -70,7 +70,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   const people = activePersons(store.draft);
   const selected = selectedId ? store.draft.persons[selectedId] ?? null : null;
-  const homeFocusId = guide.selfId ?? pickDefaultFocus(store.draft, null);
+  const homeFocusId = pickHomeFocus(store.draft, guide.selfId);
 
   const relatives = useMemo(() => {
     if (!selected) return [];
@@ -246,6 +246,16 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <span className="chip soft" title="Черновик хранится только в этом браузере">
             {people.length} чел. · в браузере
           </span>
+          {people.length >= 1 && homeFocusId && focusId && homeFocusId !== focusId ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setFocus(homeFocusId)}
+              title="Вернуть схему: вы → родители → деды"
+            >
+              К себе
+            </button>
+          ) : null}
           {people.length >= 1 && (
             <>
               <button type="button" className="btn ghost" onClick={() => void exportClassicPdf()}>

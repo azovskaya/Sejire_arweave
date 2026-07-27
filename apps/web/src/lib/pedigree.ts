@@ -234,7 +234,19 @@ export function pickDefaultFocus(snapshot: Snapshot, preferredId?: string | null
   }
   const people = activePersons(snapshot);
   if (!people.length) return null;
-  // prefer person who has parents (younger) or first
-  const withParents = people.find((p) => p.parents.some((id) => snapshot.persons[id] && !snapshot.persons[id].tombstone));
+  // Youngest generation: people who are not parents of anyone else in the tree
+  const youngest = people.filter((p) => !people.some((c) => c.parents.includes(p.id)));
+  if (youngest.length) return youngest[0].id;
+  const withParents = people.find((p) =>
+    p.parents.some((id) => snapshot.persons[id] && !snapshot.persons[id].tombstone)
+  );
   return withParents?.id ?? people[0].id;
+}
+
+/** Prefer guided "self", else youngest person in the graph. */
+export function pickHomeFocus(snapshot: Snapshot, selfId?: string | null) {
+  if (selfId && snapshot.persons[selfId] && !snapshot.persons[selfId].tombstone) {
+    return selfId;
+  }
+  return pickDefaultFocus(snapshot, null);
 }
