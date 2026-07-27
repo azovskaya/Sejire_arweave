@@ -65,7 +65,7 @@ export function PedigreeView({
   const [pan, setPan] = useState({ x: 28, y: 28 });
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
 
-  const { items, edges, width, height } = buildPedigree(snapshot, focusId, 4);
+  const { items, edges, width, height } = buildPedigree(snapshot, focusId, 7);
   const empty = items.length === 0;
   const focusPerson = focusId ? snapshot.persons[focusId] : null;
   const showHome = Boolean(homeFocusId && focusId && homeFocusId !== focusId);

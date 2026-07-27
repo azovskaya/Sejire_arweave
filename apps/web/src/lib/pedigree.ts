@@ -105,11 +105,12 @@ export function splitParents(snapshot: Snapshot, personId: string) {
 /**
  * Classic landscape pedigree (FamilySearch-style):
  * focus on the left, ancestors in columns to the right.
+ * Default 7 columns = self + 6 ancestor gens (жети ата depth on screen).
  */
 export function buildPedigree(
   snapshot: Snapshot,
   focusId: string | null,
-  maxGenerations = 4
+  maxGenerations = 7
 ): { items: PedigreeItem[]; edges: PedigreeEdge[]; width: number; height: number; focusId: string | null } {
   const people = activePersons(snapshot);
   if (!people.length || !focusId || !snapshot.persons[focusId] || snapshot.persons[focusId].tombstone) {
