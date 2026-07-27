@@ -160,22 +160,37 @@ a {
   margin: 0.2rem 0 0;
 }
 
-/* Welcome */
+/* Welcome — brand-only first viewport */
 .welcome-screen {
   width: min(980px, calc(100% - 2rem));
+  min-height: calc(100vh - 2rem);
   margin: 0 auto;
-  padding: 3.5rem 0 3rem;
+  padding: 2rem 0;
   display: grid;
-  gap: 2.5rem;
+  place-content: center;
+  gap: 0;
+}
+
+.welcome-hero {
+  text-align: center;
 }
 
 .welcome-hero h1 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2.4rem, 6vw, 3.8rem);
-  margin: 0 0 0.85rem;
-  letter-spacing: -0.03em;
+  font-size: clamp(3.2rem, 12vw, 6.5rem);
+  margin: 0;
+  letter-spacing: -0.04em;
   color: var(--ink);
+  line-height: 0.95;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 2.25rem;
 }
 
 .lede {
@@ -219,38 +234,6 @@ a {
   text-underline-offset: 3px;
   cursor: pointer;
   padding: 0;
-}
-
-.welcome-points {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.welcome-points li {
-  border-top: 2px solid var(--ink);
-  padding-top: 0.9rem;
-}
-
-.welcome-points strong {
-  display: block;
-  font-family: var(--font-display);
-  font-weight: 650;
-  margin-bottom: 0.35rem;
-}
-
-.welcome-points span {
-  color: var(--ink-dim);
-  font-size: 0.9rem;
-}
-
-@media (max-width: 800px) {
-  .welcome-points {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* App chrome */

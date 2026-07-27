@@ -42,16 +42,11 @@ export default function App() {
   return (
     <div className={screen === "work" ? "app-shell is-work" : "app-shell"}>
       {screen === "welcome" && (
-        <>
-          <Welcome
-            onStartNew={startNew}
-            onContinueDraft={continueDraft}
-            onRestoreSeed={() => setScreen("restore")}
-          />
-          <p className="footer-note">
-            Черновик живёт в браузере сам. Вечное хранение — только кнопка «В Arweave» (12 слов).
-          </p>
-        </>
+        <Welcome
+          onStartNew={startNew}
+          onContinueDraft={continueDraft}
+          onRestoreSeed={() => setScreen("restore")}
+        />
       )}
 
       {screen === "restore" && (

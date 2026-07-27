@@ -252,7 +252,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 Древо в PDF
               </button>
               <button type="button" className="btn ghost" onClick={() => void exportShezhirePdf()}>
-                Шежіре PDF
+                Жеті ата PDF
               </button>
             </>
           )}
