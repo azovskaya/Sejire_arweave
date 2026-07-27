@@ -6,6 +6,12 @@
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const deck = document.getElementById("deck");
+  const params = new URLSearchParams(location.search);
+  const pdfMode = params.has("pdf") || params.has("print");
+
+  if (pdfMode) {
+    document.body.classList.add("is-pdf");
+  }
 
   let index = 0;
   let touchX = null;
