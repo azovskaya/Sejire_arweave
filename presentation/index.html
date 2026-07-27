@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEJIRE — Цифровой гранит человеческой истории</title>
+  <meta name="description" content="Децентрализованный протокол вечного хранения генеалогических структур на Arweave и AO." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="chrome">
+    <div class="brand-mark">
+      <span class="brand-glyph" aria-hidden="true"></span>
+      <span class="brand-name">SEJIRE</span>
+    </div>
+    <div class="chrome-meta">
+      <span class="slide-counter" id="slideCounter">01 / 12</span>
+      <a class="arch-link" href="../docs/ARCHITECTURE.ru.md">Архитектура</a>
+    </div>
+  </header>
+
+  <main class="deck" id="deck" tabindex="0" aria-live="polite">
+
+    <!-- 0. Title -->
+    <section class="slide is-active" data-title="Титул">
+      <div class="slide-stage hero-stage">
+        <p class="eyebrow animate-in">Протокол вечной памяти</p>
+        <h1 class="hero-brand animate-in delay-1">SEJIRE</h1>
+        <p class="hero-sub animate-in delay-2">Создание неизменяемой ткани человеческой истории.</p>
+        <div class="hero-cta animate-in delay-3">
+          <button class="btn primary" data-next type="button">Начать презентацию</button>
+          <span class="hint">← → или пробел</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Problem -->
+    <section class="slide" data-title="Проблема">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 01</p>
+        <h2 class="animate-in delay-1">Проблема — «Цифровое Средневековье»</h2>
+        <p class="lede animate-in delay-2">Современная память человечества находится в критической опасности.</p>
+        <ul class="point-grid animate-in delay-3">
+          <li>
+            <h3>Хрупкость носителей</h3>
+            <p>Бумага гниет, диски размагничиваются, флешки выходят из строя через 10 лет.</p>
+          </li>
+          <li>
+            <h3>Централизация</h3>
+            <p>MyHeritage и Ancestry владеют вашими данными. Банкротство или смена политики — и история исчезает.</p>
+          </li>
+          <li>
+            <h3>Устаревание форматов</h3>
+            <p>Фото и видео сегодня могут стать нечитаемыми через 50 лет из‑за смены кодеков.</p>
+          </li>
+          <li>
+            <h3>Цензура и удаление</h3>
+            <p>Данные в облаке могут быть удалены администрацией или случайно стёрты пользователем.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2. Solution -->
+    <section class="slide" data-title="Решение">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 02</p>
+        <h2 class="animate-in delay-1">Решение — Протокол SEJIRE</h2>
+        <p class="lede animate-in delay-2">Децентрализованный автономный протокол для пожизненного и вечного хранения генеалогических структур.</p>
+        <div class="stack-blocks animate-in delay-3">
+          <article>
+            <h3>Статус</h3>
+            <p>Мы не «сайт». Мы — слой данных в блокчейне.</p>
+          </article>
+          <article>
+            <h3>Миссия</h3>
+            <p>Перевод семейной памяти из хрупкого цифрового вида в «цифровой гранит».</p>
+          </article>
+          <article>
+            <h3>Результат</h3>
+            <p>Данные, которые физически невозможно удалить, изменить без ведома владельца или подвергнуть цензуре.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Arweave -->
+    <section class="slide" data-title="Arweave">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 03 · Фундамент №1</p>
+        <h2 class="animate-in delay-1">Arweave (Blockweave)</h2>
+        <p class="lede animate-in delay-2">Физическая вечность данных. Инвестор платит один раз — данные живут 200+ лет.</p>
+        <div class="two-col animate-in delay-3">
+          <div class="stack-blocks compact">
+            <article>
+              <h3>Endowment Model</h3>
+              <p>Математическая модель фонда покрытия гарантирует устойчивость даже при падении рынка.</p>
+            </article>
+            <article>
+              <h3>Proof of Access</h3>
+              <p>Майнеры по всему миру обязаны хранить вашу историю, чтобы получать вознаграждение.</p>
+            </article>
+          </div>
+          <aside class="spec-panel">
+            <div class="spec"><span>Доступность</span><strong>99.99999999%</strong></div>
+            <div class="spec"><span>Стоимость фиксации</span><strong>~ $0.005</strong></div>
+            <div class="spec"><span>Формат</span><strong>текстовое дерево</strong></div>
+            <a class="ext" href="https://arweave.org" target="_blank" rel="noopener">arweave.org ↗</a>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AO -->
+    <section class="slide" data-title="AO Computer">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 04 · Фундамент №2</p>
+        <h2 class="animate-in delay-1">AO Computer</h2>
+        <p class="lede animate-in delay-2">Децентрализованный суперкомпьютер поверх Arweave — «мозг» SEJIRE.</p>
+        <ul class="point-grid animate-in delay-3">
+          <li>
+            <h3>Actor-Oriented</h3>
+            <p>Каждое родословное древо — независимый самовыполняющийся процесс.</p>
+          </li>
+          <li>
+            <h3>Гипер-параллелизм</h3>
+            <p>Миллиарды родословных одновременно без потери скорости.</p>
+          </li>
+          <li>
+            <h3>Holographic State</h3>
+            <p>Состояние дерева не зависит от серверов SEJIRE. Восстанавливается из сети автоматически.</p>
+          </li>
+          <li>
+            <h3>Ресурс</h3>
+            <p><a href="https://ao.arweave.dev" target="_blank" rel="noopener">ao.arweave.dev ↗</a></p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. Security -->
+    <section class="slide" data-title="Безопасность">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 05</p>
+        <h2 class="animate-in delay-1">Безопасность и суверенитет (BIP-39)</h2>
+        <p class="lede animate-in delay-2">В SEJIRE данные принадлежат пользователю, а не платформе.</p>
+        <ul class="point-grid animate-in delay-3">
+          <li>
+            <h3>Мастер-ключ</h3>
+            <p>Доступ к дереву — через 12 слов (seed-фраза).</p>
+          </li>
+          <li>
+            <h3>Zero-Knowledge</h3>
+            <p>Шифрование на устройстве. Команда SEJIRE видит только зашифрованный шум.</p>
+          </li>
+          <li>
+            <h3>Приватность</h3>
+            <p>Ни власти, ни ИИ, ни хакеры не прочитают имена предков без вашего ключа.</p>
+          </li>
+          <li>
+            <h3>Невозможность удаления</h3>
+            <p>Даже пользователь не может «стереть» историю после фиксации — защита от импульса и ошибок.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6. Git logic -->
+    <section class="slide" data-title="Git-логика">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 06 · Инновация</p>
+        <h2 class="animate-in delay-1">Git-логика для генеалогии</h2>
+        <p class="lede animate-in delay-2">Принципы разработки ПО — применены к семейной истории.</p>
+        <div class="timeline animate-in delay-3">
+          <div class="commit">
+            <span class="hash">commit</span>
+            <h3>Версионность</h3>
+            <p>Каждое добавление предка — «коммит» в блокчейн.</p>
+          </div>
+          <div class="commit">
+            <span class="hash">parent_tx</span>
+            <h3>Цепочка транзакций</h3>
+            <p>Каждое обновление ссылается на предыдущее.</p>
+          </div>
+          <div class="commit">
+            <span class="hash">audit</span>
+            <h3>Аудит через века</h3>
+            <p>Потомки увидят не только результат, но и хронологию сбора древа.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Product -->
+    <section class="slide" data-title="Продукт">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 07</p>
+        <h2 class="animate-in delay-1">Продукт — «Цифровой гранит»</h2>
+        <p class="lede animate-in delay-2">Граф родства — текст навечно. Медиа — опциональные ссылки на Arweave TX. Каждое дополнение — новый commit.</p>
+        <div class="two-col animate-in delay-3">
+          <article class="feature-panel">
+            <h3>JSON UTF-8 + AO state</h3>
+            <p>Имена, даты, связи. Читаемо через 500 лет. История версий никогда не стирается.</p>
+          </article>
+          <article class="feature-panel">
+            <h3>Медиа отдельно</h3>
+            <p>Фото и сканы — в Permaweb. В процессе хранятся только TX-ссылки. Граф остаётся лёгким.</p>
+          </article>
+        </div>
+        <pre class="code-sample animate-in delay-3" aria-hidden="true"><code>{
+  "version": 3,
+  "parent_commit_id": "c_2_…",
+  "person": "Ayan Bekmuratov",
+  "media": [{ "tx": "ar://…" }]
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- 8. Comparison -->
+    <section class="slide" data-title="Сравнение">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 08</p>
+        <h2 class="animate-in delay-1">Сравнение с конкурентами</h2>
+        <div class="table-wrap animate-in delay-2">
+          <table>
+            <thead>
+              <tr>
+                <th>Параметр</th>
+                <th>MyHeritage / Ancestry</th>
+                <th>Обычные блокчейны</th>
+                <th class="hl">SEJIRE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Срок жизни</td>
+                <td>До банкротства компании</td>
+                <td>Пока жива сеть</td>
+                <td class="hl">200+ лет (Endowment)</td>
+              </tr>
+              <tr>
+                <td>Владение</td>
+                <td>Компания</td>
+                <td>Публичный адрес</td>
+                <td class="hl">Только ВЫ (BIP-39)</td>
+              </tr>
+              <tr>
+                <td>Удаление</td>
+                <td>Возможно</td>
+                <td>Сложно</td>
+                <td class="hl">Невозможно</td>
+              </tr>
+              <tr>
+                <td>Логика</td>
+                <td>База данных (SQL)</td>
+                <td>Смарт-контракт</td>
+                <td class="hl">Автономный процесс (AO)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Business -->
+    <section class="slide" data-title="Бизнес">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 09</p>
+        <h2 class="animate-in delay-1">Бизнес-модель и внедрение</h2>
+        <div class="stack-blocks animate-in delay-2">
+          <article>
+            <h3>Монетизация</h3>
+            <p>Разовый взнос за «вечную фиксацию» (Endowment Fee + Service Fee). Без ежемесячных подписок.</p>
+          </article>
+          <article>
+            <h3>Масштабируемость</h3>
+            <p>Гибрид: бесплатный черновик в Web2 → переход в Web3 только для фиксации в блокчейне.</p>
+          </article>
+          <article>
+            <h3>Интеграция</h3>
+            <p>API для сервисов, которым нужен SEJIRE как «бэкенд для вечности».</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Timing -->
+    <section class="slide" data-title="Почему сейчас">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 10</p>
+        <h2 class="animate-in delay-1">Почему сейчас?</h2>
+        <div class="era-rail animate-in delay-2">
+          <div class="era">
+            <span class="year">2017</span>
+            <p>Arweave запустил технологию вечного хранения.</p>
+          </div>
+          <div class="era">
+            <span class="year">2025</span>
+            <p>AO Computer дал сложные автономные приложения.</p>
+          </div>
+          <div class="era current">
+            <span class="year">2026</span>
+            <p>SEJIRE объединяет их против страха забвения.</p>
+          </div>
+        </div>
+        <p class="lede tight animate-in delay-3">Реализация была технически невозможна ещё 12 месяцев назад. Мы на острие прогресса.</p>
+      </div>
+    </section>
+
+    <!-- 11. Team / Vision -->
+    <section class="slide" data-title="Видение">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Слайд 11</p>
+        <h2 class="animate-in delay-1">Команда и видение</h2>
+        <p class="lede animate-in delay-2">Мы строим не сервис, а стандарт. SEJIRE — фундамент сохранения идентичности народов, чья история часто подвергалась искажениям.</p>
+        <p class="lede animate-in delay-3">Инвестиции в SEJIRE — инвестиции в инфраструктуру человеческой памяти, которая переживёт нас самих.</p>
+        <footer class="closing animate-in delay-3">
+          <strong>Протокол SEJIRE</strong>
+          <span>Защищено математикой. Сохранено вечностью.</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- 12. Implementation proposal -->
+    <section class="slide" data-title="Реализация">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">Бонус · Развёртывание</p>
+        <h2 class="animate-in delay-1">AO-first · HyperBEAM · версионные деревья</h2>
+        <p class="lede animate-in delay-2">Без своего бэкенда. Каждое дополнение — новый immutable commit с полным snapshot.</p>
+        <ul class="point-grid dense animate-in delay-3">
+          <li>
+            <h3>AO Process</h3>
+            <p>Lua-актор на каждое древо: Commit / History / GetHead. Holographic state.</p>
+          </li>
+          <li>
+            <h3>HyperBEAM</h3>
+            <p>Дешёвые сообщения вместо L1 TX на каждое имя. HTTP-доступ к state.</p>
+          </li>
+          <li>
+            <h3>Медиа</h3>
+            <p>Permaweb TX + ссылки в AO. ArNS для семейных имён (name.ar.io).</p>
+          </li>
+          <li>
+            <h3>MVP сейчас</h3>
+            <p><a href="../apps/web/">apps/web</a> — локальный engine с той же git-логикой.</p>
+          </li>
+        </ul>
+        <p class="doc-note animate-in delay-3">Сверка с реальностью: <a href="../docs/VERIFICATION.ru.md">docs/VERIFICATION.ru.md</a></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="controls" aria-label="Навигация по слайдам">
+    <button type="button" class="nav-btn" id="prevBtn" aria-label="Предыдущий слайд">←</button>
+    <div class="dots" id="dots" role="tablist" aria-label="Слайды"></div>
+    <button type="button" class="nav-btn" id="nextBtn" aria-label="Следующий слайд">→</button>
+  </nav>
+
+  <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
