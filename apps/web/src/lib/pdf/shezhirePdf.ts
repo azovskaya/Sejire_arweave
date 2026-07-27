@@ -101,8 +101,8 @@ export async function downloadShezhirePdf(opts: {
   const boxW = pageW - 40;
   const boxX = 20;
   const nameAreaW = boxW - 22;
-  // Leave clear bottom margin for SEJIRE mark
-  const available = pageH - contentTop - 20;
+  // Content stays inside the frame; SEJIRE sits outside at bottom-right
+  const available = pageH - contentTop - 14;
 
   // Pre-measure row heights so long FIO get more vertical room
   const rowHeights = line.map((person) => {

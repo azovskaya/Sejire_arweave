@@ -135,7 +135,8 @@ export function safeFilename(title: string, fallback: string) {
 }
 
 /**
- * Quiet brand mark centered in the bottom margin (inside the frame, clear of content).
+ * Quiet brand mark outside the poster frame, bottom-right corner.
+ * Frame inset is 7mm — mark sits in the page margin below/right of the border.
  */
 export function drawBrandMark(
   doc: jsPDF,
@@ -144,15 +145,16 @@ export function drawBrandMark(
   label: string,
   ink: [number, number, number] = [150, 130, 100]
 ) {
-  const y = pageH - 8.2;
-  doc.setFontSize(6.5);
+  const right = pageW - 3.2;
+  const y = pageH - 2.6;
+  doc.setFontSize(6);
   doc.setTextColor(...ink);
   const chars = label.split("");
-  const tracking = 0.85;
+  const tracking = 0.75;
   let total = 0;
   for (const ch of chars) total += doc.getTextWidth(ch) + tracking;
   total -= tracking;
-  let x = (pageW - total) / 2;
+  let x = right - total;
   for (const ch of chars) {
     doc.text(ch, x, y);
     x += doc.getTextWidth(ch) + tracking;

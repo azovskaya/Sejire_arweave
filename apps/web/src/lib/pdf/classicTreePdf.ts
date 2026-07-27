@@ -102,8 +102,8 @@ export async function downloadClassicTreePdf(opts: {
 
   const marginX = 12;
   const topY = 26;
-  // Reserve bottom band for SEJIRE mark (no overlap with cards/frame)
-  const bottomY = pageH - 16;
+  // Content stays inside the frame; SEJIRE sits outside at bottom-right
+  const bottomY = pageH - 12;
   const genCount = gens.length;
   const maxInRow = Math.max(...gens.map((g) => g.length), 1);
   const gap = maxInRow >= 6 ? 3.2 : 4.5;
