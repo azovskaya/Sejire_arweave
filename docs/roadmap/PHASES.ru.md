@@ -35,7 +35,8 @@
 
 ## Phase 3.5 — Fiat sponsor + permaweb site (in progress)
 
-**Полный пошаговый план (языки, логика, безопасность):** [`PERMAWEB_ROLLOUT.ru.md`](../PERMAWEB_ROLLOUT.ru.md).
+**Полный пошаговый план (языки, логика, безопасность):** [`PERMAWEB_ROLLOUT.ru.md`](../PERMAWEB_ROLLOUT.ru.md).  
+**Зафиксированные решения владельца (не переспрашивать):** [`LOCKED_DECISIONS.ru.md`](../LOCKED_DECISIONS.ru.md).
 
 Также: [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
 
