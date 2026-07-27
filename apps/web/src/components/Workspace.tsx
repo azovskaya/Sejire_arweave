@@ -16,6 +16,7 @@ import {
 } from "../lib/treeEngine";
 import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
 import { downloadShezhirePdf } from "../lib/pdf/shezhirePdf";
+import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -47,6 +48,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const [publishStore, setPublishStore] = useState<TreeStore | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimer = useRef<number | null>(null);
+  const jsonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     saveDraftTree(store);
@@ -221,6 +223,31 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     }
   }
 
+  function exportJson() {
+    try {
+      downloadTreeJson(store, guide);
+      flash("JSON скачан — все данные древа");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function importJsonFile(file: File | null) {
+    if (!file) return;
+    const result = await readTreeJsonFile(file);
+    if (!result.ok) {
+      flash(result.error);
+      return;
+    }
+    saveDraftTree(result.store);
+    saveGuide(result.guide);
+    onStoreChange(result.store);
+    onGuideChange(result.guide);
+    setFocusId(pickHomeFocus(result.store.draft, result.guide.selfId));
+    setSelectedId(result.guide.selfId ?? pickDefaultFocus(result.store.draft, null));
+    flash(`Загружено: ${Object.keys(result.store.draft.persons).length} чел.`);
+  }
+
   const modalTitle =
     pending?.type === "self"
       ? "Добавить себя"
@@ -266,6 +293,33 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               </button>
             </>
           )}
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={exportJson}
+            title="Скачать все данные древа в JSON"
+          >
+            Выгрузить JSON
+          </button>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => jsonInputRef.current?.click()}
+            title="Загрузить древо из JSON-файла"
+          >
+            Загрузить JSON
+          </button>
+          <input
+            ref={jsonInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              void importJsonFile(file);
+              e.target.value = "";
+            }}
+          />
           <button type="button" className="btn" onClick={openPublish}>
             В Arweave
           </button>

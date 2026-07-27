@@ -14,7 +14,8 @@
     "test:pedigree": "tsx src/lib/pedigree.selftest.ts",
     "test:lineage": "tsx src/lib/pdf/lineage.selftest.ts",
     "test:dates": "tsx src/lib/dates.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:dates"
+    "test:json": "tsx src/lib/treeJson.selftest.ts",
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:dates && npm run test:json"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
