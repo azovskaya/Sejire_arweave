@@ -425,6 +425,18 @@ a {
   background: rgba(255, 103, 0, 0.2);
 }
 
+.chip-action-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.3rem 0.55rem;
+}
+
+.chip-action-primary:hover {
+  filter: brightness(1.05);
+  background: var(--accent);
+  color: #fff;
+}
+
 .pedigree-hint {
   position: absolute;
   left: 0.75rem;

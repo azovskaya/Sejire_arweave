@@ -289,7 +289,14 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           focusId={focusId}
           homeFocusId={homeFocusId}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            // Clicking yourself in the panel restores the pedigree rooted on you
+            if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
+              setFocusId(homeFocusId);
+              flash("Схема снова от вас");
+            }
+          }}
           onSetFocus={setFocus}
           onEmptyStart={() => setPending({ type: "self" })}
           onAddRelative={(slot: AddMeSlot) =>
@@ -302,7 +309,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           relatives={relatives}
           onClose={() => setSelectedId(null)}
           onChange={onPersonChange}
-          onSelectRelative={(id) => setSelectedId(id)}
+          onSelectRelative={(id) => {
+            setSelectedId(id);
+            if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
+              setFocusId(homeFocusId);
+              flash("Схема снова от вас");
+            }
+          }}
           onDelete={() => {
             if (!selected) return;
             const removedId = selected.id;

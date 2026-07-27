@@ -127,8 +127,13 @@ export function PedigreeView({
           <span className="focus-chip-label">Схема от</span>
           <strong className="clamp-1">{focusPerson?.name || "—"}</strong>
           {showHome && homeFocusId ? (
-            <button type="button" className="chip-action" onClick={() => onSetFocus(homeFocusId)}>
-              К себе
+            <button
+              type="button"
+              className="chip-action chip-action-primary"
+              onClick={() => onSetFocus(homeFocusId)}
+              title="Показать схему снова от вас: вы → родители → деды"
+            >
+              Вернуть ко мне
             </button>
           ) : null}
           {selectedId && selectedId !== focusId ? (
@@ -156,7 +161,10 @@ export function PedigreeView({
           </button>
         </div>
       </div>
-      <p className="pedigree-hint">Клик — профиль · двойной клик — смотреть предков отсюда</p>
+      <p className="pedigree-hint">
+        Клик — профиль · двойной клик — смотреть только предков от этого человека (чтобы вернуться —
+        «Вернуть ко мне»)
+      </p>
 
       <div
         className="pedigree-world"
