@@ -62,6 +62,8 @@ Arweave tags:
 4. Encrypt vault envelope and publish with tag `Vault-Id`
 5. Later / other device: enter 12 words → GraphQL by vaultId → decrypt
 
+**Restore does not need** SEJIRE payment cashier, Kaspi, Stripe, or any project backend — only the SPA + Arweave gateways. Locked for the team: `docs/LOCKED_DECISIONS.ru.md` §4.
+
 Draft trees live in `localStorage` unencrypted until publish.
 
 ## Security notes
