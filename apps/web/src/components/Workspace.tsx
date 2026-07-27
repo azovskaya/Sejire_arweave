@@ -215,7 +215,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         locale: "ru",
         maxGenerations: 7,
       });
-      flash("Шежіре PDF скачан");
+      flash("Жеті ата PDF скачан");
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }

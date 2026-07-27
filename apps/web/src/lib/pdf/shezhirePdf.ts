@@ -18,7 +18,8 @@ async function loadJsPdf() {
 }
 
 /**
- * Wall-ready Шежіре poster: male line, parchment, full names wrapped.
+ * Wall-ready Жеті ата poster: strict vertical male line (up to 7),
+ * one spine, generation labels, no cards.
  */
 export async function downloadShezhirePdf(opts: {
   snapshot: Snapshot;
@@ -28,11 +29,13 @@ export async function downloadShezhirePdf(opts: {
   maxGenerations?: number;
 }) {
   const t = pdfT(opts.locale ?? "ru");
-  const maxGen = opts.maxGenerations ?? 7;
+  const maxGen = Math.min(opts.maxGenerations ?? 7, 7);
   const youngFirst = maleLineUp(opts.snapshot, opts.startId);
   if (!youngFirst.length) throw new Error(t.noPeople);
 
-  const line = youngFirst.slice(0, maxGen).reverse();
+  // Youngest → oldest, capped at 7; display oldest at top.
+  const ascending = youngFirst.slice(0, maxGen);
+  const line = [...ascending].reverse();
   if (!line.length) throw new Error(t.noMaleLine);
 
   const JsPDF = await loadJsPdf();
@@ -41,133 +44,146 @@ export async function downloadShezhirePdf(opts: {
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const ink: [number, number, number] = [110, 65, 28];
-  const soft: [number, number, number] = [175, 125, 60];
+  const ink: [number, number, number] = [95, 55, 22];
+  const soft: [number, number, number] = [170, 120, 55];
+  const mute: [number, number, number] = [130, 95, 55];
 
-  doc.setFillColor(245, 232, 205);
+  doc.setFillColor(246, 234, 208);
   doc.rect(0, 0, pageW, pageH, "F");
-  doc.setFillColor(238, 220, 180);
-  doc.rect(0, 0, pageW, 18, "F");
 
   drawPosterFrame(doc, pageW, pageH, ink);
   drawCornerOrnaments(doc, pageW, pageH, soft);
 
+  // Title band — brand-first Жеті ата
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(24);
-  doc.text(t.shezhireTitle, pageW / 2, 24, { align: "center" });
-  drawTitleRule(doc, pageW, 29, soft);
+  doc.setFontSize(26);
+  doc.text(t.shezhireTitle, pageW / 2, 22, { align: "center" });
+  setPdfFont(doc, "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...mute);
+  doc.text(t.shezhireSubtitle, pageW / 2, 28.2, { align: "center" });
+  drawTitleRule(doc, pageW, 31.5, soft);
 
   const clan = (opts.meta.clanName || "").trim();
   const hasTamga = Boolean(opts.meta.tamgaUrl);
-  let contentTop = 36;
+  let contentTop = 38;
 
   if (clan || hasTamga) {
-    const slotY = 34;
-    const slotH = 18;
-    doc.setDrawColor(...soft);
-    doc.setLineWidth(0.35);
-    doc.setFillColor(250, 240, 215);
-    doc.roundedRect(18, slotY, pageW - 36, slotH, 1.2, 1.2, "FD");
-
-    if (clan) {
-      setPdfFont(doc, "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(130, 90, 40);
-      doc.text(t.clanLabel, 22, slotY + 6);
-      setPdfFont(doc, "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(60, 40, 15);
-      const { lines } = wrapName(doc, clan, pageW - 60, 2, 11, 8);
-      doc.text(lines[0], 22, slotY + 13);
-    }
-
+    const midY = 38;
     if (hasTamga) {
-      const tamgaSize = 13;
-      const tamgaX = pageW - 18 - tamgaSize - 3;
-      const tamgaY = slotY + (slotH - tamgaSize) / 2;
+      const tamgaSize = 12;
+      const tamgaX = pageW / 2 - tamgaSize / 2;
       doc.setDrawColor(...soft);
-      doc.setFillColor(248, 236, 205);
-      doc.roundedRect(tamgaX, tamgaY, tamgaSize, tamgaSize, 1, 1, "FD");
+      doc.setFillColor(250, 240, 215);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(tamgaX, midY, tamgaSize, tamgaSize, 1, 1, "FD");
       try {
-        doc.addImage(opts.meta.tamgaUrl!, "PNG", tamgaX + 0.8, tamgaY + 0.8, tamgaSize - 1.6, tamgaSize - 1.6);
+        doc.addImage(
+          opts.meta.tamgaUrl!,
+          "PNG",
+          tamgaX + 0.7,
+          midY + 0.7,
+          tamgaSize - 1.4,
+          tamgaSize - 1.4
+        );
       } catch {
         // empty frame
       }
+      contentTop = midY + tamgaSize + 4;
     }
-    contentTop = slotY + slotH + 8;
+    if (clan) {
+      setPdfFont(doc, "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...mute);
+      doc.text(t.clanLabel, pageW / 2, contentTop, { align: "center" });
+      setPdfFont(doc, "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(55, 35, 12);
+      const { lines } = wrapName(doc, clan, pageW - 48, 2, 11, 8);
+      doc.text(lines[0], pageW / 2, contentTop + 5.5, { align: "center" });
+      contentTop += 12;
+    } else if (hasTamga) {
+      contentTop += 2;
+    }
   }
 
-  const boxW = pageW - 40;
-  const boxX = 20;
-  const nameAreaW = boxW - 22;
-  // Content stays inside the frame; SEJIRE sits outside at bottom-right
-  const available = pageH - contentTop - 14;
+  // Layout: left labels | spine | names — strict vertical, equal steps
+  const n = line.length;
+  const bottomY = pageH - 14;
+  const topY = contentTop + 4;
+  const span = Math.max(1, bottomY - topY);
+  const step = n > 1 ? span / (n - 1) : 0;
 
-  // Pre-measure row heights so long FIO get more vertical room
-  const rowHeights = line.map((person) => {
-    setPdfFont(doc, "bold");
-    const { lines } = wrapName(doc, person.name || "—", nameAreaW, 3, 11, 7.5);
-    const hasMeta = Boolean(yearSpan(person) || (person.birthPlace || "").trim());
-    return Math.max(16, 6 + lines.length * 5 + (hasMeta ? 5 : 2));
-  });
-  const totalH = rowHeights.reduce((a, b) => a + b, 0);
-  const gaps = Math.max(0, line.length - 1);
-  const scale = totalH + gaps * 4 > available ? available / (totalH + gaps * 4) : 1;
+  const spineX = 52;
+  const labelRight = spineX - 7;
+  const nameX = spineX + 10;
+  const nameMaxW = pageW - nameX - 16;
 
-  let y = contentTop;
-  for (let i = 0; i < line.length; i += 1) {
-    const person = line[i];
-    const genNumber = line.length - i;
-    const boxH = rowHeights[i] * scale;
-    const boxY = y;
-
-    doc.setFillColor(251, 243, 222);
+  // Continuous spine behind nodes
+  if (n > 1) {
     doc.setDrawColor(...soft);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(boxX, boxY, boxW, boxH, 1.1, 1.1, "FD");
+    doc.setLineWidth(0.7);
+    doc.line(spineX, topY, spineX, bottomY);
+  }
 
+  for (let i = 0; i < n; i += 1) {
+    const person = line[i];
+    // distance from focus (youngest): oldest has highest index in ascending
+    const distanceFromFocus = n - 1 - i;
+    const cy = n === 1 ? (topY + bottomY) / 2 : topY + i * step;
+    const label = t.jetiAtaLabel(distanceFromFocus);
+
+    // Node on spine
+    doc.setFillColor(246, 234, 208);
+    doc.setDrawColor(...ink);
+    doc.setLineWidth(0.85);
+    doc.circle(spineX, cy, 2.6, "FD");
     doc.setFillColor(...ink);
-    doc.circle(boxX + 8, boxY + Math.min(boxH / 2, 8), 3.8, "F");
-    setPdfFont(doc, "bold");
-    doc.setTextColor(255, 250, 240);
-    doc.setFontSize(9);
-    doc.text(String(genNumber), boxX + 8, boxY + Math.min(boxH / 2, 8) + 1.05, { align: "center" });
+    doc.circle(spineX, cy, 1.15, "F");
 
+    // Generation label (left of spine)
+    setPdfFont(doc, "normal");
+    doc.setFontSize(7.2);
+    doc.setTextColor(...mute);
+    doc.text(label, labelRight, cy + 0.9, { align: "right" });
+
+    // Full name (right of spine) — wrap, never ellipsis on FIO
     setPdfFont(doc, "bold");
-    doc.setTextColor(50, 32, 14);
-    const { lines: nameLines, fontSize } = wrapName(doc, person.name || "—", nameAreaW, 3, 11, 7.5);
+    doc.setTextColor(40, 28, 12);
+    const meta = yearSpan(person);
+    const place = (person.birthPlace || "").trim();
+    const hasMeta = Boolean(meta || place);
+    const nameMaxLines = hasMeta ? 2 : 3;
+    const { lines: nameLines, fontSize } = wrapName(
+      doc,
+      person.name || "—",
+      nameMaxW,
+      nameMaxLines,
+      12,
+      7.5
+    );
     doc.setFontSize(fontSize);
-    let ty = boxY + 5.5;
-    const lineH = fontSize * 0.42 + 0.55;
+    const lineH = fontSize * 0.42 + 0.45;
+    const blockH = nameLines.length * lineH + (hasMeta ? 3.6 : 0);
+    let ty = cy - blockH / 2 + lineH * 0.75;
     for (const nl of nameLines) {
-      doc.text(nl, boxX + 15, ty);
+      doc.text(nl, nameX, ty);
       ty += lineH;
     }
 
-    const metaBits = [yearSpan(person), (person.birthPlace || "").trim()].filter(Boolean);
-    if (metaBits.length) {
+    if (hasMeta) {
       setPdfFont(doc, "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(115, 85, 45);
-      doc.text(fitText(doc, metaBits.join("  ·  "), nameAreaW, 7), boxX + 15, Math.min(ty + 1.2, boxY + boxH - 2.5));
-    }
-
-    if (i < line.length - 1) {
-      const connectorGap = 4 * scale;
-      doc.setDrawColor(...soft);
-      doc.setLineWidth(0.45);
-      const cx = boxX + 8;
-      doc.line(cx, boxY + boxH, cx, boxY + boxH + connectorGap);
-      y += boxH + connectorGap;
-    } else {
-      y += boxH;
+      doc.setFontSize(6.8);
+      doc.setTextColor(...mute);
+      const bits = [meta, place].filter(Boolean).join("  ·  ");
+      doc.text(fitText(doc, bits, nameMaxW, 6.8), nameX, ty + 1.2);
     }
   }
 
   setPdfFont(doc, "bold");
   drawBrandMark(doc, pageW, pageH, t.exportedWith, [150, 115, 70]);
 
-  const safe = safeFilename(opts.meta.title || "shezhire", "shezhire");
-  doc.save(`sejire-shezhire-${safe}.pdf`);
+  const safe = safeFilename(opts.meta.title || "jeti-ata", "jeti-ata");
+  doc.save(`sejire-jeti-ata-${safe}.pdf`);
 }

@@ -6,17 +6,31 @@ export type PdfLocale = "ru";
 type PdfMessages = {
   classicTitle: string;
   shezhireTitle: string;
-  generation: (n: number) => string;
+  shezhireSubtitle: string;
+  /** Labels by distance from focus: 0 = self, 1 = father, … */
+  jetiAtaLabel: (distanceFromFocus: number) => string;
   clanLabel: string;
   noPeople: string;
   noMaleLine: string;
   exportedWith: string;
 };
 
+/** Classic жеті ата names counting from self upward (өзі → түп ата). */
+const JETI_ATA_FROM_SELF = [
+  "Өзі",
+  "Әке",
+  "Ата",
+  "Арғы ата",
+  "Баба",
+  "Тек ата",
+  "Түп ата",
+] as const;
+
 const ru: PdfMessages = {
   classicTitle: "Генеалогическое древо",
-  shezhireTitle: "Шежіре",
-  generation: (n) => `${n}`,
+  shezhireTitle: "Жеті ата",
+  shezhireSubtitle: "Шежіре",
+  jetiAtaLabel: (d) => JETI_ATA_FROM_SELF[Math.min(Math.max(0, d), JETI_ATA_FROM_SELF.length - 1)] ?? `${d + 1}`,
   clanLabel: "Ру",
   noPeople: "В древе нет людей для экспорта",
   noMaleLine: "Нет мужской линии для шежіре (нужен отец или выбран мужчина)",
