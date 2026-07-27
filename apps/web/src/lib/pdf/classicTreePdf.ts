@@ -1,5 +1,5 @@
 import type { jsPDF } from "jspdf";
-import type { Snapshot, TreeMeta } from "../types";
+import type { Person, Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
 import { ancestorSlotLayout, slotCenterFraction, yearSpan } from "./lineage";
