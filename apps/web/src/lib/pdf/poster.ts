@@ -133,3 +133,28 @@ export function wrapName(
 export function safeFilename(title: string, fallback: string) {
   return title.replace(/[^\w\-а-яА-ЯёЁәіңғүұқөһӘІҢҒҮҰҚӨҺ ]+/g, "").trim() || fallback;
 }
+
+/**
+ * Quiet brand mark centered in the bottom margin (inside the frame, clear of content).
+ */
+export function drawBrandMark(
+  doc: jsPDF,
+  pageW: number,
+  pageH: number,
+  label: string,
+  ink: [number, number, number] = [150, 130, 100]
+) {
+  const y = pageH - 8.2;
+  doc.setFontSize(6.5);
+  doc.setTextColor(...ink);
+  const chars = label.split("");
+  const tracking = 0.85;
+  let total = 0;
+  for (const ch of chars) total += doc.getTextWidth(ch) + tracking;
+  total -= tracking;
+  let x = (pageW - total) / 2;
+  for (const ch of chars) {
+    doc.text(ch, x, y);
+    x += doc.getTextWidth(ch) + tracking;
+  }
+}

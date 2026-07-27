@@ -14,7 +14,7 @@ type PdfMessages = {
 };
 
 const ru: PdfMessages = {
-  classicTitle: "Семейное древо",
+  classicTitle: "Генеалогическое древо",
   shezhireTitle: "Шежіре",
   generation: (n) => `${n}`,
   clanLabel: "Ру",

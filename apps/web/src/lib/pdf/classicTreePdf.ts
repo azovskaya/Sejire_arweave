@@ -4,6 +4,7 @@ import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { ancestorGenerations, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
+  drawBrandMark,
   drawCornerOrnaments,
   drawPosterFrame,
   drawTitleRule,
@@ -92,16 +93,17 @@ export async function downloadClassicTreePdf(opts: {
   drawPosterFrame(doc, pageW, pageH, ink);
   drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
 
-  const title = (opts.meta.title || t.classicTitle).trim() || t.classicTitle;
+  const title = t.classicTitle;
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(15);
-  doc.text(title, pageW / 2, 16.5, { align: "center" });
-  drawTitleRule(doc, pageW, 20.5, [175, 140, 90]);
+  doc.setFontSize(14);
+  doc.text(title, pageW / 2, 16.2, { align: "center" });
+  drawTitleRule(doc, pageW, 20.2, [175, 140, 90]);
 
   const marginX = 12;
   const topY = 26;
-  const bottomY = pageH - 11;
+  // Reserve bottom band for SEJIRE mark (no overlap with cards/frame)
+  const bottomY = pageH - 16;
   const genCount = gens.length;
   const maxInRow = Math.max(...gens.map((g) => g.length), 1);
   const gap = maxInRow >= 6 ? 3.2 : 4.5;
@@ -160,10 +162,8 @@ export async function downloadClassicTreePdf(opts: {
     }
   }
 
-  setPdfFont(doc, "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(160, 145, 120);
-  doc.text(t.exportedWith, pageW - 12, pageH - 4.5, { align: "right" });
+  setPdfFont(doc, "bold");
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [155, 135, 105]);
 
-  doc.save(`sejire-tree-${safeFilename(title, "tree")}.pdf`);
+  doc.save(`sejire-tree-${safeFilename(opts.meta.title || title, "tree")}.pdf`);
 }

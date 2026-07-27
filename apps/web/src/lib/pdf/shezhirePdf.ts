@@ -3,6 +3,7 @@ import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { maleLineUp, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
+  drawBrandMark,
   drawCornerOrnaments,
   drawPosterFrame,
   drawTitleRule,
@@ -100,7 +101,8 @@ export async function downloadShezhirePdf(opts: {
   const boxW = pageW - 40;
   const boxX = 20;
   const nameAreaW = boxW - 22;
-  const available = pageH - contentTop - 16;
+  // Leave clear bottom margin for SEJIRE mark
+  const available = pageH - contentTop - 20;
 
   // Pre-measure row heights so long FIO get more vertical room
   const rowHeights = line.map((person) => {
@@ -163,10 +165,8 @@ export async function downloadShezhirePdf(opts: {
     }
   }
 
-  setPdfFont(doc, "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(155, 125, 80);
-  doc.text(t.exportedWith, pageW / 2, pageH - 5, { align: "center" });
+  setPdfFont(doc, "bold");
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [150, 115, 70]);
 
   const safe = safeFilename(opts.meta.title || "shezhire", "shezhire");
   doc.save(`sejire-shezhire-${safe}.pdf`);
