@@ -27,48 +27,53 @@ function drawPersonCard(
   h: number,
   accent: [number, number, number]
 ) {
+  const scale = Math.min(1, w / 40);
+  const radius = Math.max(0.4, 1.2 * scale);
   doc.setDrawColor(120, 110, 95);
   doc.setFillColor(255, 253, 248);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(x, y, w, h, 1.2, 1.2, "FD");
+  doc.setLineWidth(Math.max(0.15, 0.3 * scale));
+  doc.roundedRect(x, y, w, h, radius, radius, "FD");
   doc.setFillColor(...accent);
-  doc.rect(x, y, 1.5, h, "F");
+  doc.rect(x, y, Math.max(0.8, 1.5 * scale), h, "F");
 
-  const padX = 3.4;
-  const textW = w - padX * 2 - 1.2;
+  const padX = Math.max(1.2, 3.2 * scale);
+  const textW = Math.max(6, w - padX * 2 - 1);
   const life = yearSpan(p);
   const place = (p.birthPlace || "").trim();
   const metaLines = [life, place].filter(Boolean).length;
-  const nameMaxLines = metaLines >= 2 ? 2 : metaLines === 1 ? 3 : 4;
+  const nameMaxLines = w < 22 ? 2 : metaLines >= 2 ? 2 : metaLines === 1 ? 3 : 4;
+  const maxName = Math.max(4.2, 8.2 * scale);
+  const minName = Math.max(3.4, 5.2 * scale);
 
   setPdfFont(doc, "bold");
   doc.setTextColor(34, 35, 38);
-  const { lines: nameLines, fontSize } = wrapName(doc, p.name || "—", textW, nameMaxLines, 8.4, 5.8);
+  const { lines: nameLines, fontSize } = wrapName(doc, p.name || "—", textW, nameMaxLines, maxName, minName);
   const lineH = fontSize * 0.42;
-  let ty = y + 4.6;
+  let ty = y + Math.max(2.8, 4.2 * scale);
   doc.setFontSize(fontSize);
   for (const line of nameLines) {
-    doc.text(line, x + padX + 1, ty);
-    ty += lineH + 0.6;
+    doc.text(line, x + padX + 0.6, ty);
+    ty += lineH + Math.max(0.25, 0.5 * scale);
   }
 
   setPdfFont(doc, "normal");
   doc.setTextColor(95, 90, 82);
-  ty += 0.8;
-  if (life && ty < y + h - 2) {
-    doc.setFontSize(6.4);
-    doc.text(fitText(doc, life, textW, 6.4), x + padX + 1, ty);
-    ty += 3.6;
+  ty += Math.max(0.3, 0.6 * scale);
+  const metaSize = Math.max(3.6, 6.2 * scale);
+  if (life && ty < y + h - 1.5) {
+    doc.setFontSize(metaSize);
+    doc.text(fitText(doc, life, textW, metaSize), x + padX + 0.6, ty);
+    ty += metaSize * 0.55 + 0.8;
   }
-  if (place && ty < y + h - 2) {
-    doc.setFontSize(6);
-    doc.text(fitText(doc, place, textW, 6), x + padX + 1, ty);
+  if (place && ty < y + h - 1.5) {
+    doc.setFontSize(Math.max(3.4, metaSize - 0.4));
+    doc.text(fitText(doc, place, textW, Math.max(3.4, metaSize - 0.4)), x + padX + 0.6, ty);
   }
 }
 
 /**
  * Wall-ready classic family poster: quiet header, roots-down layout.
- * Names wrap fully — never clipped to «Азовский Владими…».
+ * Card size shrinks to keep every generation inside the poster frame.
  */
 export async function downloadClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -100,18 +105,24 @@ export async function downloadClassicTreePdf(opts: {
   doc.text(title, pageW / 2, 16.2, { align: "center" });
   drawTitleRule(doc, pageW, 20.2, [175, 140, 90]);
 
+  // Stay inside double frame (~9.4mm) + brand clearance at bottom
   const marginX = 12;
   const topY = 26;
-  // Content stays inside the frame; SEJIRE sits outside at bottom-right
-  const bottomY = pageH - 12;
+  const bottomY = pageH - 14;
   const genCount = gens.length;
   const maxInRow = Math.max(...gens.map((g) => g.length), 1);
-  const gap = maxInRow >= 6 ? 3.2 : 4.5;
   const usableW = pageW - marginX * 2;
-  const cardW = Math.min(52, Math.max(34, (usableW - gap * (maxInRow - 1)) / maxInRow));
-  const cardH = cardW >= 44 ? 26 : 24;
-  const usableH = bottomY - topY - cardH;
-  const rowGap = genCount > 1 ? usableH / (genCount - 1) : 0;
+  const boxH = bottomY - topY;
+
+  // Shrink width to fit the widest generation — no fixed 34mm floor
+  const gap = Math.min(3.5, Math.max(0.6, usableW / (maxInRow * 12)));
+  let cardW = (usableW - gap * Math.max(0, maxInRow - 1)) / maxInRow;
+  cardW = Math.min(46, Math.max(11, cardW));
+  // Height scales with width and available vertical room (no overlap)
+  let cardH = Math.min(cardW * 0.62, boxH / genCount - 1.2);
+  cardH = Math.max(10, Math.min(24, cardH));
+
+  const rowPitch = genCount > 1 ? (boxH - cardH) / (genCount - 1) : 0;
 
   type Pos = { id: string; x: number; y: number; cx: number };
   const positions = new Map<string, Pos>();
@@ -119,9 +130,13 @@ export async function downloadClassicTreePdf(opts: {
   for (let gi = 0; gi < genCount; gi += 1) {
     const people = gens[gi];
     const visualRow = genCount - 1 - gi;
-    const y = topY + visualRow * rowGap;
+    const y = topY + visualRow * rowPitch;
     const totalW = people.length * cardW + Math.max(0, people.length - 1) * gap;
-    let x0 = Math.max(marginX, (pageW - totalW) / 2);
+    let x0 = marginX + Math.max(0, (usableW - totalW) / 2);
+    // Clamp row inside frame if still slightly over (rounding)
+    if (x0 + totalW > pageW - marginX) {
+      x0 = Math.max(marginX, pageW - marginX - totalW);
+    }
     for (const p of people) {
       positions.set(p.id, { id: p.id, x: x0, y, cx: x0 + cardW / 2 });
       x0 += cardW + gap;
@@ -129,7 +144,7 @@ export async function downloadClassicTreePdf(opts: {
   }
 
   doc.setDrawColor(170, 150, 120);
-  doc.setLineWidth(0.28);
+  doc.setLineWidth(0.22);
   for (let gi = 0; gi < genCount - 1; gi += 1) {
     for (const child of gens[gi]) {
       const childPos = positions.get(child.id);
