@@ -803,8 +803,13 @@ td:first-child {
   .point-grid,
   .two-col,
   .timeline,
-  .era-rail {
+  .era-rail,
+  .roadmap {
     grid-template-columns: 1fr;
+  }
+
+  .arch-arrow {
+    display: none;
   }
 
   .era-rail::before {
