@@ -1,7 +1,8 @@
 import type { jsPDF } from "jspdf";
-import type { Person, Snapshot, TreeMeta } from "../types";
+import type { Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
-import { ancestorGenerations, yearSpan } from "./lineage";
+import { splitParents } from "../pedigree";
+import { ancestorSlotLayout, slotCenterFraction, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
   drawBrandMark,
@@ -72,8 +73,8 @@ function drawPersonCard(
 }
 
 /**
- * Wall-ready classic family poster: quiet header, roots-down layout.
- * Card size shrinks to keep every generation inside the poster frame.
+ * Wall-ready classic family poster: roots-down, binary pedigree slots
+ * so father/mother sit above their child and connector lines do not cross.
  */
 export async function downloadClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -82,8 +83,8 @@ export async function downloadClassicTreePdf(opts: {
   locale?: PdfLocale;
 }) {
   const t = pdfT(opts.locale ?? "ru");
-  const gens = ancestorGenerations(opts.snapshot, opts.focusId, 5);
-  if (!gens.length) throw new Error(t.noPeople);
+  const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, 5);
+  if (!slots.length) throw new Error(t.noPeople);
 
   const JsPDF = await loadJsPdf();
   const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -105,76 +106,78 @@ export async function downloadClassicTreePdf(opts: {
   doc.text(title, pageW / 2, 16.2, { align: "center" });
   drawTitleRule(doc, pageW, 20.2, [175, 140, 90]);
 
-  // Stay inside double frame (~9.4mm) + brand clearance at bottom
   const marginX = 12;
   const topY = 26;
   const bottomY = pageH - 14;
-  const genCount = gens.length;
-  const maxInRow = Math.max(...gens.map((g) => g.length), 1);
   const usableW = pageW - marginX * 2;
   const boxH = bottomY - topY;
 
-  // Shrink width to fit the widest generation — no fixed 34mm floor
-  const gap = Math.min(3.5, Math.max(0.6, usableW / (maxInRow * 12)));
-  let cardW = (usableW - gap * Math.max(0, maxInRow - 1)) / maxInRow;
-  cardW = Math.min(46, Math.max(11, cardW));
-  // Height scales with width and available vertical room (no overlap)
-  let cardH = Math.min(cardW * 0.62, boxH / genCount - 1.2);
-  cardH = Math.max(10, Math.min(24, cardH));
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  const leafSlots = 2 ** Math.max(0, depth - 1);
+  const cellW = usableW / leafSlots;
+  let cardW = Math.min(42, Math.max(9, cellW - 0.9));
+  let cardH = Math.min(cardW * 0.62, boxH / depth - 1.2);
+  cardH = Math.max(9, Math.min(22, cardH));
+  const rowPitch = depth > 1 ? (boxH - cardH) / (depth - 1) : 0;
 
-  const rowPitch = genCount > 1 ? (boxH - cardH) / (genCount - 1) : 0;
-
-  type Pos = { id: string; x: number; y: number; cx: number };
+  type Pos = { id: string; x: number; y: number; cx: number; generation: number; slot: number };
   const positions = new Map<string, Pos>();
 
-  for (let gi = 0; gi < genCount; gi += 1) {
-    const people = gens[gi];
-    const visualRow = genCount - 1 - gi;
+  for (const s of slots) {
+    const visualRow = depth - 1 - s.generation; // oldest on top
     const y = topY + visualRow * rowPitch;
-    const totalW = people.length * cardW + Math.max(0, people.length - 1) * gap;
-    let x0 = marginX + Math.max(0, (usableW - totalW) / 2);
-    // Clamp row inside frame if still slightly over (rounding)
-    if (x0 + totalW > pageW - marginX) {
-      x0 = Math.max(marginX, pageW - marginX - totalW);
+    const frac = slotCenterFraction(s.generation, s.slot, depth);
+    const cx = marginX + frac * usableW;
+    const x = Math.min(pageW - marginX - cardW, Math.max(marginX, cx - cardW / 2));
+    positions.set(s.person.id, {
+      id: s.person.id,
+      x,
+      y,
+      cx: x + cardW / 2,
+      generation: s.generation,
+      slot: s.slot,
+    });
+  }
+
+  // Family bars: one horizontal per child, parents drop onto it — no crossed diagonals
+  doc.setDrawColor(150, 130, 100);
+  doc.setLineWidth(0.28);
+  for (const s of slots) {
+    if (s.generation + 1 >= depth) continue;
+    const childPos = positions.get(s.person.id);
+    if (!childPos) continue;
+
+    const { fatherId, motherId } = splitParents(opts.snapshot, s.person.id);
+    const parentCenters = [fatherId, motherId]
+      .filter((id): id is string => Boolean(id))
+      .map((id) => positions.get(id))
+      .filter((p): p is Pos => Boolean(p));
+    if (!parentCenters.length) continue;
+
+    const parentBottom = Math.max(...parentCenters.map((p) => p.y + cardH));
+    const midY = (parentBottom + childPos.y) / 2;
+    const barLeft = Math.min(childPos.cx, ...parentCenters.map((p) => p.cx));
+    const barRight = Math.max(childPos.cx, ...parentCenters.map((p) => p.cx));
+
+    doc.line(childPos.cx, childPos.y, childPos.cx, midY);
+    if (Math.abs(barRight - barLeft) > 0.4) {
+      doc.line(barLeft, midY, barRight, midY);
     }
-    for (const p of people) {
-      positions.set(p.id, { id: p.id, x: x0, y, cx: x0 + cardW / 2 });
-      x0 += cardW + gap;
+    for (const p of parentCenters) {
+      doc.line(p.cx, midY, p.cx, p.y + cardH);
     }
   }
 
-  doc.setDrawColor(170, 150, 120);
-  doc.setLineWidth(0.22);
-  for (let gi = 0; gi < genCount - 1; gi += 1) {
-    for (const child of gens[gi]) {
-      const childPos = positions.get(child.id);
-      if (!childPos) continue;
-      const parents = child.parents
-        .map((id) => opts.snapshot.persons[id])
-        .filter((p): p is Person => Boolean(p) && !p.tombstone);
-      for (const parent of parents) {
-        const parentPos = positions.get(parent.id);
-        if (!parentPos) continue;
-        const x1 = childPos.cx;
-        const y1 = childPos.y;
-        const x2 = parentPos.cx;
-        const y2 = parentPos.y + cardH;
-        const mid = (y1 + y2) / 2;
-        doc.line(x1, y1, x1, mid);
-        doc.line(x1, mid, x2, mid);
-        doc.line(x2, mid, x2, y2);
-      }
-    }
-  }
-
-  for (const people of gens) {
-    for (const p of people) {
-      const pos = positions.get(p.id);
-      if (!pos) continue;
-      const accent: [number, number, number] =
-        p.sex === "F" ? [150, 105, 115] : p.sex === "M" ? [85, 115, 140] : [150, 145, 135];
-      drawPersonCard(doc, p, pos.x, pos.y, cardW, cardH, accent);
-    }
+  for (const s of slots) {
+    const pos = positions.get(s.person.id);
+    if (!pos) continue;
+    const accent: [number, number, number] =
+      s.person.sex === "F"
+        ? [150, 105, 115]
+        : s.person.sex === "M"
+          ? [85, 115, 140]
+          : [150, 145, 135];
+    drawPersonCard(doc, s.person, pos.x, pos.y, cardW, cardH, accent);
   }
 
   setPdfFont(doc, "bold");

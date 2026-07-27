@@ -1,7 +1,7 @@
 /**
  * Lineage helpers self-test
  */
-import { ancestorGenerations, maleLineUp } from "./lineage";
+import { ancestorGenerations, ancestorSlotLayout, maleLineUp, slotCenterFraction } from "./lineage";
 import type { Snapshot } from "../types";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -11,9 +11,12 @@ function assert(cond: unknown, msg: string): asserts cond {
 const snapshot: Snapshot = {
   persons: {
     me: { id: "me", name: "Me", sex: "M", parents: ["fa", "mo"], media: [] },
-    fa: { id: "fa", name: "Father", sex: "M", parents: ["gf"], media: [] },
-    mo: { id: "mo", name: "Mother", sex: "F", parents: [], media: [] },
-    gf: { id: "gf", name: "Grandfather", sex: "M", parents: [], media: [] },
+    fa: { id: "fa", name: "Father", sex: "M", parents: ["gf", "gm"], media: [] },
+    mo: { id: "mo", name: "Mother", sex: "F", parents: ["mgf", "mgm"], media: [] },
+    gf: { id: "gf", name: "GF", sex: "M", parents: [], media: [] },
+    gm: { id: "gm", name: "GM", sex: "F", parents: [], media: [] },
+    mgf: { id: "mgf", name: "MGF", sex: "M", parents: [], media: [] },
+    mgm: { id: "mgm", name: "MGM", sex: "F", parents: [], media: [] },
   },
 };
 
@@ -22,7 +25,25 @@ assert(male.map((p) => p.id).join(",") === "me,fa,gf", `male line ${male.map((p)
 
 const gens = ancestorGenerations(snapshot, "me", 4);
 assert(gens[0][0].id === "me", "focus bottom gen");
-assert(gens[1].some((p) => p.id === "fa") && gens[1].some((p) => p.id === "mo"), "parents");
-assert(gens[2].some((p) => p.id === "gf"), "grandfather");
+assert(gens[1][0].id === "fa" && gens[1][1].id === "mo", "father left of mother");
+assert(gens[2].map((p) => p.id).join(",") === "gf,gm,mgf,mgm", "grandparents slot order");
 
-console.log("lineage.selftest: OK", { male: male.length, gens: gens.length });
+const slots = ancestorSlotLayout(snapshot, "me", 4);
+const byId = Object.fromEntries(slots.map((s) => [s.person.id, s]));
+assert(byId.fa.slot === 0 && byId.mo.slot === 1, "parent slots");
+assert(byId.gf.slot === 0 && byId.gm.slot === 1, "paternal gp slots");
+assert(byId.mgf.slot === 2 && byId.mgm.slot === 3, "maternal gp slots");
+
+// Father center left of mother for same depth
+const depth = 3;
+assert(
+  slotCenterFraction(1, 0, depth) < slotCenterFraction(1, 1, depth),
+  "father fraction left of mother"
+);
+assert(
+  slotCenterFraction(0, 0, depth) > slotCenterFraction(1, 0, depth) &&
+    slotCenterFraction(0, 0, depth) < slotCenterFraction(1, 1, depth),
+  "child centered between parents"
+);
+
+console.log("lineage.selftest: OK", { male: male.length, gens: gens.length, slots: slots.length });

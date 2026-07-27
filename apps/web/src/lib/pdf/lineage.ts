@@ -20,36 +20,80 @@ export function maleLineUp(snapshot: Snapshot, startId: string): Person[] {
   return line;
 }
 
+export type AncestorSlot = {
+  person: Person;
+  /** 0 = focus (youngest / bottom of poster) */
+  generation: number;
+  /** Pedigree index: father = 2*childSlot, mother = 2*childSlot+1 */
+  slot: number;
+};
+
 /**
- * Ancestor generations for a classic roots-down chart.
- * gens[0] = focus (bottom), gens[1] = parents, …
+ * Binary pedigree layout: father left / mother right under each child.
+ * Connector edges do not cross when X follows slot spans.
+ */
+export function ancestorSlotLayout(
+  snapshot: Snapshot,
+  focusId: string,
+  maxGenerations = 5
+): AncestorSlot[] {
+  const focus = snapshot.persons[focusId];
+  if (!focus || focus.tombstone) return [];
+
+  const out: AncestorSlot[] = [];
+  const placed = new Set<string>();
+  type Q = { id: string; generation: number; slot: number };
+  const queue: Q[] = [{ id: focusId, generation: 0, slot: 0 }];
+
+  while (queue.length) {
+    const cur = queue.shift()!;
+    if (placed.has(cur.id) || cur.generation >= maxGenerations) continue;
+    const person = snapshot.persons[cur.id];
+    if (!person || person.tombstone) continue;
+    placed.add(cur.id);
+    out.push({ person, generation: cur.generation, slot: cur.slot });
+
+    if (cur.generation + 1 >= maxGenerations) continue;
+    const { fatherId, motherId } = splitParents(snapshot, cur.id);
+    if (fatherId && !placed.has(fatherId)) {
+      queue.push({ id: fatherId, generation: cur.generation + 1, slot: cur.slot * 2 });
+    }
+    if (motherId && !placed.has(motherId)) {
+      queue.push({ id: motherId, generation: cur.generation + 1, slot: cur.slot * 2 + 1 });
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Ancestor generations for charts.
+ * gens[0] = focus, gens[1] = parents, … ordered by pedigree slot.
  */
 export function ancestorGenerations(
   snapshot: Snapshot,
   focusId: string,
   maxGenerations = 5
 ): Person[][] {
-  const focus = snapshot.persons[focusId];
-  if (!focus || focus.tombstone) return [];
-
-  const gens: Person[][] = [[focus]];
-  for (let g = 0; g < maxGenerations - 1; g += 1) {
-    const next: Person[] = [];
-    const seen = new Set<string>();
-    for (const person of gens[g]) {
-      const { fatherId, motherId } = splitParents(snapshot, person.id);
-      for (const pid of [fatherId, motherId]) {
-        if (!pid || seen.has(pid)) continue;
-        const p = snapshot.persons[pid];
-        if (!p || p.tombstone) continue;
-        seen.add(pid);
-        next.push(p);
-      }
-    }
-    if (!next.length) break;
-    gens.push(next);
+  const slots = ancestorSlotLayout(snapshot, focusId, maxGenerations);
+  if (!slots.length) return [];
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  const gens: Person[][] = Array.from({ length: depth }, () => []);
+  for (let g = 0; g < depth; g += 1) {
+    gens[g] = slots
+      .filter((s) => s.generation === g)
+      .sort((a, b) => a.slot - b.slot)
+      .map((s) => s.person);
   }
   return gens;
+}
+
+/** Center X of a slot as a fraction of usable width (0..1). */
+export function slotCenterFraction(generation: number, slot: number, depth: number): number {
+  const leafSlots = 2 ** Math.max(0, depth - 1);
+  const leafSpan = 2 ** Math.max(0, depth - 1 - generation);
+  const leftLeaf = slot * leafSpan;
+  return (leftLeaf + leafSpan / 2) / leafSlots;
 }
 
 export function yearSpan(p: Person): string {
