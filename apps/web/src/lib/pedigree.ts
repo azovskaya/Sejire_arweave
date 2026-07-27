@@ -1,5 +1,6 @@
 import type { Person, Snapshot } from "./types";
 import { activePersons } from "./treeEngine";
+import { yearFromDate } from "./dates";
 
 export type PedigreeNode = {
   kind: "person";
@@ -41,9 +42,7 @@ const GAP_Y = 20;
 export const PEDIGREE_CARD = { w: CARD_W, h: CARD_H, gapX: GAP_X, gapY: GAP_Y };
 
 function yearOf(iso?: string | null) {
-  if (!iso) return null;
-  const y = iso.slice(0, 4);
-  return /^\d{4}$/.test(y) ? y : null;
+  return yearFromDate(iso);
 }
 
 export function lifespan(p: Person) {

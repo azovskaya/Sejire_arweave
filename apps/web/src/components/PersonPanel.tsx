@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Person } from "../lib/types";
 import { lifespan } from "../lib/pedigree";
+import { normalizeDateInput } from "../lib/dates";
+import { DateTextInput } from "./DateTextInput";
 
 type Props = {
   person: Person | null;
@@ -43,9 +45,9 @@ function buildPerson(base: Person, draft: Person): Person {
     burialPlace: draft.burialPlace?.trim() || null,
     occupation: draft.occupation?.trim() || null,
     notes: draft.notes?.trim() || "",
-    born: draft.born || null,
-    died: draft.died || null,
-    burialDate: draft.burialDate || null,
+    born: draft.born ? normalizeDateInput(draft.born) || null : null,
+    died: draft.died ? normalizeDateInput(draft.died) || null : null,
+    burialDate: draft.burialDate ? normalizeDateInput(draft.burialDate) || null : null,
     parents: base.parents,
     media: base.media ?? [],
     tombstone: base.tombstone ?? false,
@@ -164,10 +166,10 @@ export function PersonPanel({
           <h3>Рождение</h3>
           <label>
             Дата рождения
-            <input
-              type="date"
+            <DateTextInput
               value={draft.born ?? ""}
-              onChange={(e) => setField("born", e.target.value || null)}
+              onChange={(v) => setField("born", v || null)}
+              aria-label="Дата рождения"
             />
           </label>
           <label>
@@ -184,10 +186,10 @@ export function PersonPanel({
           <h3>Смерть</h3>
           <label>
             Дата смерти
-            <input
-              type="date"
+            <DateTextInput
               value={draft.died ?? ""}
-              onChange={(e) => setField("died", e.target.value || null)}
+              onChange={(v) => setField("died", v || null)}
+              aria-label="Дата смерти"
             />
           </label>
           <label>
@@ -204,10 +206,10 @@ export function PersonPanel({
           <h3>Захоронение</h3>
           <label>
             Дата захоронения
-            <input
-              type="date"
+            <DateTextInput
               value={draft.burialDate ?? ""}
-              onChange={(e) => setField("burialDate", e.target.value || null)}
+              onChange={(v) => setField("burialDate", v || null)}
+              aria-label="Дата захоронения"
             />
           </label>
           <label>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { Person } from "../lib/types";
+import { normalizeDateInput } from "../lib/dates";
+import { DateTextInput } from "./DateTextInput";
 
 export type AddPersonPayload = {
   name: string;
@@ -41,7 +43,13 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return;
-    onSave({ ...form, name: form.name.trim() });
+    onSave({
+      ...form,
+      name: form.name.trim(),
+      born: normalizeDateInput(form.born),
+      died: normalizeDateInput(form.died),
+      burialDate: normalizeDateInput(form.burialDate),
+    });
   }
 
   return (
@@ -85,18 +93,18 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
         <div className="row-2">
           <label>
             Дата рождения
-            <input
-              type="date"
+            <DateTextInput
               value={form.born}
-              onChange={(e) => setForm({ ...form, born: e.target.value })}
+              onChange={(born) => setForm({ ...form, born })}
+              aria-label="Дата рождения"
             />
           </label>
           <label>
             Дата смерти
-            <input
-              type="date"
+            <DateTextInput
               value={form.died}
-              onChange={(e) => setForm({ ...form, died: e.target.value })}
+              onChange={(died) => setForm({ ...form, died })}
+              aria-label="Дата смерти"
             />
           </label>
         </div>
@@ -119,10 +127,10 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
         <div className="row-2">
           <label>
             Дата захоронения
-            <input
-              type="date"
+            <DateTextInput
               value={form.burialDate}
-              onChange={(e) => setForm({ ...form, burialDate: e.target.value })}
+              onChange={(burialDate) => setForm({ ...form, burialDate })}
+              aria-label="Дата захоронения"
             />
           </label>
           <label>
