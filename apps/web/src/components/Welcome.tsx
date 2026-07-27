@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
 
 type Props = {
@@ -6,28 +7,37 @@ type Props = {
   onRestoreSeed: () => void;
 };
 
+/**
+ * Brand-only welcome: the single visible word is SEJIRE.
+ * Click → continue draft if any, else start. Shift+click → new. Right-click → open by seed.
+ */
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const hasDraft = Boolean(loadDraftTree());
 
+  function onBrandClick(e: MouseEvent<HTMLButtonElement>) {
+    if (e.shiftKey) {
+      onStartNew("Мой род");
+      return;
+    }
+    if (hasDraft) onContinueDraft();
+    else onStartNew("Мой род");
+  }
+
   return (
     <div className="welcome-screen">
-      <div className="welcome-hero">
-        <h1>SEJIRE</h1>
-
-        <div className="welcome-actions">
-          <button className="btn" type="button" onClick={() => onStartNew("Мой род")}>
-            Начать
-          </button>
-          {hasDraft && (
-            <button className="btn ghost" type="button" onClick={onContinueDraft}>
-              Черновик
-            </button>
-          )}
-          <button className="btn ghost" type="button" onClick={onRestoreSeed}>
-            Открыть
-          </button>
-        </div>
-      </div>
+      <button
+        type="button"
+        className="welcome-brand"
+        onClick={onBrandClick}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          onRestoreSeed();
+        }}
+        aria-label={hasDraft ? "Продолжить черновик SEJIRE" : "Начать SEJIRE"}
+        title={hasDraft ? "Открыть черновик · Shift — новый · ПКМ — по 12 словам" : "Начать · ПКМ — по 12 словам"}
+      >
+        SEJIRE
+      </button>
     </div>
   );
 }
