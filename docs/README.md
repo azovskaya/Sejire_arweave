@@ -13,6 +13,7 @@
 | [LIVE.md](./LIVE.md) | Публичные ссылки на работающее приложение |
 | [COMPETITIVE.ru.md](./COMPETITIVE.ru.md) | SEJIRE vs Ancestry/MyHeritage vs DeepFamily |
 | [SPONSOR_AND_PERMAWEB.ru.md](./SPONSOR_AND_PERMAWEB.ru.md) | Fiat $3 + Turbo + permaweb hosting |
+| [PERMAWEB_ROLLOUT.ru.md](./PERMAWEB_ROLLOUT.ru.md) | Пошаговый план: языки, деплой, sponsor, безопасность |
 | [CHECKLIST.md](./CHECKLIST.md) | Синхронизация код ↔ docs |
 | [processes/](./processes/) | Логика каждого AO-процесса и хендлера |
 | [flows/](./flows/) | Пользовательские и системные сценарии |
