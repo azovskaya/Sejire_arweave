@@ -1,5 +1,6 @@
 import type { Person, Snapshot } from "../types";
 import { splitParents } from "../pedigree";
+import { yearFromDate } from "../dates";
 
 /** Youngest-first male line: [self, father, grandfather, …]. */
 export function maleLineUp(snapshot: Snapshot, startId: string): Person[] {
@@ -52,10 +53,8 @@ export function ancestorGenerations(
 }
 
 export function yearSpan(p: Person): string {
-  const b = p.born?.slice(0, 4);
-  const d = p.died?.slice(0, 4);
-  const by = b && /^\d{4}$/.test(b) ? b : "";
-  const dy = d && /^\d{4}$/.test(d) ? d : "";
+  const by = yearFromDate(p.born) ?? "";
+  const dy = yearFromDate(p.died) ?? "";
   if (by && dy) return `${by}–${dy}`;
   if (by) return `род. ${by}`;
   if (dy) return `ум. ${dy}`;

@@ -2,15 +2,16 @@ import type { Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { maleLineUp, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
+import { drawBrandMark, fitText, safeFilename, wrapName } from "./poster";
 import {
-  drawBrandMark,
-  drawCornerOrnaments,
-  drawPosterFrame,
-  drawTitleRule,
-  fitText,
-  safeFilename,
-  wrapName,
-} from "./poster";
+  drawDiamondKnot,
+  drawHornPair,
+  drawLabelPlaque,
+  drawNameCartouche,
+  drawOrnamentBorder,
+  drawTitleOrnament,
+  type Rgb,
+} from "./ornaments";
 
 async function loadJsPdf() {
   const mod = await import("jspdf");
@@ -18,8 +19,7 @@ async function loadJsPdf() {
 }
 
 /**
- * Wall-ready Жеті ата poster: strict vertical male line (up to 7),
- * one spine, generation labels, no cards.
+ * Wall poster «Жеті ата»: vertical male line in Kazakh ornamental cartouches.
  */
 export async function downloadShezhirePdf(opts: {
   snapshot: Snapshot;
@@ -33,9 +33,8 @@ export async function downloadShezhirePdf(opts: {
   const youngFirst = maleLineUp(opts.snapshot, opts.startId);
   if (!youngFirst.length) throw new Error(t.noPeople);
 
-  // Youngest → oldest, capped at 7; display oldest at top.
   const ascending = youngFirst.slice(0, maxGen);
-  const line = [...ascending].reverse();
+  const line = [...ascending].reverse(); // oldest at top
   if (!line.length) throw new Error(t.noMaleLine);
 
   const JsPDF = await loadJsPdf();
@@ -44,145 +43,144 @@ export async function downloadShezhirePdf(opts: {
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const ink: [number, number, number] = [95, 55, 22];
-  const soft: [number, number, number] = [170, 120, 55];
-  const mute: [number, number, number] = [130, 95, 55];
 
-  doc.setFillColor(246, 234, 208);
+  // Deep parchment + ink (manuscript shezhire, not flat UI)
+  const parchment: Rgb = [242, 228, 198];
+  const parchmentDeep: Rgb = [232, 212, 172];
+  const ink: Rgb = [72, 38, 18];
+  const gold: Rgb = [148, 98, 42];
+  const goldSoft: Rgb = [176, 132, 68];
+  const plaque: Rgb = [252, 243, 220];
+  const mute: Rgb = [110, 78, 42];
+
+  doc.setFillColor(...parchment);
   doc.rect(0, 0, pageW, pageH, "F");
+  // soft side panels
+  doc.setFillColor(...parchmentDeep);
+  doc.rect(0, 0, 14, pageH, "F");
+  doc.rect(pageW - 14, 0, 14, pageH, "F");
 
-  drawPosterFrame(doc, pageW, pageH, ink);
-  drawCornerOrnaments(doc, pageW, pageH, soft);
+  drawOrnamentBorder(doc, pageW, pageH, 8, ink);
 
-  // Title band — brand-first Жеті ата
+  // Title
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(26);
+  doc.setFontSize(24);
   doc.text(t.shezhireTitle, pageW / 2, 22, { align: "center" });
   setPdfFont(doc, "normal");
   doc.setFontSize(9);
   doc.setTextColor(...mute);
-  doc.text(t.shezhireSubtitle, pageW / 2, 28.2, { align: "center" });
-  drawTitleRule(doc, pageW, 31.5, soft);
+  doc.text(t.shezhireSubtitle, pageW / 2, 27.8, { align: "center" });
+  drawTitleOrnament(doc, pageW / 2, 31.5, pageW / 2 - 28, gold);
 
   const clan = (opts.meta.clanName || "").trim();
-  const hasTamga = Boolean(opts.meta.tamgaUrl);
   let contentTop = 38;
 
-  if (clan || hasTamga) {
-    const midY = 38;
-    if (hasTamga) {
-      const tamgaSize = 12;
-      const tamgaX = pageW / 2 - tamgaSize / 2;
-      doc.setDrawColor(...soft);
-      doc.setFillColor(250, 240, 215);
-      doc.setLineWidth(0.35);
-      doc.roundedRect(tamgaX, midY, tamgaSize, tamgaSize, 1, 1, "FD");
-      try {
-        doc.addImage(
-          opts.meta.tamgaUrl!,
-          "PNG",
-          tamgaX + 0.7,
-          midY + 0.7,
-          tamgaSize - 1.4,
-          tamgaSize - 1.4
-        );
-      } catch {
-        // empty frame
-      }
-      contentTop = midY + tamgaSize + 4;
-    }
-    if (clan) {
-      setPdfFont(doc, "bold");
-      doc.setFontSize(7.5);
-      doc.setTextColor(...mute);
-      doc.text(t.clanLabel, pageW / 2, contentTop, { align: "center" });
-      setPdfFont(doc, "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(55, 35, 12);
-      const { lines } = wrapName(doc, clan, pageW - 48, 2, 11, 8);
-      doc.text(lines[0], pageW / 2, contentTop + 5.5, { align: "center" });
-      contentTop += 12;
-    } else if (hasTamga) {
-      contentTop += 2;
-    }
+  if (clan) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...mute);
+    doc.text(t.clanLabel, pageW / 2, contentTop, { align: "center" });
+    setPdfFont(doc, "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...ink);
+    const { lines } = wrapName(doc, clan, pageW - 56, 2, 11, 8);
+    doc.text(lines[0], pageW / 2, contentTop + 5.2, { align: "center" });
+    drawHornPair(doc, pageW / 2, contentTop + 8.5, 5.5, goldSoft, 0.28);
+    contentTop += 14;
   }
 
-  // Layout: left labels | spine | names — strict vertical, equal steps
   const n = line.length;
-  const bottomY = pageH - 14;
-  const topY = contentTop + 4;
-  const span = Math.max(1, bottomY - topY);
-  const step = n > 1 ? span / (n - 1) : 0;
+  const bottomY = pageH - 16;
+  const topY = contentTop + 2;
+  const available = Math.max(40, bottomY - topY);
+  // cartouche height scales with count so all 7 fit
+  const gap = n > 1 ? Math.min(4.5, available * 0.02) : 0;
+  const cartoucheH = Math.min(22, (available - gap * Math.max(0, n - 1)) / n);
+  const block = cartoucheH + gap;
+  const stackH = n * cartoucheH + Math.max(0, n - 1) * gap;
+  const stackTop = topY + Math.max(0, (available - stackH) / 2);
 
-  const spineX = 52;
-  const labelRight = spineX - 7;
-  const nameX = spineX + 10;
-  const nameMaxW = pageW - nameX - 16;
+  const spineX = 48;
+  const cartoucheX = 58;
+  const cartoucheW = pageW - cartoucheX - 18;
+  const namePadX = 5.5;
+  const nameMaxW = cartoucheW - namePadX * 2;
 
-  // Continuous spine behind nodes
+  // Vertical ornamental spine
   if (n > 1) {
-    doc.setDrawColor(...soft);
-    doc.setLineWidth(0.7);
-    doc.line(spineX, topY, spineX, bottomY);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.85);
+    const y0 = stackTop + cartoucheH / 2;
+    const y1 = stackTop + (n - 1) * block + cartoucheH / 2;
+    doc.line(spineX, y0, spineX, y1);
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(...goldSoft);
+    doc.line(spineX - 1.1, y0, spineX - 1.1, y1);
+    doc.line(spineX + 1.1, y0, spineX + 1.1, y1);
   }
 
   for (let i = 0; i < n; i += 1) {
     const person = line[i];
-    // distance from focus (youngest): oldest has highest index in ascending
     const distanceFromFocus = n - 1 - i;
-    const cy = n === 1 ? (topY + bottomY) / 2 : topY + i * step;
+    const y = stackTop + i * block;
+    const cy = y + cartoucheH / 2;
     const label = t.jetiAtaLabel(distanceFromFocus);
 
-    // Node on spine
-    doc.setFillColor(246, 234, 208);
-    doc.setDrawColor(...ink);
-    doc.setLineWidth(0.85);
-    doc.circle(spineX, cy, 2.6, "FD");
-    doc.setFillColor(...ink);
-    doc.circle(spineX, cy, 1.15, "F");
+    drawDiamondKnot(doc, spineX, cy, Math.min(3.2, cartoucheH * 0.22), ink, parchment);
 
-    // Generation label (left of spine)
-    setPdfFont(doc, "normal");
-    doc.setFontSize(7.2);
-    doc.setTextColor(...mute);
-    doc.text(label, labelRight, cy + 0.9, { align: "right" });
+    // connector to cartouche
+    doc.setDrawColor(...goldSoft);
+    doc.setLineWidth(0.35);
+    doc.line(spineX + 3.2, cy, cartoucheX - 4.6, cy);
 
-    // Full name (right of spine) — wrap, never ellipsis on FIO
-    setPdfFont(doc, "bold");
-    doc.setTextColor(40, 28, 12);
+    drawLabelPlaque(doc, spineX - 5, cy, label, ink, plaque, (bold) => setPdfFont(doc, bold ? "bold" : "normal"));
+
+    drawNameCartouche(doc, cartoucheX, y, cartoucheW, cartoucheH, ink, plaque, gold);
+
     const meta = yearSpan(person);
     const place = (person.birthPlace || "").trim();
     const hasMeta = Boolean(meta || place);
-    const nameMaxLines = hasMeta ? 2 : 3;
+    const nameMaxLines = cartoucheH < 16 ? 1 : hasMeta ? 2 : 3;
+    const prefer = cartoucheH >= 20 ? 11 : cartoucheH >= 16 ? 9.5 : 8;
     const { lines: nameLines, fontSize } = wrapName(
       doc,
       person.name || "—",
       nameMaxW,
       nameMaxLines,
-      12,
-      7.5
+      prefer,
+      6.2
     );
+
+    setPdfFont(doc, "bold");
+    doc.setTextColor(...ink);
     doc.setFontSize(fontSize);
-    const lineH = fontSize * 0.42 + 0.45;
-    const blockH = nameLines.length * lineH + (hasMeta ? 3.6 : 0);
-    let ty = cy - blockH / 2 + lineH * 0.75;
+    const lineH = fontSize * 0.42 + 0.35;
+    const metaH = hasMeta ? 3.2 : 0;
+    const blockH = nameLines.length * lineH + metaH;
+    let ty = cy - blockH / 2 + lineH * 0.72;
+
     for (const nl of nameLines) {
-      doc.text(nl, nameX, ty);
+      doc.text(nl, cartoucheX + cartoucheW / 2, ty, { align: "center" });
       ty += lineH;
     }
 
     if (hasMeta) {
       setPdfFont(doc, "normal");
-      doc.setFontSize(6.8);
+      doc.setFontSize(Math.min(6.4, fontSize * 0.72));
       doc.setTextColor(...mute);
-      const bits = [meta, place].filter(Boolean).join("  ·  ");
-      doc.text(fitText(doc, bits, nameMaxW, 6.8), nameX, ty + 1.2);
+      const bits = [meta, place].filter(Boolean).join(" · ");
+      doc.text(
+        fitText(doc, bits, nameMaxW, Math.min(6.4, fontSize * 0.72)),
+        cartoucheX + cartoucheW / 2,
+        ty + 1.1,
+        { align: "center" }
+      );
     }
   }
 
   setPdfFont(doc, "bold");
-  drawBrandMark(doc, pageW, pageH, t.exportedWith, [150, 115, 70]);
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [140, 105, 60]);
 
   const safe = safeFilename(opts.meta.title || "jeti-ata", "jeti-ata");
   doc.save(`sejire-jeti-ata-${safe}.pdf`);
