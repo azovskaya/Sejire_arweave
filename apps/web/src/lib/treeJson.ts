@@ -80,7 +80,7 @@ function normalizeSnapshot(raw: unknown): Snapshot | null {
   return { persons };
 }
 
-function normalizeMeta(raw: unknown, fallbackDraft: Snapshot): TreeMeta | null {
+function normalizeMeta(raw: unknown): TreeMeta | null {
   if (!isRecord(raw)) return null;
   if (typeof raw.id !== "string" || typeof raw.title !== "string") return null;
   return {
@@ -168,7 +168,7 @@ export function parseTreeJson(text: string): ParseTreeJsonResult {
   if (!isRecord(storeRaw)) return { ok: false, error: "В файле нет данных древа (store)" };
   const draft = normalizeSnapshot(storeRaw.draft);
   if (!draft) return { ok: false, error: "В файле нет черновика (draft.persons)" };
-  const meta = normalizeMeta(storeRaw.meta, draft);
+  const meta = normalizeMeta(storeRaw.meta);
   if (!meta) return { ok: false, error: "В файле нет корректного meta" };
 
   const commits = isRecord(storeRaw.commits) ? storeRaw.commits : {};
