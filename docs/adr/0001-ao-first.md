@@ -23,3 +23,7 @@ Optional centralized services (analytics, support UI hosting) MUST NOT be requir
 + Lower ops cost  
 − UX depends on wallets/gateways  
 − Debugging distributed actors is harder  
+
+## Amendment (2026-07-27)
+
+[ADR-0006](./0006-sponsored-fiat-publish.md) allows a **thin sponsor edge** (Stripe + Turbo) that pays for uploads. It must never receive BIP-39 seeds or plaintext trees. Tree truth remains on Arweave/AO; the edge is payment rails only.
