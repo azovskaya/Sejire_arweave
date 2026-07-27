@@ -3,6 +3,7 @@ import type { Person, TreeMeta } from "../types";
 import type { Snapshot } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { ancestorGenerations, yearSpan } from "./lineage";
+import { ensurePdfFont, setPdfFont } from "./font";
 
 async function loadJsPdf() {
   const mod = await import("jspdf");
@@ -35,11 +36,11 @@ function drawPersonCard(
   doc.rect(x, y, 1.8, h, "F");
 
   doc.setTextColor(34, 35, 38);
-  doc.setFont("helvetica", "bold");
+  setPdfFont(doc, "bold");
   const name = fitText(doc, p.name || "Без имени", w - 6, 9);
   doc.text(name, x + 4, y + 6);
 
-  doc.setFont("helvetica", "normal");
+  setPdfFont(doc, "normal");
   doc.setTextColor(90, 92, 98);
   const life = yearSpan(p);
   if (life) {
@@ -68,19 +69,20 @@ export async function downloadClassicTreePdf(opts: {
 
   const JsPDF = await loadJsPdf();
   const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  await ensurePdfFont(doc);
+
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 12;
 
-  // parchment-light background
   doc.setFillColor(252, 250, 245);
   doc.rect(0, 0, pageW, pageH, "F");
 
   doc.setTextColor(34, 35, 38);
-  doc.setFont("helvetica", "bold");
+  setPdfFont(doc, "bold");
   doc.setFontSize(16);
   doc.text(t.classicTitle, margin, 14);
-  doc.setFont("helvetica", "normal");
+  setPdfFont(doc, "normal");
   doc.setFontSize(9);
   doc.setTextColor(100, 102, 108);
   doc.text(`${opts.meta.title} · ${t.classicSubtitle}`, margin, 20);
@@ -97,10 +99,8 @@ export async function downloadClassicTreePdf(opts: {
   type Pos = { id: string; x: number; y: number; cx: number; cy: number };
   const positions = new Map<string, Pos>();
 
-  // Layout from top (oldest gen) to bottom (focus): gens[last] at top
   for (let gi = 0; gi < genCount; gi += 1) {
     const people = gens[gi];
-    // visual row from top: oldest first
     const visualRow = genCount - 1 - gi;
     const y = topY + visualRow * rowGap;
     const totalW = people.length * cardW + Math.max(0, people.length - 1) * 6;
@@ -112,7 +112,6 @@ export async function downloadClassicTreePdf(opts: {
     }
   }
 
-  // Edges: child (lower gen index) to parents (higher gen index) — draw upward
   doc.setDrawColor(160, 140, 110);
   doc.setLineWidth(0.35);
   for (let gi = 0; gi < genCount - 1; gi += 1) {
@@ -147,6 +146,7 @@ export async function downloadClassicTreePdf(opts: {
     }
   }
 
+  setPdfFont(doc, "normal");
   doc.setFontSize(7);
   doc.setTextColor(140, 140, 145);
   doc.text(`${t.exportedWith} · ${new Date().toLocaleDateString("ru-RU")}`, margin, pageH - 5);
