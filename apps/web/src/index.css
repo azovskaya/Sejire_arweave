@@ -369,7 +369,7 @@ a {
 .pedigree-chrome {
   position: absolute;
   inset: 0.75rem 0.75rem auto;
-  z-index: 5;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;

@@ -81,7 +81,11 @@ export function PedigreeView({
   }
 
   function onPointerDown(e: ReactPointerEvent) {
-    if ((e.target as HTMLElement).closest("[data-card]")) return;
+    const target = e.target as HTMLElement;
+    // Don't start canvas pan when using chrome controls / cards / form controls
+    if (target.closest("[data-card], .pedigree-chrome, .pedigree-hint, button, a, input, textarea, select")) {
+      return;
+    }
     drag.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
@@ -122,7 +126,11 @@ export function PedigreeView({
         drag.current = null;
       }}
     >
-      <div className="pedigree-chrome">
+      <div
+        className="pedigree-chrome"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="focus-chip" title="Схема строится от этого человека влево направо — к предкам">
           <span className="focus-chip-label">Схема от</span>
           <strong className="clamp-1">{focusPerson?.name || "—"}</strong>
@@ -130,28 +138,53 @@ export function PedigreeView({
             <button
               type="button"
               className="chip-action chip-action-primary"
-              onClick={() => onSetFocus(homeFocusId)}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSetFocus(homeFocusId);
+              }}
               title="Показать схему снова от вас: вы → родители → деды"
             >
               Вернуть ко мне
             </button>
           ) : null}
           {selectedId && selectedId !== focusId ? (
-            <button type="button" className="chip-action" onClick={() => onSetFocus(selectedId)}>
+            <button
+              type="button"
+              className="chip-action"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSetFocus(selectedId);
+              }}
+            >
               От выбранного
             </button>
           ) : null}
         </div>
         <div className="pedigree-toolbar" aria-label="Масштаб">
-          <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}>
+          <button
+            type="button"
+            className="tool-btn"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}
+          >
             +
           </button>
-          <button type="button" className="tool-btn" onClick={() => setScale((s) => Math.max(0.55, s - 0.1))}>
+          <button
+            type="button"
+            className="tool-btn"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setScale((s) => Math.max(0.55, s - 0.1))}
+          >
             −
           </button>
           <button
             type="button"
             className="tool-btn wide"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => {
               setScale(1);
               setPan({ x: 28, y: 28 });
