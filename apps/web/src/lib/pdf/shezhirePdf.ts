@@ -1,6 +1,6 @@
 import type { Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
-import { maleLineUp, yearSpan } from "./lineage";
+import { maleLineUp, lifeDatesLine } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import { drawBrandMark, fitText, safeFilename, wrapName } from "./poster";
 import {
@@ -138,10 +138,9 @@ export async function downloadShezhirePdf(opts: {
 
     drawNameCartouche(doc, cartoucheX, y, cartoucheW, cartoucheH, ink, plaque, gold);
 
-    const meta = yearSpan(person);
-    const place = (person.birthPlace || "").trim();
-    const hasMeta = Boolean(meta || place);
-    const nameMaxLines = cartoucheH < 16 ? 1 : hasMeta ? 2 : 3;
+    const life = lifeDatesLine(person, false);
+    const hasMeta = Boolean(life);
+    const nameMaxLines = cartoucheH < 16 ? (hasMeta ? 1 : 2) : hasMeta ? 2 : 3;
     const prefer = cartoucheH >= 20 ? 11 : cartoucheH >= 16 ? 9.5 : 8;
     const { lines: nameLines, fontSize } = wrapName(
       doc,
@@ -156,7 +155,8 @@ export async function downloadShezhirePdf(opts: {
     doc.setTextColor(...ink);
     doc.setFontSize(fontSize);
     const lineH = fontSize * 0.42 + 0.35;
-    const metaH = hasMeta ? 3.2 : 0;
+    const metaSize = Math.min(6.6, fontSize * 0.78);
+    const metaH = hasMeta ? metaSize + 1.6 : 0;
     const blockH = nameLines.length * lineH + metaH;
     let ty = cy - blockH / 2 + lineH * 0.72;
 
@@ -165,17 +165,13 @@ export async function downloadShezhirePdf(opts: {
       ty += lineH;
     }
 
-    if (hasMeta) {
+    if (life) {
       setPdfFont(doc, "normal");
-      doc.setFontSize(Math.min(6.4, fontSize * 0.72));
+      doc.setFontSize(metaSize);
       doc.setTextColor(...mute);
-      const bits = [meta, place].filter(Boolean).join(" · ");
-      doc.text(
-        fitText(doc, bits, nameMaxW, Math.min(6.4, fontSize * 0.72)),
-        cartoucheX + cartoucheW / 2,
-        ty + 1.1,
-        { align: "center" }
-      );
+      doc.text(fitText(doc, life, nameMaxW, metaSize), cartoucheX + cartoucheW / 2, ty + 1.2, {
+        align: "center",
+      });
     }
   }
 

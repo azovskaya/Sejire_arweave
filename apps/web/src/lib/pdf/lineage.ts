@@ -1,6 +1,6 @@
 import type { Person, Snapshot } from "../types";
 import { splitParents } from "../pedigree";
-import { yearFromDate } from "../dates";
+import { formatPersonDate, yearFromDate } from "../dates";
 
 /** Youngest-first male line: [self, father, grandfather, …]. */
 export function maleLineUp(snapshot: Snapshot, startId: string): Person[] {
@@ -102,5 +102,16 @@ export function yearSpan(p: Person): string {
   if (by && dy) return `${by}–${dy}`;
   if (by) return `род. ${by}`;
   if (dy) return `ум. ${dy}`;
+  return "";
+}
+
+/** Birth/death line for PDF — full dates when known, years otherwise. */
+export function lifeDatesLine(p: Person, compact = false): string {
+  if (compact) return yearSpan(p);
+  const b = formatPersonDate(p.born);
+  const d = formatPersonDate(p.died);
+  if (b && d) return `${b} — ${d}`;
+  if (b) return `род. ${b}`;
+  if (d) return `ум. ${d}`;
   return "";
 }

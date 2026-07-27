@@ -61,8 +61,24 @@ export function yearFromDate(value?: string | null): string | null {
     const y = n.slice(0, 4);
     return /^\d{4}$/.test(y) ? y : null;
   }
-  const dot = value.trim().match(/(\d{4})$/);
-  return dot ? dot[1] : null;
+  const dig = value.trim().match(/(\d{4})/);
+  return dig ? dig[1] : null;
+}
+
+/** Human date for PDF: 15.03.1990, 03.1990, or 1990 */
+export function formatPersonDate(value?: string | null): string | null {
+  if (!value?.trim()) return null;
+  const n = normalizeDateInput(value.trim());
+  if (/^\d{4}-\d{2}-\d{2}$/.test(n)) {
+    const [y, m, d] = n.split("-");
+    return `${d}.${m}.${y}`;
+  }
+  if (/^\d{4}-\d{2}$/.test(n)) {
+    const [y, m] = n.split("-");
+    return `${m}.${y}`;
+  }
+  if (/^\d{4}$/.test(n)) return n;
+  return yearFromDate(value);
 }
 
 export function isLooseDateTyping(value: string) {
