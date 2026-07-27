@@ -1,22 +1,13 @@
 import type { jsPDF } from "jspdf";
-import type { Person, TreeMeta } from "../types";
-import type { Snapshot } from "../types";
+import type { Person, Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { ancestorGenerations, yearSpan } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
+import { drawCornerOrnaments, drawPosterFrame, drawTitleRule, fitText, safeFilename } from "./poster";
 
 async function loadJsPdf() {
   const mod = await import("jspdf");
   return mod.jsPDF;
-}
-
-function fitText(doc: jsPDF, text: string, maxWidth: number, fontSize: number) {
-  doc.setFontSize(fontSize);
-  let t = text;
-  while (t.length > 1 && doc.getTextWidth(t) > maxWidth) {
-    t = `${t.slice(0, -2)}…`;
-  }
-  return t;
 }
 
 function drawPersonCard(
@@ -28,34 +19,37 @@ function drawPersonCard(
   h: number,
   accent: [number, number, number]
 ) {
-  doc.setDrawColor(60, 62, 68);
-  doc.setFillColor(255, 255, 255);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
+  doc.setDrawColor(120, 110, 95);
+  doc.setFillColor(255, 253, 248);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, 1.2, 1.2, "FD");
   doc.setFillColor(...accent);
-  doc.rect(x, y, 1.8, h, "F");
+  doc.rect(x, y, 1.5, h, "F");
 
+  const pad = 3.2;
   doc.setTextColor(34, 35, 38);
   setPdfFont(doc, "bold");
-  const name = fitText(doc, p.name || "Без имени", w - 6, 9);
-  doc.text(name, x + 4, y + 6);
+  const name = fitText(doc, p.name || "—", w - pad * 2 - 1, 8.2);
+  doc.text(name, x + pad + 1, y + 6.2);
 
   setPdfFont(doc, "normal");
-  doc.setTextColor(90, 92, 98);
+  doc.setTextColor(95, 90, 82);
   const life = yearSpan(p);
-  if (life) {
-    doc.setFontSize(7.5);
-    doc.text(fitText(doc, life, w - 6, 7.5), x + 4, y + 11);
-  }
   const place = (p.birthPlace || "").trim();
-  if (place) {
-    doc.setFontSize(7);
-    doc.text(fitText(doc, place, w - 6, 7), x + 4, y + 15.5);
+  let metaY = y + 11.2;
+  if (life) {
+    doc.setFontSize(6.8);
+    doc.text(fitText(doc, life, w - pad * 2 - 1, 6.8), x + pad + 1, metaY);
+    metaY += 4;
+  }
+  if (place && metaY < y + h - 2) {
+    doc.setFontSize(6.4);
+    doc.text(fitText(doc, place, w - pad * 2 - 1, 6.4), x + pad + 1, metaY);
   }
 }
 
 /**
- * Classic family PDF: focus at the bottom, ancestors upward (roots down).
+ * Wall-ready classic family poster: quiet header, roots-down layout.
  */
 export async function downloadClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -73,47 +67,48 @@ export async function downloadClassicTreePdf(opts: {
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 12;
+  const ink: [number, number, number] = [95, 70, 40];
 
-  doc.setFillColor(252, 250, 245);
+  doc.setFillColor(250, 246, 238);
   doc.rect(0, 0, pageW, pageH, "F");
+  drawPosterFrame(doc, pageW, pageH, ink);
+  drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
 
-  doc.setTextColor(34, 35, 38);
+  // Quiet centered title only — no layout instructions, no "От:"
+  const title = (opts.meta.title || t.classicTitle).trim() || t.classicTitle;
   setPdfFont(doc, "bold");
-  doc.setFontSize(16);
-  doc.text(t.classicTitle, margin, 14);
-  setPdfFont(doc, "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(100, 102, 108);
-  doc.text(`${opts.meta.title} · ${t.classicSubtitle}`, margin, 20);
-  doc.text(`${t.focusLabel}: ${gens[0][0]?.name ?? ""}`, margin, 25);
+  doc.setTextColor(...ink);
+  doc.setFontSize(15);
+  doc.text(title, pageW / 2, 16.5, { align: "center" });
+  drawTitleRule(doc, pageW, 20.5, [175, 140, 90]);
 
-  const cardW = 42;
-  const cardH = 20;
-  const topY = 32;
-  const bottomY = pageH - 14;
-  const usableH = bottomY - topY;
+  const marginX = 14;
+  const cardW = 40;
+  const cardH = 18;
+  const topY = 27;
+  const bottomY = pageH - 12;
+  const usableH = bottomY - topY - cardH;
   const genCount = gens.length;
   const rowGap = genCount > 1 ? usableH / (genCount - 1) : 0;
 
-  type Pos = { id: string; x: number; y: number; cx: number; cy: number };
+  type Pos = { id: string; x: number; y: number; cx: number };
   const positions = new Map<string, Pos>();
 
   for (let gi = 0; gi < genCount; gi += 1) {
     const people = gens[gi];
     const visualRow = genCount - 1 - gi;
     const y = topY + visualRow * rowGap;
-    const totalW = people.length * cardW + Math.max(0, people.length - 1) * 6;
-    let x0 = Math.max(margin, (pageW - totalW) / 2);
+    const gap = 5;
+    const totalW = people.length * cardW + Math.max(0, people.length - 1) * gap;
+    let x0 = Math.max(marginX, (pageW - totalW) / 2);
     for (const p of people) {
-      const x = x0;
-      positions.set(p.id, { id: p.id, x, y, cx: x + cardW / 2, cy: y + cardH / 2 });
-      x0 += cardW + 6;
+      positions.set(p.id, { id: p.id, x: x0, y, cx: x0 + cardW / 2 });
+      x0 += cardW + gap;
     }
   }
 
-  doc.setDrawColor(160, 140, 110);
-  doc.setLineWidth(0.35);
+  doc.setDrawColor(170, 150, 120);
+  doc.setLineWidth(0.28);
   for (let gi = 0; gi < genCount - 1; gi += 1) {
     for (const child of gens[gi]) {
       const childPos = positions.get(child.id);
@@ -141,16 +136,15 @@ export async function downloadClassicTreePdf(opts: {
       const pos = positions.get(p.id);
       if (!pos) continue;
       const accent: [number, number, number] =
-        p.sex === "F" ? [140, 90, 106] : p.sex === "M" ? [74, 109, 140] : [160, 160, 165];
+        p.sex === "F" ? [150, 105, 115] : p.sex === "M" ? [85, 115, 140] : [150, 145, 135];
       drawPersonCard(doc, p, pos.x, pos.y, cardW, cardH, accent);
     }
   }
 
   setPdfFont(doc, "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(140, 140, 145);
-  doc.text(`${t.exportedWith} · ${new Date().toLocaleDateString("ru-RU")}`, margin, pageH - 5);
+  doc.setFontSize(6);
+  doc.setTextColor(160, 145, 120);
+  doc.text(t.exportedWith, pageW - 12, pageH - 4.5, { align: "right" });
 
-  const safe = (opts.meta.title || "tree").replace(/[^\w\-а-яА-ЯёЁәіңғүұқөһӘІҢҒҮҰҚӨҺ ]+/g, "").trim() || "tree";
-  doc.save(`sejire-tree-${safe}.pdf`);
+  doc.save(`sejire-tree-${safeFilename(title, "tree")}.pdf`);
 }
