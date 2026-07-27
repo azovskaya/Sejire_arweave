@@ -35,7 +35,9 @@
 
 ## Phase 3.5 — Fiat sponsor + permaweb site (in progress)
 
-See [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
+**Полный пошаговый план (языки, логика, безопасность):** [`PERMAWEB_ROLLOUT.ru.md`](../PERMAWEB_ROLLOUT.ru.md).
+
+Также: [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
 
 - [ ] Stripe Checkout $3 → sponsor edge verifies payment
 - [ ] Turbo upload of **sealed** envelope (seed never on server)
