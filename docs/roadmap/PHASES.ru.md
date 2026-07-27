@@ -33,19 +33,32 @@
 - Permaweb deploy of UI
 - Kinship query handlers in AO
 
-## Phase 3.5 — Fiat sponsor + permaweb site (in progress)
+## Phase 3.4 — Product UX hardening ✅ (checkpoint v0.4)
 
-**Полный пошаговый план (языки, логика, безопасность):** [`PERMAWEB_ROLLOUT.ru.md`](../PERMAWEB_ROLLOUT.ru.md).  
-**Зафиксированные решения владельца (не переспрашивать):** [`LOCKED_DECISIONS.ru.md`](../LOCKED_DECISIONS.ru.md).
+Зафиксировано в [`CHECKPOINT.ru.md`](../CHECKPOINT.ru.md).
+
+- [x] Схема до 7 поколений; «К себе» после двойного клика
+- [x] Текстовые даты (без поломки года в `type=date`)
+- [x] Classic PDF: без пересечений линий; ФИО + даты
+- [x] Жеті ата PDF: орнаментальный шежіре
+- [x] Выгрузить / Загрузить JSON (полный бэкап)
+- [x] Investor deck Arweave-style + PDF
+- [x] LOCKED_DECISIONS + PERMAWEB_ROLLOUT
+
+## Phase 3.5 — Fiat sponsor + permaweb site (следующий блок)
+
+**Полный пошаговый план:** [`PERMAWEB_ROLLOUT.ru.md`](../PERMAWEB_ROLLOUT.ru.md).  
+**Решения владельца:** [`LOCKED_DECISIONS.ru.md`](../LOCKED_DECISIONS.ru.md).  
+**Старт отсюда:** [`CHECKPOINT.ru.md`](../CHECKPOINT.ru.md).
 
 Также: [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
 
-- [ ] Stripe Checkout $3 → sponsor edge verifies payment
-- [ ] Turbo upload of **sealed** envelope (seed never on server)
-- [ ] Wire PublishSeedModal to sponsor path (flag + fallback to self-fund)
-- [ ] Project treasury wallet + initial Turbo credits
-- [ ] Permaweb deploy of SPA + ArNS name
+- [ ] Купить ArNS `sejire` навсегда + казна (владелец)
+- [ ] Dual-base + permaweb deploy SPA → `sejire.ar.io`
+- [ ] Kaspi мерчант (ИП/ТОО) → тонкий кассир оплаты
+- [ ] Wire PublishSeedModal → sponsor Turbo upload (seed never on server)
 - [ ] Keep GitHub Pages as mirror
+- [ ] Stripe **не** используем (см. LOCKED_DECISIONS)
 
 ## Phase 4 — Ecosystem
 
