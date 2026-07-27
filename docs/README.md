@@ -11,6 +11,8 @@
 | [GLOSSARY.ru.md](./GLOSSARY.ru.md) | Термины |
 | [VERIFICATION.ru.md](./VERIFICATION.ru.md) | Сверка с экосистемой Arweave/AO (2026) |
 | [LIVE.md](./LIVE.md) | Публичные ссылки на работающее приложение |
+| [COMPETITIVE.ru.md](./COMPETITIVE.ru.md) | SEJIRE vs Ancestry/MyHeritage vs DeepFamily |
+| [SPONSOR_AND_PERMAWEB.ru.md](./SPONSOR_AND_PERMAWEB.ru.md) | Fiat $3 + Turbo + permaweb hosting |
 | [CHECKLIST.md](./CHECKLIST.md) | Синхронизация код ↔ docs |
 | [processes/](./processes/) | Логика каждого AO-процесса и хендлера |
 | [flows/](./flows/) | Пользовательские и системные сценарии |
