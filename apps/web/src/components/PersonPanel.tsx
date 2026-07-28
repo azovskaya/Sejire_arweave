@@ -7,11 +7,16 @@ import { DateTextInput } from "./DateTextInput";
 type Props = {
   person: Person | null;
   relatives: { id: string; name: string; relation: string }[];
+  /** Explicit open — on mobile opens bottom sheet; on desktop keeps side panel. */
+  open?: boolean;
   onClose: () => void;
   onChange: (person: Person) => void;
   onAdd: (role: "father" | "mother" | "child") => void;
   onSelectRelative: (id: string) => void;
   onDelete: () => void;
+  /** Mobile has no reliable double-tap — offer “view ancestors from here”. */
+  onFocusAncestors?: () => void;
+  showFocusAncestors?: boolean;
 };
 
 function emptyPerson(): Person {
@@ -73,15 +78,19 @@ function sameProfile(a: Person, b: Person) {
 export function PersonPanel({
   person,
   relatives,
+  open = false,
   onClose,
   onChange,
   onAdd,
   onSelectRelative,
   onDelete,
+  onFocusAncestors,
+  showFocusAncestors = false,
 }: Props) {
   const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const ready = useRef(false);
+  const sheetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setDraft(person ?? emptyPerson());
@@ -102,10 +111,17 @@ export function PersonPanel({
     return () => window.clearTimeout(timer);
   }, [draft, person, onChange]);
 
+  useEffect(() => {
+    if (!person) return;
+    const el = sheetRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+  }, [person]);
+
   if (!person) {
     return (
-      <aside className="person-panel is-empty">
-        <p>Выберите карточку на схеме или добавьте себя, чтобы заполнить сведения.</p>
+      <aside className="person-panel is-empty" aria-hidden="true">
+        <p>Нажмите карточку на схеме, чтобы открыть форму сведений.</p>
       </aside>
     );
   }
@@ -114,8 +130,17 @@ export function PersonPanel({
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
+  const panelClass = open ? "person-panel is-open" : "person-panel is-docked";
+
   return (
-    <aside className="person-panel">
+    <aside
+      ref={sheetRef}
+      className={panelClass}
+      role="dialog"
+      aria-modal={open ? "true" : undefined}
+      aria-label={`Профиль: ${draft.name || "без имени"}`}
+    >
+      <div className="person-sheet-handle" aria-hidden />
       <header className="person-panel-head">
         <div className="person-panel-head-text">
           <p className="eyebrow">Профиль · сохраняется сам</p>
@@ -126,6 +151,14 @@ export function PersonPanel({
           ×
         </button>
       </header>
+
+      {showFocusAncestors && onFocusAncestors ? (
+        <div className="panel-section person-panel-focus-actions">
+          <button type="button" className="btn ghost" onClick={onFocusAncestors}>
+            Смотреть предков отсюда
+          </button>
+        </div>
+      ) : null}
 
       <div className="person-panel-form">
         <section className="field-block">

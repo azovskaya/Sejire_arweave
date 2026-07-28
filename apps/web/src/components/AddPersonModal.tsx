@@ -57,7 +57,7 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
       <form className="modal add-modal" onSubmit={submit}>
         <h2>{title}</h2>
         <p className="sub">
-          Заполните известные факты. Позже всё можно уточнить в панели профиля справа.
+          Заполните известные факты. Позже всё можно уточнить, нажав карточку на схеме.
         </p>
 
         <label>

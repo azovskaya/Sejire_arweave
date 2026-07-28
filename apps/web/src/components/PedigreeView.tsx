@@ -35,7 +35,7 @@ function cardTooltip(person: {
   return [
     person.name,
     "Клик — открыть профиль",
-    "Двойной клик — смотреть предков отсюда",
+    "Двойной клик / кнопка в профиле — смотреть предков отсюда",
     person.maidenName ? `девичья: ${person.maidenName}` : "",
     person.born ? `рождение: ${person.born}` : "",
     person.birthPlace || person.place?.label
@@ -105,8 +105,8 @@ export function PedigreeView({
           <p className="eyebrow">SEJIRE</p>
           <h2>Начните с себя</h2>
           <p>
-            Добавьте себя на схему, затем маму и папу карточками «+». Полные сведения — в панели
-            справа.
+            Добавьте себя на схему, затем маму и папу карточками «+». Чтобы заполнить сведения —
+            нажмите карточку.
           </p>
           <button className="btn" type="button" onClick={onEmptyStart}>
             Добавить себя
@@ -195,8 +195,8 @@ export function PedigreeView({
         </div>
       </div>
       <p className="pedigree-hint">
-        Клик — профиль · двойной клик — смотреть только предков от этого человека (чтобы вернуться —
-        «Вернуть ко мне»)
+        Нажмите карточку — профиль. На компьютере двойной клик (на телефоне кнопка в профиле) —
+        смотреть предков от этого человека
       </p>
 
       <div

@@ -330,12 +330,13 @@ a {
   display: grid;
   grid-template-columns: 1fr min(380px, 40vw);
   min-height: 0;
+  position: relative;
 }
 
 @media (max-width: 900px) {
   .workspace-main {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(52vh, 1fr) minmax(40vh, auto);
+    grid-template-rows: 1fr;
   }
 }
 
@@ -482,6 +483,8 @@ a {
   border-radius: 3px;
   overflow: hidden;
   text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255, 103, 0, 0.18);
 }
 
 .person-card .card-inner {
@@ -650,6 +653,22 @@ a {
   padding: 1rem 1rem 1.5rem;
   overflow: auto;
   min-width: 0;
+}
+
+.person-sheet-handle {
+  display: none;
+}
+
+.person-sheet-backdrop {
+  display: none;
+}
+
+.person-panel-focus-actions {
+  margin-top: -0.35rem;
+}
+
+.person-panel-focus-actions .btn {
+  width: 100%;
 }
 
 .person-panel.is-empty {
@@ -987,11 +1006,131 @@ a {
   }
 
   .app-topbar {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .top-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.15rem;
+    max-width: 100%;
+  }
+
+  .top-actions .btn,
+  .top-actions .chip {
+    flex: 0 0 auto;
+  }
+
+  .tree-title {
+    max-width: calc(100vw - 3rem);
   }
 
   .row-2 {
     grid-template-columns: 1fr;
+  }
+
+  .modal-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: min(92vh, 900px);
+    border-radius: 12px 12px 0 0;
+    padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: auto;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    width: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .person-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(34, 35, 38, 0.45);
+    cursor: pointer;
+  }
+
+  .person-panel.is-empty,
+  .person-panel.is-docked {
+    display: none;
+  }
+
+  .person-panel.is-open {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 46;
+    width: 100%;
+    max-height: min(92vh, 920px);
+    border-left: none;
+    border-top: 1px solid var(--line);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -12px 40px rgba(34, 35, 38, 0.18);
+    padding: 0.45rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    animation: sejire-sheet-up 0.22s ease-out;
+  }
+
+  .person-sheet-handle {
+    display: block;
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(34, 35, 38, 0.22);
+    margin: 0.2rem auto 0.65rem;
+  }
+
+  .pedigree-viewport,
+  .pedigree-empty {
+    min-height: calc(100dvh - 7.5rem);
+    height: 100%;
+  }
+
+  .pedigree-hint {
+    max-width: calc(100% - 1.2rem);
+    font-size: 0.68rem;
+  }
+
+  .person-panel input,
+  .person-panel select,
+  .person-panel textarea,
+  .add-modal input,
+  .add-modal select,
+  .add-modal textarea,
+  .modal input,
+  .modal select,
+  .modal textarea {
+    font-size: 16px; /* avoid iOS zoom on focus */
+  }
+}
+
+@keyframes sejire-sheet-up {
+  from {
+    transform: translateY(12%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

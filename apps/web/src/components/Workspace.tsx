@@ -43,6 +43,7 @@ type ToastState = {
 export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }: Props) {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [pending, setPending] = useState<PendingAdd | null>(null);
   const [showPublish, setShowPublish] = useState(false);
   const [publishStore, setPublishStore] = useState<TreeStore | null>(null);
@@ -70,6 +71,17 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     };
   }, []);
 
+  useEffect(() => {
+    if (!selectedId || !profileOpen) return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    if (!mq.matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [selectedId, profileOpen]);
+
   const people = activePersons(store.draft);
   const selected = selectedId ? store.draft.persons[selectedId] ?? null : null;
   const homeFocusId = pickHomeFocus(store.draft, guide.selfId);
@@ -96,6 +108,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     setToast({ message, undo });
     toastTimer.current = window.setTimeout(() => setToast(null), undo ? 7000 : 3200);
+  }
+
+  function openProfile(id: string) {
+    setSelectedId(id);
+    setProfileOpen(true);
+    if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
+      setFocusId(homeFocusId);
+      flash("Схема снова от вас");
+    }
+  }
+
+  function closeProfile() {
+    setProfileOpen(false);
   }
 
   const onPersonChange = useCallback(
@@ -134,6 +159,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       nextGuide = { ...guide, selfId: id, step: "mother" };
       setFocusId(id);
       setSelectedId(id);
+      setProfileOpen(true);
       flash("Добавьте маму или папу карточками «+» на схеме");
     } else if (pending.type === "parent") {
       person.sex = pending.role === "father" ? "M" : "F";
@@ -150,11 +176,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       if (pending.role === "mother") nextGuide.motherId = id;
       if (pending.role === "father") nextGuide.fatherId = id;
       setSelectedId(id);
+      setProfileOpen(false);
       flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
     } else if (pending.type === "child") {
       person.parents = [pending.parentId];
       next = setDraftPerson(store, person);
       setSelectedId(id);
+      setProfileOpen(false);
       flash("Ребёнок добавлен");
     }
 
@@ -180,6 +208,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   function setFocus(id: string) {
     setFocusId(id);
     setSelectedId(id);
+    setProfileOpen(false);
     const name = store.draft.persons[id]?.name;
     flash(name ? `Смотрим предков от «${name}»` : "Схема перестроена");
   }
@@ -353,14 +382,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           focusId={focusId}
           homeFocusId={homeFocusId}
           selectedId={selectedId}
-          onSelect={(id) => {
-            setSelectedId(id);
-            // Clicking yourself in the panel restores the pedigree rooted on you
-            if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
-              setFocusId(homeFocusId);
-              flash("Схема снова от вас");
-            }
-          }}
+          onSelect={openProfile}
           onSetFocus={setFocus}
           onEmptyStart={() => setPending({ type: "self" })}
           onAddRelative={(slot: AddMeSlot) =>
@@ -368,18 +390,30 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           }
         />
 
+        {selected && profileOpen ? (
+          <button
+            type="button"
+            className="person-sheet-backdrop"
+            aria-label="Закрыть профиль"
+            onClick={closeProfile}
+          />
+        ) : null}
+
         <PersonPanel
           person={selected}
           relatives={relatives}
-          onClose={() => setSelectedId(null)}
-          onChange={onPersonChange}
-          onSelectRelative={(id) => {
-            setSelectedId(id);
-            if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
-              setFocusId(homeFocusId);
-              flash("Схема снова от вас");
-            }
+          open={profileOpen}
+          onClose={() => {
+            closeProfile();
+            setSelectedId(null);
           }}
+          onChange={onPersonChange}
+          showFocusAncestors={Boolean(selected && focusId && selected.id !== focusId)}
+          onFocusAncestors={() => {
+            if (!selected) return;
+            setFocus(selected.id);
+          }}
+          onSelectRelative={(id) => openProfile(id)}
           onDelete={() => {
             if (!selected) return;
             const removedId = selected.id;
@@ -388,6 +422,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
             const afterRemove = removeDraftPerson(store, removedId);
             persist(afterRemove);
             setSelectedId(null);
+            setProfileOpen(false);
             if (wasFocus) {
               setFocusId(pickDefaultFocus(afterRemove.draft, homeFocusId));
             }
@@ -395,6 +430,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               const restored = restoreDraftPerson(afterRemove, removedId);
               persist(restored);
               setSelectedId(removedId);
+              setProfileOpen(true);
               if (wasFocus) setFocusId(removedId);
               flash("Человек возвращён на древо");
             });

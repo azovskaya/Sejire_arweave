@@ -19,7 +19,7 @@
 | Приложение (зеркало Pages) | https://azovskaya.github.io/Sejire_arweave/ |
 | Investor deck (HTML) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
 | Investor deck (PDF) | https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf |
-| Канон (цель) | `https://sejire.ar.io` — **ещё не куплено / не привязано** |
+| Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; сайт ещё не привязан |
 
 Деплой зеркала: из корня `npm run deploy:pages` (сохраняет `presentation/`).
 
@@ -34,6 +34,7 @@
 - Двойной клик = смотреть от предка; **«К себе» / «Вернуть ко мне»** возвращает фокус
 - Гибкие даты текстом (`1990` или `15.03.1990`) — не `type=date`
 - Панель профиля: ФИО, пол, даты, места, захоронение, занятие, заметки
+- **Мобильный:** тап по карточке открывает профиль снизу (sheet), не «панель под схемой»
 
 ### Экспорт
 - **Древо в PDF** — landscape, слоты без пересечения линий, ФИО + даты рождения/смерти
@@ -72,7 +73,7 @@
 
 Порядок из [`PERMAWEB_ROLLOUT.ru.md`](./PERMAWEB_ROLLOUT.ru.md) §5 + решения владельца:
 
-1. **Владелец:** купить ArNS `sejire` **навсегда** — инструкция [`BUY_SEJIRE.ru.md`](./BUY_SEJIRE.ru.md) (ArConnect + лучше карта на arns.ar.io; AR с Binance → казна).
+1. **Владелец:** ~~купить ArNS `sejire`~~ **сделано** (Phantom + ARIO). Дальше — деплой SPA и Configure Domain.
 2. **Код:** dual-base Vite (`/` для ArNS, `/Sejire_arweave/` для Pages) + CI permaweb-deploy.
 3. **Привязать** `sejire.ar.io` → TX манифеста; Pages оставить зеркалом.
 4. **Kaspi:** после ИП/ТОО + мерчант — тонкий кассир (оплата → Turbo upload ciphertext). До этого не блокировать бесплатный слой.
@@ -85,8 +86,8 @@
 
 ## 5. Открытые хвосты у владельца (единственное, что можно спросить)
 
-1. Имя `sejire` уже куплено навсегда? (да/нет)
-2. Казна (отдельный кошелёк проекта) готова? (да/нет — **не** присылать ключ в чат)
+1. Имя `sejire` уже куплено навсегда? (**да**)
+2. Казна (ArConnect с AR) готова к деплою сайта? (да/нет — **не** присылать ключ в чат)
 3. Есть / будет ИП или ТОО под Kaspi для бизнеса?
 
 Всё остальное из LOCKED_DECISIONS — закрыто.
