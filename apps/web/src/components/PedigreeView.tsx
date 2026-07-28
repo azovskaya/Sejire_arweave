@@ -98,6 +98,24 @@ export function PedigreeView({
     });
   }
 
+  function endPan() {
+    drag.current = null;
+  }
+
+  function isCoarsePointer() {
+    return window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(hover: none)").matches;
+  }
+
+  function onCardActivate(id: string) {
+    onSelect(id);
+  }
+
+  function onCardFocusAncestors(id: string) {
+    // Double-tap on phones often fires dblclick and closes the fresh sheet — skip on touch.
+    if (isCoarsePointer()) return;
+    onSetFocus(id);
+  }
+
   if (empty) {
     return (
       <div className="pedigree-empty">
@@ -122,9 +140,9 @@ export function PedigreeView({
       onWheel={onWheel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
+      onPointerUp={endPan}
+      onPointerCancel={endPan}
+      onLostPointerCapture={endPan}
     >
       <div
         className="pedigree-chrome"
@@ -195,8 +213,8 @@ export function PedigreeView({
         </div>
       </div>
       <p className="pedigree-hint">
-        Нажмите карточку — профиль. На компьютере двойной клик (на телефоне кнопка в профиле) —
-        смотреть предков от этого человека
+        Нажмите карточку — профиль. Предки от человека: на телефоне кнопка в профиле, на компьютере —
+        двойной клик
       </p>
 
       <div
@@ -256,8 +274,8 @@ export function PedigreeView({
                 item.id === focusId ? "is-focus" : ""
               }`}
               style={{ left: item.x, top: item.y, width: PEDIGREE_CARD.w, height: PEDIGREE_CARD.h }}
-              onClick={() => onSelect(item.id)}
-              onDoubleClick={() => onSetFocus(item.id)}
+              onClick={() => onCardActivate(item.id)}
+              onDoubleClick={() => onCardFocusAncestors(item.id)}
             >
               <span className="card-inner">
                 <span className="card-title">{item.person.name}</span>

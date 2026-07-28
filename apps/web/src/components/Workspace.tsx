@@ -121,7 +121,28 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   function closeProfile() {
     setProfileOpen(false);
+    setSelectedId(null);
   }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (showPublish) {
+        setShowPublish(false);
+        setPublishStore(null);
+        return;
+      }
+      if (pending) {
+        setPending(null);
+        return;
+      }
+      if (profileOpen) {
+        closeProfile();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showPublish, pending, profileOpen]);
 
   const onPersonChange = useCallback(
     (person: Person) => {
@@ -176,13 +197,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       if (pending.role === "mother") nextGuide.motherId = id;
       if (pending.role === "father") nextGuide.fatherId = id;
       setSelectedId(id);
-      setProfileOpen(false);
+      setProfileOpen(true);
       flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
     } else if (pending.type === "child") {
       person.parents = [pending.parentId];
       next = setDraftPerson(store, person);
       setSelectedId(id);
-      setProfileOpen(false);
+      setProfileOpen(true);
       flash("Ребёнок добавлен");
     }
 
@@ -312,32 +333,43 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               К себе
             </button>
           ) : null}
-          {people.length >= 1 && (
-            <>
-              <button type="button" className="btn ghost" onClick={() => void exportClassicPdf()}>
-                Древо в PDF
-              </button>
-              <button type="button" className="btn ghost" onClick={() => void exportShezhirePdf()}>
-                Жеті ата PDF
-              </button>
-            </>
-          )}
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={exportJson}
-            title="Скачать все данные древа в JSON"
-          >
-            Выгрузить JSON
+          <button type="button" className="btn" onClick={openPublish}>
+            В Arweave
           </button>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => jsonInputRef.current?.click()}
-            title="Загрузить древо из JSON-файла"
-          >
-            Загрузить JSON
-          </button>
+          <details className="top-more">
+            <summary className="btn ghost">Ещё</summary>
+            <div className="top-more-menu" role="menu">
+              {people.length >= 1 && (
+                <>
+                  <button type="button" className="btn ghost" onClick={() => void exportClassicPdf()}>
+                    Древо в PDF
+                  </button>
+                  <button type="button" className="btn ghost" onClick={() => void exportShezhirePdf()}>
+                    Жеті ата PDF
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={exportJson}
+                title="Скачать все данные древа в JSON"
+              >
+                Выгрузить JSON
+              </button>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => jsonInputRef.current?.click()}
+                title="Загрузить древо из JSON-файла"
+              >
+                Загрузить JSON
+              </button>
+              <button type="button" className="btn ghost" onClick={onHome}>
+                На главную
+              </button>
+            </div>
+          </details>
           <input
             ref={jsonInputRef}
             type="file"
@@ -349,12 +381,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               e.target.value = "";
             }}
           />
-          <button type="button" className="btn" onClick={openPublish}>
-            В Arweave
-          </button>
-          <button type="button" className="btn ghost" onClick={onHome}>
-            На главную
-          </button>
         </nav>
       </header>
 
@@ -403,10 +429,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           person={selected}
           relatives={relatives}
           open={profileOpen}
-          onClose={() => {
-            closeProfile();
-            setSelectedId(null);
-          }}
+          onClose={closeProfile}
           onChange={onPersonChange}
           showFocusAncestors={Boolean(selected && focusId && selected.id !== focusId)}
           onFocusAncestors={() => {

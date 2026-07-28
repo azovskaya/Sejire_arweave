@@ -8,8 +8,8 @@ type Props = {
 };
 
 /**
- * Brand-only welcome: the single visible word is SEJIRE.
- * Click → continue draft if any, else start. Shift+click → new. Right-click → open by seed.
+ * Brand-first welcome: SEJIRE is the hero.
+ * Secondary actions under the brand (needed on phones — no Shift / right-click).
  */
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const hasDraft = Boolean(loadDraftTree());
@@ -25,19 +25,45 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
 
   return (
     <div className="welcome-screen">
-      <button
-        type="button"
-        className="welcome-brand"
-        onClick={onBrandClick}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onRestoreSeed();
-        }}
-        aria-label={hasDraft ? "Продолжить черновик SEJIRE" : "Начать SEJIRE"}
-        title={hasDraft ? "Открыть черновик · Shift — новый · ПКМ — по 12 словам" : "Начать · ПКМ — по 12 словам"}
-      >
-        SEJIRE
-      </button>
+      <div className="welcome-hero">
+        <button
+          type="button"
+          className="welcome-brand"
+          onClick={onBrandClick}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onRestoreSeed();
+          }}
+          aria-label={hasDraft ? "Продолжить черновик SEJIRE" : "Начать SEJIRE"}
+          title={
+            hasDraft
+              ? "Открыть черновик · Shift — новый · ПКМ — по 12 словам"
+              : "Начать · ПКМ — по 12 словам"
+          }
+        >
+          SEJIRE
+        </button>
+
+        <div className="welcome-actions">
+          {hasDraft ? (
+            <>
+              <button type="button" className="welcome-link" onClick={onContinueDraft}>
+                Продолжить черновик
+              </button>
+              <button type="button" className="welcome-link" onClick={() => onStartNew("Мой род")}>
+                Новое древо
+              </button>
+            </>
+          ) : (
+            <button type="button" className="welcome-link" onClick={() => onStartNew("Мой род")}>
+              Начать
+            </button>
+          )}
+          <button type="button" className="welcome-link" onClick={onRestoreSeed}>
+            Открыть по 12 словам
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

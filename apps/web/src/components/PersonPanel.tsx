@@ -118,6 +118,20 @@ export function PersonPanel({
     el.scrollTop = 0;
   }, [person]);
 
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el || !open) return;
+    function onFocusIn(e: Event) {
+      const t = e.target as HTMLElement | null;
+      if (!t || !t.matches("input, textarea, select")) return;
+      window.setTimeout(() => {
+        t.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 50);
+    }
+    el.addEventListener("focusin", onFocusIn);
+    return () => el.removeEventListener("focusin", onFocusIn);
+  }, [open, person]);
+
   if (!person) {
     return (
       <aside className="person-panel is-empty" aria-hidden="true">

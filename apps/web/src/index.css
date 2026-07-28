@@ -36,10 +36,13 @@ body,
 #root {
   margin: 0;
   height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
 }
 
 body {
   min-height: 100%;
+  min-height: 100dvh;
   background:
     radial-gradient(ellipse at 0% 0%, rgba(255, 103, 0, 0.07), transparent 42%),
     radial-gradient(ellipse at 100% 100%, rgba(34, 35, 38, 0.04), transparent 45%),
@@ -160,15 +163,22 @@ a {
   margin: 0.2rem 0 0;
 }
 
-/* Welcome — brand-only first viewport */
+/* Welcome — brand-first first viewport */
 .welcome-screen {
   width: min(980px, calc(100% - 2rem));
   min-height: calc(100vh - 2rem);
+  min-height: calc(100dvh - 2rem);
   margin: 0 auto;
   padding: 2rem 0;
   display: grid;
   place-content: center;
   gap: 0;
+}
+
+.welcome-hero {
+  display: grid;
+  justify-items: center;
+  gap: 1.4rem;
 }
 
 .welcome-brand {
@@ -190,6 +200,36 @@ a {
 .welcome-brand:hover,
 .welcome-brand:focus-visible {
   color: var(--accent);
+  outline: none;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem 1.1rem;
+  max-width: 22rem;
+}
+
+.welcome-link {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0.2rem 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(34, 35, 38, 0.28);
+}
+
+.welcome-link:hover,
+.welcome-link:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
   outline: none;
 }
 
@@ -224,6 +264,7 @@ a {
 .app-frame {
   height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg-0);
@@ -235,6 +276,7 @@ a {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
+  padding-top: max(0.75rem, env(safe-area-inset-top));
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
@@ -285,6 +327,40 @@ a {
   justify-content: flex-end;
 }
 
+.top-more {
+  position: relative;
+}
+
+.top-more > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.top-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.top-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 30;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 11.5rem;
+  padding: 0.45rem;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 3px;
+}
+
+.top-more-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
 .chip.soft {
   font-size: 0.75rem;
   color: var(--ink-dim);
@@ -300,7 +376,7 @@ a {
   top: 4.2rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 40;
+  z-index: 60;
   background: #ffffff;
   border: 1px solid rgba(255, 103, 0, 0.45);
   color: var(--ink);
@@ -1000,7 +1076,7 @@ a {
   font-weight: 700;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .seed-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1012,17 +1088,9 @@ a {
   }
 
   .top-actions {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.15rem;
     max-width: 100%;
-  }
-
-  .top-actions .btn,
-  .top-actions .chip {
-    flex: 0 0 auto;
   }
 
   .tree-title {
@@ -1040,22 +1108,20 @@ a {
 
   .modal {
     width: 100%;
-    max-height: min(92vh, 900px);
+    max-height: min(92dvh, 900px);
     border-radius: 12px 12px 0 0;
     padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
   }
 
   .toast {
     top: auto;
-    bottom: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
     left: 1rem;
     right: 1rem;
     transform: none;
     width: auto;
   }
-}
 
-@media (max-width: 900px) {
   .person-sheet-backdrop {
     display: block;
     position: fixed;
@@ -1080,7 +1146,7 @@ a {
     bottom: 0;
     z-index: 46;
     width: 100%;
-    max-height: min(92vh, 920px);
+    max-height: min(92dvh, 920px);
     border-left: none;
     border-top: 1px solid var(--line);
     border-radius: 14px 14px 0 0;
@@ -1109,6 +1175,17 @@ a {
   .pedigree-hint {
     max-width: calc(100% - 1.2rem);
     font-size: 0.68rem;
+    bottom: max(0.55rem, env(safe-area-inset-bottom));
+  }
+
+  .pedigree-chrome {
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .focus-chip {
+    max-width: 100%;
+    flex-wrap: wrap;
   }
 
   .person-panel input,
@@ -1119,7 +1196,10 @@ a {
   .add-modal textarea,
   .modal input,
   .modal select,
-  .modal textarea {
+  .modal textarea,
+  .panel input,
+  .panel select,
+  .panel textarea {
     font-size: 16px; /* avoid iOS zoom on focus */
   }
 }

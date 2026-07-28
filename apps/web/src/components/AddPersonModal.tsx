@@ -53,7 +53,14 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
   }
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
       <form className="modal add-modal" onSubmit={submit}>
         <h2>{title}</h2>
         <p className="sub">
@@ -65,7 +72,7 @@ export function AddPersonModal({ title, defaultSex = "U", onCancel, onSave }: Pr
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            autoFocus
+            autoFocus={typeof window !== "undefined" && !window.matchMedia("(pointer: coarse)").matches}
             required
           />
         </label>

@@ -36,7 +36,7 @@ export function DateTextInput({
     <input
       id={id}
       type="text"
-      inputMode="decimal"
+      inputMode="text"
       autoComplete="bday"
       spellCheck={false}
       placeholder={placeholder}
