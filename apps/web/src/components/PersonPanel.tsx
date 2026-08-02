@@ -1,20 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import type { Person } from "../lib/types";
 import { lifespan } from "../lib/pedigree";
 import { normalizeDateInput } from "../lib/dates";
 import { DateTextInput } from "./DateTextInput";
 
+export type PersonPanelHandle = {
+  flush: () => void;
+};
+
 type Props = {
   person: Person | null;
   relatives: { id: string; name: string; relation: string }[];
-  /** Explicit open — on mobile opens bottom sheet; on desktop keeps side panel. */
   open?: boolean;
+  hasFather?: boolean;
+  hasMother?: boolean;
+  highlightAncestors?: boolean;
   onClose: () => void;
   onChange: (person: Person) => void;
   onAdd: (role: "father" | "mother" | "child") => void;
   onSelectRelative: (id: string) => void;
   onDelete: () => void;
-  /** Mobile has no reliable double-tap — offer “view ancestors from here”. */
   onFocusAncestors?: () => void;
   showFocusAncestors?: boolean;
 };
@@ -75,10 +80,14 @@ function sameProfile(a: Person, b: Person) {
   );
 }
 
-export function PersonPanel({
+export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonPanel(
+  {
   person,
   relatives,
   open = false,
+  hasFather = false,
+  hasMother = false,
+  highlightAncestors = false,
   onClose,
   onChange,
   onAdd,
@@ -86,11 +95,18 @@ export function PersonPanel({
   onDelete,
   onFocusAncestors,
   showFocusAncestors = false,
-}: Props) {
+}: Props,
+  ref
+) {
   const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const ready = useRef(false);
   const sheetRef = useRef<HTMLElement | null>(null);
+  const draftRef = useRef(draft);
+  const personRef = useRef(person);
+
+  draftRef.current = draft;
+  personRef.current = person;
 
   useEffect(() => {
     setDraft(person ?? emptyPerson());
@@ -132,6 +148,25 @@ export function PersonPanel({
     return () => el.removeEventListener("focusin", onFocusIn);
   }, [open, person]);
 
+  function flushNow() {
+    const base = personRef.current;
+    const d = draftRef.current;
+    if (!base) return;
+    const next = buildPerson(base, d);
+    if (!next.name.trim()) {
+      setDraft((prev) => ({ ...prev, name: base.name }));
+      return;
+    }
+    if (!sameProfile(base, next)) onChange(next);
+  }
+
+  useImperativeHandle(ref, () => ({ flush: flushNow }));
+
+  function handleClose() {
+    flushNow();
+    onClose();
+  }
+
   if (!person) {
     return (
       <aside className="person-panel is-empty" aria-hidden="true">
@@ -161,13 +196,17 @@ export function PersonPanel({
           <h2 className="clamp-2">{draft.name || "Без имени"}</h2>
           <p className="sub mono">{lifespan(draft) || "даты не указаны"}</p>
         </div>
-        <button type="button" className="tool-btn" onClick={onClose} aria-label="Закрыть">
+        <button type="button" className="tool-btn" onClick={handleClose} aria-label="Закрыть">
           ×
         </button>
       </header>
 
       {showFocusAncestors && onFocusAncestors ? (
-        <div className="panel-section person-panel-focus-actions">
+        <div
+          className={`panel-section person-panel-focus-actions${
+            highlightAncestors ? " is-hint" : ""
+          }`}
+        >
           <button type="button" className="btn ghost" onClick={onFocusAncestors}>
             Смотреть предков отсюда
           </button>
@@ -179,7 +218,14 @@ export function PersonPanel({
           <h3>Личные данные</h3>
           <label>
             Полное имя
-            <input value={draft.name} onChange={(e) => setField("name", e.target.value)} />
+            <input
+              value={draft.name}
+              onChange={(e) => setField("name", e.target.value)}
+              onBlur={() => {
+                if (!draft.name.trim()) setDraft((prev) => ({ ...prev, name: person.name }));
+                else flushNow();
+              }}
+            />
           </label>
           <label>
             Девичья фамилия
@@ -285,12 +331,24 @@ export function PersonPanel({
       <div className="panel-section">
         <h3>Родственники</h3>
         <div className="rel-actions">
-          <button type="button" className="btn ghost" onClick={() => onAdd("father")}>
-            + Папа
-          </button>
-          <button type="button" className="btn ghost" onClick={() => onAdd("mother")}>
-            + Мама
-          </button>
+          {hasFather ? (
+            <button type="button" className="btn ghost" disabled title="Папа уже на схеме">
+              Папа есть
+            </button>
+          ) : (
+            <button type="button" className="btn ghost" onClick={() => onAdd("father")}>
+              + Папа
+            </button>
+          )}
+          {hasMother ? (
+            <button type="button" className="btn ghost" disabled title="Мама уже на схеме">
+              Мама есть
+            </button>
+          ) : (
+            <button type="button" className="btn ghost" onClick={() => onAdd("mother")}>
+              + Мама
+            </button>
+          )}
           <button type="button" className="btn ghost" onClick={() => onAdd("child")}>
             + Ребёнок
           </button>
@@ -329,6 +387,7 @@ export function PersonPanel({
                 className="btn danger"
                 onClick={() => {
                   setConfirmDelete(false);
+                  flushNow();
                   onDelete();
                 }}
               >
@@ -340,4 +399,4 @@ export function PersonPanel({
       </div>
     </aside>
   );
-}
+});

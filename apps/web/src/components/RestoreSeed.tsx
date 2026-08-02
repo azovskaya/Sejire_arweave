@@ -5,8 +5,10 @@ import { deriveKeysFromMnemonic, fingerprintVaultId } from "../lib/crypto/keys";
 import type { EnvelopeV1 } from "../lib/crypto/encrypt";
 import { openEnvelope, openLocalVault } from "../lib/crypto/vault";
 import { fetchLatestEnvelope } from "../lib/arweave/fetch";
-import { saveDraftTree } from "../lib/draftStorage";
+import { saveDraftTree, loadDraftTree } from "../lib/draftStorage";
 import { defaultGuide, saveGuide } from "../lib/guide";
+import { pickHomeFocus } from "../lib/pedigree";
+import { activePersons } from "../lib/treeEngine";
 
 type Props = {
   onRestored: () => void;
@@ -23,8 +25,16 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
     const treeId = vault.active_tree_id;
     const store = treeId ? vault.trees[treeId] : Object.values(vault.trees)[0];
     if (!store) throw new Error("В сейфе нет деревьев");
+    const existing = loadDraftTree();
+    if (existing && activePersons(existing.draft).length > 0) {
+      const ok = window.confirm(
+        "Текущий черновик в браузере будет заменён восстановленным деревом. Продолжить?"
+      );
+      if (!ok) return;
+    }
+    const selfId = pickHomeFocus(store.draft, null);
     saveDraftTree(store);
-    saveGuide({ ...defaultGuide(), step: "done" });
+    saveGuide({ ...defaultGuide(), step: "done", selfId });
     onRestored();
   }
 
@@ -107,7 +117,13 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
             }}
           />
         </label>
-        {error && <p className="form-error">{error}</p>}
+        {error && (
+          <p className="form-error">
+            {/mismatch|decrypt|JSON/i.test(error)
+              ? "Не удалось открыть сейф: проверьте 12 слов или файл envelope."
+              : error}
+          </p>
+        )}
       </form>
     </section>
   );

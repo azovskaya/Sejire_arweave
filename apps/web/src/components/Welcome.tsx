@@ -17,6 +17,16 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const [step, setStep] = useState<Step>("brand");
   const hasDraft = Boolean(loadDraftTree());
 
+  function startFresh() {
+    if (hasDraft) {
+      const ok = window.confirm(
+        "Текущий черновик будет удалён. Сначала можно продолжить его и выгрузить JSON. Создать новое древо?"
+      );
+      if (!ok) return;
+    }
+    onStartNew("Мой род");
+  }
+
   if (step === "brand") {
     return (
       <div className="welcome-screen is-brand">
@@ -46,20 +56,12 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
               <button type="button" className="btn welcome-menu-btn" onClick={onContinueDraft}>
                 Продолжить черновик
               </button>
-              <button
-                type="button"
-                className="btn ghost welcome-menu-btn"
-                onClick={() => onStartNew("Мой род")}
-              >
+              <button type="button" className="btn ghost welcome-menu-btn" onClick={startFresh}>
                 Новое древо
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              className="btn welcome-menu-btn"
-              onClick={() => onStartNew("Мой род")}
-            >
+            <button type="button" className="btn welcome-menu-btn" onClick={startFresh}>
               Начать
             </button>
           )}

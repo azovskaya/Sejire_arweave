@@ -64,6 +64,10 @@ export function PedigreeView({
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 28, y: 28 });
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const pinch = useRef<{ dist: number; scale: number } | null>(null);
+  const scaleRef = useRef(scale);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  scaleRef.current = scale;
 
   const { items, edges, width, height } = buildPedigree(snapshot, focusId, 7);
   const empty = items.length === 0;
@@ -74,6 +78,46 @@ export function PedigreeView({
     setPan({ x: 28, y: 28 });
     setScale(1);
   }, [focusId]);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    function distance(a: Touch, b: Touch) {
+      const dx = a.clientX - b.clientX;
+      const dy = a.clientY - b.clientY;
+      return Math.hypot(dx, dy);
+    }
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length === 2) {
+        drag.current = null;
+        pinch.current = {
+          dist: distance(e.touches[0], e.touches[1]),
+          scale: scaleRef.current,
+        };
+      }
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length === 2 && pinch.current) {
+        e.preventDefault();
+        const d = distance(e.touches[0], e.touches[1]);
+        const next = Math.min(1.45, Math.max(0.55, pinch.current.scale * (d / pinch.current.dist)));
+        setScale(next);
+      }
+    }
+    function onTouchEnd() {
+      pinch.current = null;
+    }
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [empty]);
 
   function onWheel(e: ReactWheelEvent) {
     e.preventDefault();
@@ -136,6 +180,7 @@ export function PedigreeView({
 
   return (
     <div
+      ref={viewportRef}
       className="pedigree-viewport"
       onWheel={onWheel}
       onPointerDown={onPointerDown}
@@ -213,8 +258,8 @@ export function PedigreeView({
         </div>
       </div>
       <p className="pedigree-hint">
-        Нажмите карточку — профиль. Предки от человека: на телефоне кнопка в профиле, на компьютере —
-        двойной клик
+        Нажмите карточку — профиль. Предки: кнопка в профиле или двойной клик на компьютере. На
+        телефоне можно сжать/развести пальцы для масштаба
       </p>
 
       <div

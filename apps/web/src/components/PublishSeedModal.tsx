@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   createMnemonic,
@@ -25,6 +25,8 @@ type Props = {
   onPublished: (info: { txId?: string; mode: "export" | "arweave"; address?: string }) => void;
 };
 
+type Mode = "intro" | "create-show" | "create-confirm" | "existing" | "busy" | "fund-wait";
+
 async function loadVault(keys: ReturnType<typeof deriveKeysFromMnemonic>): Promise<VaultV1> {
   const local = await openLocalVault(keys);
   if (local) return local;
@@ -37,24 +39,51 @@ async function loadVault(keys: ReturnType<typeof deriveKeysFromMnemonic>): Promi
   return emptyVault(keys.vaultId);
 }
 
-export function PublishSeedModal({ store, onClose, onPublished }: Props) {
-  const [mode, setMode] = useState<"intro" | "create-show" | "create-confirm" | "existing" | "busy">(
-    "intro"
+function confirmDiscardSeed() {
+  return window.confirm(
+    "Сгенерированные 12 слов будут потеряны с экрана. Вы уже записали их на бумагу?"
   );
+}
+
+export function PublishSeedModal({ store, onClose, onPublished }: Props) {
+  const [mode, setMode] = useState<Mode>("intro");
   const [mnemonic, setMnemonic] = useState("");
   const [confirm, setConfirm] = useState("");
   const [existing, setExisting] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [txId, setTxId] = useState<string | null>(null);
   const words = useMemo(() => (mnemonic ? splitWords(mnemonic) : []), [mnemonic]);
+
+  const seedLocked = mode === "create-show" || mode === "create-confirm" || mode === "busy" || mode === "fund-wait";
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (mode === "busy") {
+        e.preventDefault();
+        return;
+      }
+      if (mode === "create-show" || mode === "create-confirm" || mode === "fund-wait") {
+        e.preventDefault();
+        if (!confirmDiscardSeed()) return;
+        setMode("intro");
+        setMnemonic("");
+        setConfirm("");
+        setError(null);
+        setWalletAddress(null);
+        return;
+      }
+      onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mode, onClose]);
 
   async function runPublish(phrase: string, preferArweave: boolean) {
     setMode("busy");
     setError(null);
-    setTxId(null);
-    setWalletAddress(null);
+    if (!preferArweave) setWalletAddress(null);
     try {
       const keys = deriveKeysFromMnemonic(phrase);
       setStatus(`Сейф ${fingerprintVaultId(keys.vaultId)}…`);
@@ -81,24 +110,26 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       if (!result.ok) {
         downloadEnvelope(envelope);
         const fundHint = result.needsFunds
-          ? ` Переведите немного AR на адрес, который получился из ваших 12 слов (ниже). Отдельный кошелёк подключать не нужно.`
+          ? " Переведите немного AR на адрес ниже (из ваших 12 слов). Отдельный кошелёк не нужен."
           : "";
         setError(`${result.error}${fundHint} Зашифрованный файл скачан как запасной вариант.`);
-        setMode("intro");
+        setMnemonic(phrase);
+        setMode(result.needsFunds ? "fund-wait" : "intro");
         return;
       }
-      setTxId(result.txId);
       onPublished({ mode: "arweave", txId: result.txId, address });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setMode("intro");
+      setMode(mnemonic ? "fund-wait" : "intro");
     }
   }
 
   function startCreate() {
+    if (mnemonic && !confirmDiscardSeed()) return;
     setMnemonic(createMnemonic());
     setConfirm("");
     setError(null);
+    setWalletAddress(null);
     setMode("create-show");
   }
 
@@ -118,7 +149,34 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       setError("Нужна корректная BIP-39 фраза из 12 слов.");
       return;
     }
+    setMnemonic(phrase);
     await runPublish(phrase, true);
+  }
+
+  async function exportFileOnly() {
+    if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
+      setError("Сначала повторите 12 слов — так мы убедимся, что вы их записали.");
+      return;
+    }
+    await runPublish(mnemonic, false);
+  }
+
+  async function copyAddress() {
+    if (!walletAddress) return;
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setStatus("Адрес скопирован");
+    } catch {
+      setStatus("Скопируйте адрес вручную");
+    }
+  }
+
+  function requestClose() {
+    if (mode === "busy") return;
+    if (seedLocked && mnemonic) {
+      if (!confirmDiscardSeed()) return;
+    }
+    onClose();
   }
 
   return (
@@ -140,7 +198,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
             <button className="btn ghost" type="button" onClick={() => setMode("existing")}>
               У меня уже есть 12 слов
             </button>
-            <button className="btn ghost" type="button" onClick={onClose}>
+            <button className="btn ghost" type="button" onClick={requestClose}>
               Отмена
             </button>
           </div>
@@ -149,8 +207,8 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "create-show" && (
           <div>
             <p className="sub">
-              Запишите фразу на бумаге. Это и ключ шифрования, и доступ к адресу Arweave — сторонний
-              кошелёк не подключается.
+              Запишите фразу на бумаге <strong>сейчас</strong>. Это ключ шифрования и доступ к адресу
+              Arweave — сторонний кошелёк не подключается.
             </p>
             <ol className="seed-grid">
               {words.map((w, i) => (
@@ -160,7 +218,15 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
               ))}
             </ol>
             <div className="actions">
-              <button className="btn ghost" type="button" onClick={() => setMode("intro")}>
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => {
+                  if (!confirmDiscardSeed()) return;
+                  setMnemonic("");
+                  setMode("intro");
+                }}
+              >
                 Назад
               </button>
               <button className="btn" type="button" onClick={() => setMode("create-confirm")}>
@@ -172,13 +238,13 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
         {mode === "create-confirm" && (
           <form onSubmit={(e) => void onConfirmCreate(e)}>
-            <p className="sub">Повторите 12 слов.</p>
+            <p className="sub">Повторите 12 слов — без этого нельзя ни файл, ни отправку.</p>
             <textarea rows={3} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             <div className="actions">
               <button className="btn ghost" type="button" onClick={() => setMode("create-show")}>
                 Назад
               </button>
-              <button className="btn ghost" type="button" onClick={() => void runPublish(mnemonic, false)}>
+              <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
                 Только файл
               </button>
               <button className="btn" type="submit">
@@ -210,26 +276,61 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
         {mode === "busy" && (
           <div>
-            <p className="sub">{status || "Работаем…"}</p>
+            <p className="sub">{status || "Работаем… Не закрывайте окно."}</p>
             {walletAddress && (
-              <p className="sub mono publish-meta">
-                Адрес из 12 слов: {walletAddress}
-              </p>
-            )}
-            {txId && (
-              <p className="sub">
-                TX:{" "}
-                <a href={`https://viewblock.io/arweave/tx/${txId}`} target="_blank" rel="noreferrer">
-                  {txId.slice(0, 12)}…
-                </a>
-              </p>
+              <p className="sub mono publish-meta">Адрес из 12 слов: {walletAddress}</p>
             )}
           </div>
         )}
+
+        {mode === "fund-wait" && (
+          <div>
+            <p className="sub">
+              Те же 12 слов сохранены в этом окне. Пополните адрес и нажмите «Повторить отправку» —
+              не создавайте новую фразу.
+            </p>
+            {words.length > 0 && (
+              <ol className="seed-grid">
+                {words.map((w, i) => (
+                  <li key={`${w}-${i}`}>
+                    <span>{i + 1}.</span> {w}
+                  </li>
+                ))}
+              </ol>
+            )}
+            {walletAddress && (
+              <p className="sub mono publish-meta">Адрес: {walletAddress}</p>
+            )}
+            <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
+              <button className="btn" type="button" onClick={() => void runPublish(mnemonic, true)}>
+                Повторить отправку
+              </button>
+              <button className="btn ghost" type="button" onClick={() => void copyAddress()}>
+                Скопировать адрес
+              </button>
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => {
+                  if (!confirmDiscardSeed()) return;
+                  setMnemonic("");
+                  setConfirm("");
+                  setWalletAddress(null);
+                  setError(null);
+                  setMode("intro");
+                }}
+              >
+                В начало (новые 12 слов — только если уверены)
+              </button>
+            </div>
+            {status && <p className="sub">{status}</p>}
+          </div>
+        )}
+
         {error && (
           <div className="form-error-block">
             <p className="form-error">{error}</p>
-            {walletAddress && (
+            {walletAddress && mode !== "fund-wait" && (
               <p className="sub mono publish-meta">Адрес из ваших 12 слов: {walletAddress}</p>
             )}
           </div>

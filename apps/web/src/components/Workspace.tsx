@@ -4,7 +4,7 @@ import { saveDraftTree } from "../lib/draftStorage";
 import { type GuideState, saveGuide } from "../lib/guide";
 import { pickDefaultFocus, pickHomeFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
 import { PedigreeView } from "./PedigreeView";
-import { PersonPanel } from "./PersonPanel";
+import { PersonPanel, type PersonPanelHandle } from "./PersonPanel";
 import { AddPersonModal, type AddPersonPayload } from "./AddPersonModal";
 import { PublishSeedModal } from "./PublishSeedModal";
 import {
@@ -38,6 +38,7 @@ type PendingAdd =
 type ToastState = {
   message: string;
   undo?: () => void;
+  actionLabel?: string;
 };
 
 export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }: Props) {
@@ -51,9 +52,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const toastTimer = useRef<number | null>(null);
   const jsonInputRef = useRef<HTMLInputElement | null>(null);
   const moreRef = useRef<HTMLDetailsElement | null>(null);
+  const panelRef = useRef<PersonPanelHandle | null>(null);
+  const [ancestorsHint, setAncestorsHint] = useState(false);
 
   function closeMoreMenu() {
     if (moreRef.current) moreRef.current.open = false;
+  }
+
+  function confirmReplaceDraft(action: string) {
+    const count = Object.keys(store.draft.persons).length;
+    if (count === 0) return true;
+    return window.confirm(
+      `Текущий черновик (${count} чел.) будет заменён: ${action}. Сначала можно выгрузить JSON в меню «Ещё». Продолжить?`
+    );
   }
 
   useEffect(() => {
@@ -109,34 +120,42 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     onStoreChange(next);
   }
 
-  function flash(message: string, undo?: () => void) {
+  function flash(message: string, undo?: () => void, actionLabel?: string) {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    setToast({ message, undo });
+    setToast({ message, undo, actionLabel });
     toastTimer.current = window.setTimeout(() => setToast(null), undo ? 7000 : 3200);
   }
 
   function openProfile(id: string) {
     setSelectedId(id);
     setProfileOpen(true);
-    if (homeFocusId && id === homeFocusId && focusId && focusId !== homeFocusId) {
-      setFocusId(homeFocusId);
-      flash("Схема снова от вас");
+    const showAncestors = Boolean(focusId && id !== focusId);
+    if (showAncestors) {
+      try {
+        const key = "sejire.hint.ancestors.v1";
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, "1");
+          setAncestorsHint(true);
+          window.setTimeout(() => setAncestorsHint(false), 4000);
+        }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
   function closeProfile() {
+    panelRef.current?.flush();
     setProfileOpen(false);
     setSelectedId(null);
+    setAncestorsHint(false);
   }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      if (showPublish) {
-        setShowPublish(false);
-        setPublishStore(null);
-        return;
-      }
+      // PublishSeedModal handles its own Escape (seed-safe).
+      if (showPublish) return;
       if (pending) {
         setPending(null);
         return;
@@ -209,7 +228,11 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       next = setDraftPerson(store, person);
       setSelectedId(id);
       setProfileOpen(true);
-      flash("Ребёнок добавлен");
+      flash(
+        "Ребёнок добавлен. На схеме видны предки — чтобы увидеть его карточку, откройте схему от него.",
+        () => setFocus(id),
+        "Показать от него"
+      );
     }
 
     persist(next);
@@ -222,6 +245,18 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       flash("Сначала добавьте хотя бы одного человека");
       return;
     }
+    try {
+      const key = "sejire.jsonNudge.v1";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        const wantJson = window.confirm(
+          "Перед отправкой в Arweave скачать JSON-копию черновика на всякий случай?"
+        );
+        if (wantJson) exportJson();
+      }
+    } catch {
+      /* ignore */
+    }
     let next = store;
     if (store.dirty) {
       next = commitDraft(store, "Снимок перед Arweave");
@@ -232,9 +267,11 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   }
 
   function setFocus(id: string) {
+    panelRef.current?.flush();
     setFocusId(id);
     setSelectedId(id);
     setProfileOpen(false);
+    setAncestorsHint(false);
     const name = store.draft.persons[id]?.name;
     flash(name ? `Смотрим предков от «${name}»` : "Схема перестроена");
   }
@@ -289,6 +326,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   async function importJsonFile(file: File | null) {
     if (!file) return;
+    if (!confirmReplaceDraft("загрузка JSON")) return;
     const result = await readTreeJsonFile(file);
     if (!result.ok) {
       flash(result.error);
@@ -300,6 +338,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     onGuideChange(result.guide);
     setFocusId(pickHomeFocus(result.store.draft, result.guide.selfId));
     setSelectedId(result.guide.selfId ?? pickDefaultFocus(result.store.draft, null));
+    setProfileOpen(false);
     flash(`Загружено: ${Object.keys(result.store.draft.persons).length} чел.`);
   }
 
@@ -331,7 +370,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           {people.length >= 1 && homeFocusId && focusId && homeFocusId !== focusId ? (
             <button
               type="button"
-              className="btn"
+              className="btn top-home-btn"
               onClick={() => setFocus(homeFocusId)}
               title="Вернуть схему: вы → родители → деды"
             >
@@ -428,7 +467,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 setToast(null);
               }}
             >
-              Вернуть
+              {toast.actionLabel ?? "Вернуть"}
             </button>
           ) : null}
         </div>
@@ -458,14 +497,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         ) : null}
 
         <PersonPanel
+          ref={panelRef}
           person={selected}
           relatives={relatives}
           open={profileOpen}
+          hasFather={Boolean(selected && relatives.some((r) => r.relation === "Папа"))}
+          hasMother={Boolean(selected && relatives.some((r) => r.relation === "Мама"))}
+          highlightAncestors={ancestorsHint}
           onClose={closeProfile}
           onChange={onPersonChange}
           showFocusAncestors={Boolean(selected && focusId && selected.id !== focusId)}
           onFocusAncestors={() => {
             if (!selected) return;
+            setAncestorsHint(false);
             setFocus(selected.id);
           }}
           onSelectRelative={(id) => openProfile(id)}
