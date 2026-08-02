@@ -868,12 +868,7 @@ a {
 }
 
 .person-panel.is-empty {
-  display: grid;
-  place-items: center;
-  color: var(--ink-dim);
-  text-align: center;
-  padding: 2rem;
-  background: #fafafa;
+  display: none;
 }
 
 .person-panel-head {
