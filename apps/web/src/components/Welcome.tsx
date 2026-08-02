@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+import { useState } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
 
 type Props = {
@@ -7,62 +7,70 @@ type Props = {
   onRestoreSeed: () => void;
 };
 
+type Step = "brand" | "menu";
+
 /**
- * Brand-first welcome: SEJIRE is the hero.
- * Secondary actions under the brand (needed on phones — no Shift / right-click).
+ * Step 1: only the word SEJIRE.
+ * Step 2 (after tap): start choices — same controls on phone and desktop.
  */
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
+  const [step, setStep] = useState<Step>("brand");
   const hasDraft = Boolean(loadDraftTree());
 
-  function onBrandClick(e: MouseEvent<HTMLButtonElement>) {
-    if (e.shiftKey) {
-      onStartNew("Мой род");
-      return;
-    }
-    if (hasDraft) onContinueDraft();
-    else onStartNew("Мой род");
-  }
-
-  return (
-    <div className="welcome-screen">
-      <div className="welcome-hero">
+  if (step === "brand") {
+    return (
+      <div className="welcome-screen is-brand">
         <button
           type="button"
           className="welcome-brand"
-          onClick={onBrandClick}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            onRestoreSeed();
-          }}
-          aria-label={hasDraft ? "Продолжить черновик SEJIRE" : "Начать SEJIRE"}
-          title={
-            hasDraft
-              ? "Открыть черновик · Shift — новый · ПКМ — по 12 словам"
-              : "Начать · ПКМ — по 12 словам"
-          }
+          onClick={() => setStep("menu")}
+          aria-label="SEJIRE — открыть меню"
         >
           SEJIRE
         </button>
+      </div>
+    );
+  }
 
-        <div className="welcome-actions">
+  return (
+    <div className="welcome-screen is-menu">
+      <div className="welcome-menu">
+        <button type="button" className="welcome-menu-brand" onClick={() => setStep("brand")}>
+          SEJIRE
+        </button>
+        <p className="welcome-menu-sub">Что сделать дальше</p>
+
+        <div className="welcome-menu-actions">
           {hasDraft ? (
             <>
-              <button type="button" className="welcome-link" onClick={onContinueDraft}>
+              <button type="button" className="btn welcome-menu-btn" onClick={onContinueDraft}>
                 Продолжить черновик
               </button>
-              <button type="button" className="welcome-link" onClick={() => onStartNew("Мой род")}>
+              <button
+                type="button"
+                className="btn ghost welcome-menu-btn"
+                onClick={() => onStartNew("Мой род")}
+              >
                 Новое древо
               </button>
             </>
           ) : (
-            <button type="button" className="welcome-link" onClick={() => onStartNew("Мой род")}>
+            <button
+              type="button"
+              className="btn welcome-menu-btn"
+              onClick={() => onStartNew("Мой род")}
+            >
               Начать
             </button>
           )}
-          <button type="button" className="welcome-link" onClick={onRestoreSeed}>
+          <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
             Открыть по 12 словам
           </button>
         </div>
+
+        <button type="button" className="welcome-menu-back" onClick={() => setStep("brand")}>
+          Назад
+        </button>
       </div>
     </div>
   );
