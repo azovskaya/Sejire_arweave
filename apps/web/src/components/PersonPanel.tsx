@@ -192,7 +192,6 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
       <div className="person-sheet-handle" aria-hidden />
       <header className="person-panel-head">
         <div className="person-panel-head-text">
-          <p className="eyebrow">Профиль · сохраняется сам</p>
           <h2 className="clamp-2">{draft.name || "Без имени"}</h2>
           <p className="sub mono">{lifespan(draft) || "даты не указаны"}</p>
         </div>
@@ -215,9 +214,8 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
 
       <div className="person-panel-form">
         <section className="field-block">
-          <h3>Личные данные</h3>
           <label>
-            Полное имя
+            Имя
             <input
               value={draft.name}
               onChange={(e) => setField("name", e.target.value)}
@@ -225,14 +223,6 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
                 if (!draft.name.trim()) setDraft((prev) => ({ ...prev, name: person.name }));
                 else flushNow();
               }}
-            />
-          </label>
-          <label>
-            Девичья фамилия
-            <input
-              value={draft.maidenName ?? ""}
-              onChange={(e) => setField("maidenName", e.target.value || null)}
-              placeholder="если применимо"
             />
           </label>
           <label>
@@ -246,19 +236,12 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
               <option value="M">мужской</option>
             </select>
           </label>
-          <label>
-            Род занятий
-            <input
-              value={draft.occupation ?? ""}
-              onChange={(e) => setField("occupation", e.target.value || null)}
-            />
-          </label>
         </section>
 
         <section className="field-block">
           <h3>Рождение</h3>
           <label>
-            Дата рождения
+            Дата
             <DateTextInput
               value={draft.born ?? ""}
               onChange={(v) => setField("born", v || null)}
@@ -266,7 +249,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
             />
           </label>
           <label>
-            Место рождения
+            Место
             <input
               value={draft.birthPlace ?? ""}
               onChange={(e) => setField("birthPlace", e.target.value || null)}
@@ -278,7 +261,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
         <section className="field-block">
           <h3>Смерть</h3>
           <label>
-            Дата смерти
+            Дата
             <DateTextInput
               value={draft.died ?? ""}
               onChange={(v) => setField("died", v || null)}
@@ -286,7 +269,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
             />
           </label>
           <label>
-            Место смерти
+            Место
             <input
               value={draft.deathPlace ?? ""}
               onChange={(e) => setField("deathPlace", e.target.value || null)}
@@ -296,7 +279,34 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
         </section>
 
         <section className="field-block">
-          <h3>Захоронение</h3>
+          <h3>Заметки</h3>
+          <label>
+            <textarea
+              rows={3}
+              value={draft.notes ?? ""}
+              onChange={(e) => setField("notes", e.target.value)}
+              placeholder="Кратко о человеке"
+            />
+          </label>
+        </section>
+
+        <details className="field-block more-fields">
+          <summary>Ещё сведения</summary>
+          <label>
+            Девичья фамилия
+            <input
+              value={draft.maidenName ?? ""}
+              onChange={(e) => setField("maidenName", e.target.value || null)}
+              placeholder="если применимо"
+            />
+          </label>
+          <label>
+            Род занятий
+            <input
+              value={draft.occupation ?? ""}
+              onChange={(e) => setField("occupation", e.target.value || null)}
+            />
+          </label>
           <label>
             Дата захоронения
             <DateTextInput
@@ -313,42 +323,22 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
               placeholder="кладбище, город"
             />
           </label>
-        </section>
-
-        <section className="field-block">
-          <h3>Заметки</h3>
-          <label>
-            Биография / примечания
-            <textarea
-              rows={4}
-              value={draft.notes ?? ""}
-              onChange={(e) => setField("notes", e.target.value)}
-            />
-          </label>
-        </section>
+        </details>
       </div>
 
       <div className="panel-section">
         <h3>Родственники</h3>
         <div className="rel-actions">
-          {hasFather ? (
-            <button type="button" className="btn ghost" disabled title="Папа уже на схеме">
-              Папа есть
-            </button>
-          ) : (
+          {!hasFather ? (
             <button type="button" className="btn ghost" onClick={() => onAdd("father")}>
               + Папа
             </button>
-          )}
-          {hasMother ? (
-            <button type="button" className="btn ghost" disabled title="Мама уже на схеме">
-              Мама есть
-            </button>
-          ) : (
+          ) : null}
+          {!hasMother ? (
             <button type="button" className="btn ghost" onClick={() => onAdd("mother")}>
               + Мама
             </button>
-          )}
+          ) : null}
           <button type="button" className="btn ghost" onClick={() => onAdd("child")}>
             + Ребёнок
           </button>

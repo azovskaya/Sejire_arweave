@@ -20,8 +20,12 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [showFile, setShowFile] = useState(false);
 
-  async function finishWithVault(vault: { active_tree_id: string | null; trees: Record<string, import("../lib/types").TreeStore> }) {
+  async function finishWithVault(vault: {
+    active_tree_id: string | null;
+    trees: Record<string, import("../lib/types").TreeStore>;
+  }) {
     const treeId = vault.active_tree_id;
     const store = treeId ? vault.trees[treeId] : Object.values(vault.trees)[0];
     if (!store) throw new Error("В сейфе нет деревьев");
@@ -42,24 +46,29 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
     e.preventDefault();
     const phrase = normalizeMnemonic(input);
     if (!isValidMnemonic(phrase)) {
-      setError("Нужны 12 корректных английских слов BIP-39.");
+      setError("Нужны 12 корректных английских слов.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
       const keys = deriveKeysFromMnemonic(phrase);
-      setStatus("Локальный сейф…");
+      setStatus("Ищем…");
       let vault = await openLocalVault(keys);
       if (!vault) {
-        setStatus(`Ищем в Arweave (${fingerprintVaultId(keys.vaultId)})…`);
+        setStatus(`Ищем в сети (${fingerprintVaultId(keys.vaultId)})…`);
         const remote = await fetchLatestEnvelope(keys.vaultId);
-        if (!remote) throw new Error("Сейф не найден локально и в Arweave");
+        if (!remote) throw new Error("Сейф не найден");
         vault = await openEnvelope(keys, remote.envelope);
       }
       await finishWithVault(vault);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(
+        /mismatch|decrypt|JSON/i.test(msg)
+          ? "Не удалось открыть: проверьте 12 слов или файл."
+          : msg
+      );
     } finally {
       setBusy(false);
       setStatus("");
@@ -69,7 +78,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
   async function onFile(file: File) {
     const phrase = normalizeMnemonic(input);
     if (!isValidMnemonic(phrase)) {
-      setError("Сначала введите 12 слов для расшифровки файла.");
+      setError("Сначала введите 12 слов.");
       return;
     }
     setBusy(true);
@@ -79,18 +88,25 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const vault = await openEnvelope(keys, envelope);
       await finishWithVault(vault);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(
+        /mismatch|decrypt|JSON/i.test(msg)
+          ? "Не удалось открыть: проверьте 12 слов или файл."
+          : msg
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="hero-create" style={{ maxWidth: 640, margin: "0 auto" }}>
-      <h1>SEJIRE</h1>
+    <section className="hero-create" style={{ maxWidth: 480, margin: "0 auto" }}>
+      <button type="button" className="welcome-menu-brand" onClick={onBack}>
+        SEJIRE
+      </button>
       <form className="panel" style={{ textAlign: "left", width: "100%" }} onSubmit={(e) => void onSubmit(e)}>
-        <h2>Открыть опубликованное древо</h2>
-        <p className="sub">12 слов — только для уже отправленного в Arweave сейфа (или envelope-файла).</p>
+        <h2>Открыть по словам</h2>
+        <p className="sub">Введите 12 слов от сохранённого древа.</p>
         <textarea
           rows={3}
           value={input}
@@ -106,24 +122,28 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
             {busy ? status || "Ищем…" : "Открыть"}
           </button>
         </div>
-        <label className="full" style={{ marginTop: "0.75rem" }}>
-          Или envelope-файл
-          <input
-            type="file"
-            accept="application/json,.json"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void onFile(f);
-            }}
-          />
-        </label>
-        {error && (
-          <p className="form-error">
-            {/mismatch|decrypt|JSON/i.test(error)
-              ? "Не удалось открыть сейф: проверьте 12 слов или файл envelope."
-              : error}
-          </p>
-        )}
+        <button
+          type="button"
+          className="welcome-link-quiet"
+          style={{ marginTop: "0.85rem" }}
+          onClick={() => setShowFile((v) => !v)}
+        >
+          {showFile ? "Скрыть файл" : "Открыть из файла"}
+        </button>
+        {showFile ? (
+          <label className="full" style={{ marginTop: "0.55rem" }}>
+            Envelope-файл
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void onFile(f);
+              }}
+            />
+          </label>
+        ) : null}
+        {error && <p className="form-error">{error}</p>}
       </form>
     </section>
   );

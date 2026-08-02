@@ -245,21 +245,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       flash("Сначала добавьте хотя бы одного человека");
       return;
     }
-    try {
-      const key = "sejire.jsonNudge.v1";
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, "1");
-        const wantJson = window.confirm(
-          "Перед отправкой в Arweave скачать JSON-копию черновика на всякий случай?"
-        );
-        if (wantJson) exportJson();
-      }
-    } catch {
-      /* ignore */
-    }
     let next = store;
     if (store.dirty) {
-      next = commitDraft(store, "Снимок перед Arweave");
+      next = commitDraft(store, "Снимок перед сохранением");
       persist(next);
     }
     setPublishStore(next);
@@ -364,24 +352,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           </div>
         </div>
         <nav className="top-actions">
-          <span className="chip soft" title="Черновик хранится только в этом браузере">
-            {people.length} чел. · в браузере
-          </span>
-          {people.length >= 1 && homeFocusId && focusId && homeFocusId !== focusId ? (
-            <button
-              type="button"
-              className="btn top-home-btn"
-              onClick={() => setFocus(homeFocusId)}
-              title="Вернуть схему: вы → родители → деды"
-            >
-              К себе
-            </button>
-          ) : null}
           <button type="button" className="btn" onClick={openPublish}>
-            В Arweave
+            Сохранить
           </button>
           <details className="top-more" ref={moreRef}>
-            <summary className="btn ghost">Ещё</summary>
+            <summary className="btn ghost" aria-label="Ещё">
+              ⋯
+            </summary>
             <div className="top-more-menu" role="menu">
               {people.length >= 1 && (
                 <>
@@ -473,7 +450,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         </div>
       )}
 
-      <div className="workspace-main">
+      <div className={`workspace-main${profileOpen && selected ? " has-panel" : ""}`}>
         <PedigreeView
           snapshot={store.draft}
           focusId={focusId}
@@ -548,6 +525,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           defaultSex={
             pending.type === "parent" ? (pending.role === "mother" ? "F" : "M") : pending.type === "self" ? "U" : "U"
           }
+          askSex={pending.type === "self" || pending.type === "child"}
           onCancel={() => setPending(null)}
           onSave={completeAdd}
         />

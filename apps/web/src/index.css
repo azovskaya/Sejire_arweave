@@ -273,6 +273,55 @@ a {
   outline: none;
 }
 
+.welcome-link-quiet {
+  appearance: none;
+  background: none;
+  border: none;
+  margin: 0.15rem auto 0;
+  padding: 0.45rem 0.5rem;
+  cursor: pointer;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(34, 35, 38, 0.22);
+  touch-action: manipulation;
+}
+
+.welcome-link-quiet:hover,
+.welcome-link-quiet:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.field-block.more-fields {
+  gap: 0.65rem;
+}
+
+.field-block.more-fields > summary {
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  list-style: none;
+}
+
+.field-block.more-fields > summary::-webkit-details-marker {
+  display: none;
+}
+
+.field-block.more-fields[open] > summary {
+  margin-bottom: 0.35rem;
+  color: var(--ink);
+}
+
+.add-modal-simple {
+  max-width: 420px;
+}
+
 .lede {
   max-width: 38rem;
   color: var(--ink-dim);
@@ -444,13 +493,23 @@ a {
 .workspace-main {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr min(380px, 40vw);
+  grid-template-columns: 1fr;
   min-height: 0;
   position: relative;
 }
 
+.workspace-main.has-panel {
+  grid-template-columns: 1fr min(380px, 40vw);
+}
+
+.person-panel.is-empty,
+.person-panel.is-docked {
+  display: none;
+}
+
 @media (max-width: 900px) {
-  .workspace-main {
+  .workspace-main,
+  .workspace-main.has-panel {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }

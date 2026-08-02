@@ -10,8 +10,8 @@ type Props = {
 type Step = "brand" | "menu";
 
 /**
- * Step 1: only the word SEJIRE.
- * Step 2 (after tap): start choices — same controls on phone and desktop.
+ * Step 1: only SEJIRE.
+ * Step 2: start choices — same mental model on phone and desktop.
  */
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const [step, setStep] = useState<Step>("brand");
@@ -48,31 +48,31 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
         <button type="button" className="welcome-menu-brand" onClick={() => setStep("brand")}>
           SEJIRE
         </button>
-        <p className="welcome-menu-sub">Что сделать дальше</p>
 
         <div className="welcome-menu-actions">
           {hasDraft ? (
             <>
               <button type="button" className="btn welcome-menu-btn" onClick={onContinueDraft}>
-                Продолжить черновик
+                Продолжить
               </button>
-              <button type="button" className="btn ghost welcome-menu-btn" onClick={startFresh}>
+              <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
+                Открыть по 12 словам
+              </button>
+              <button type="button" className="welcome-link-quiet" onClick={startFresh}>
                 Новое древо
               </button>
             </>
           ) : (
-            <button type="button" className="btn welcome-menu-btn" onClick={startFresh}>
-              Начать
-            </button>
+            <>
+              <button type="button" className="btn welcome-menu-btn" onClick={startFresh}>
+                Начать
+              </button>
+              <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
+                Открыть по 12 словам
+              </button>
+            </>
           )}
-          <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
-            Открыть по 12 словам
-          </button>
         </div>
-
-        <button type="button" className="welcome-menu-back" onClick={() => setStep("brand")}>
-          Назад
-        </button>
       </div>
     </div>
   );

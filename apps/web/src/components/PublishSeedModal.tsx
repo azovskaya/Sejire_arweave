@@ -182,21 +182,18 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal panel">
-        <h2>Сохранить в Arweave</h2>
+        <h2>Сохранить</h2>
         <p className="sub">
-          Отдельный кошелёк (ArConnect и т.п.) <strong>не нужен</strong>. Достаточно{" "}
-          <strong>12 слов</strong>: ими шифруется сейф и из них же получается адрес в Arweave для
-          оплаты одной записи. Без фразы данные не прочитать; на этом адресе должен быть небольшой
-          баланс AR.
+          <strong>12 слов</strong> — ваш ключ. Без них дерево потом не открыть. Запишите на бумагу.
         </p>
 
         {mode === "intro" && (
           <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
             <button className="btn" type="button" onClick={startCreate}>
-              Создать 12 слов и отправить
+              Создать 12 слов
             </button>
             <button className="btn ghost" type="button" onClick={() => setMode("existing")}>
-              У меня уже есть 12 слов
+              У меня уже есть слова
             </button>
             <button className="btn ghost" type="button" onClick={requestClose}>
               Отмена
@@ -207,8 +204,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "create-show" && (
           <div>
             <p className="sub">
-              Запишите фразу на бумаге <strong>сейчас</strong>. Это ключ шифрования и доступ к адресу
-              Arweave — сторонний кошелёк не подключается.
+              Запишите эти слова на бумаге <strong>сейчас</strong>.
             </p>
             <ol className="seed-grid">
               {words.map((w, i) => (
@@ -238,19 +234,24 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
         {mode === "create-confirm" && (
           <form onSubmit={(e) => void onConfirmCreate(e)}>
-            <p className="sub">Повторите 12 слов — без этого нельзя ни файл, ни отправку.</p>
+            <p className="sub">Повторите 12 слов.</p>
             <textarea rows={3} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             <div className="actions">
               <button className="btn ghost" type="button" onClick={() => setMode("create-show")}>
                 Назад
               </button>
-              <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
-                Только файл
-              </button>
               <button className="btn" type="submit">
-                В Arweave
+                Сохранить
               </button>
             </div>
+            <button
+              className="welcome-link-quiet"
+              type="button"
+              style={{ marginTop: "0.75rem", width: "100%", textAlign: "center" }}
+              onClick={() => void exportFileOnly()}
+            >
+              Только скачать файл (без сети)
+            </button>
           </form>
         )}
 

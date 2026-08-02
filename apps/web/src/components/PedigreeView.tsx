@@ -166,10 +166,6 @@ export function PedigreeView({
         <div className="pedigree-empty-card">
           <p className="eyebrow">SEJIRE</p>
           <h2>Начните с себя</h2>
-          <p>
-            Добавьте себя на схему, затем маму и папу карточками «+». Чтобы заполнить сведения —
-            нажмите карточку.
-          </p>
           <button className="btn" type="button" onClick={onEmptyStart}>
             Добавить себя
           </button>
@@ -194,8 +190,8 @@ export function PedigreeView({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="focus-chip" title="Схема строится от этого человека влево направо — к предкам">
-          <span className="focus-chip-label">Схема от</span>
+        <div className="focus-chip" title="Схема строится от этого человека к предкам">
+          <span className="focus-chip-label">От</span>
           <strong className="clamp-1">{focusPerson?.name || "—"}</strong>
           {showHome && homeFocusId ? (
             <button
@@ -207,60 +203,28 @@ export function PedigreeView({
                 e.stopPropagation();
                 onSetFocus(homeFocusId);
               }}
-              title="Показать схему снова от вас: вы → родители → деды"
+              title="Вернуть схему к вам"
             >
-              Вернуть ко мне
+              К себе
             </button>
           ) : null}
-          {selectedId && selectedId !== focusId ? (
+        </div>
+        {(scale !== 1 || pan.x !== 28 || pan.y !== 28) && (
+          <div className="pedigree-toolbar" aria-label="Вид">
             <button
               type="button"
-              className="chip-action"
+              className="tool-btn wide"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onSetFocus(selectedId);
+              onClick={() => {
+                setScale(1);
+                setPan({ x: 28, y: 28 });
               }}
             >
-              От выбранного
+              Сброс вида
             </button>
-          ) : null}
-        </div>
-        <div className="pedigree-toolbar" aria-label="Масштаб">
-          <button
-            type="button"
-            className="tool-btn"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setScale((s) => Math.min(1.45, s + 0.1))}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="tool-btn"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setScale((s) => Math.max(0.55, s - 0.1))}
-          >
-            −
-          </button>
-          <button
-            type="button"
-            className="tool-btn wide"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => {
-              setScale(1);
-              setPan({ x: 28, y: 28 });
-            }}
-          >
-            Сброс вида
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-      <p className="pedigree-hint">
-        Нажмите карточку — профиль. Предки: кнопка в профиле или двойной клик на компьютере. На
-        телефоне можно сжать/развести пальцы для масштаба
-      </p>
 
       <div
         className="pedigree-world"
