@@ -50,6 +50,11 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimer = useRef<number | null>(null);
   const jsonInputRef = useRef<HTMLInputElement | null>(null);
+  const moreRef = useRef<HTMLDetailsElement | null>(null);
+
+  function closeMoreMenu() {
+    if (moreRef.current) moreRef.current.open = false;
+  }
 
   useEffect(() => {
     saveDraftTree(store);
@@ -336,15 +341,29 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <button type="button" className="btn" onClick={openPublish}>
             В Arweave
           </button>
-          <details className="top-more">
+          <details className="top-more" ref={moreRef}>
             <summary className="btn ghost">Ещё</summary>
             <div className="top-more-menu" role="menu">
               {people.length >= 1 && (
                 <>
-                  <button type="button" className="btn ghost" onClick={() => void exportClassicPdf()}>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      closeMoreMenu();
+                      void exportClassicPdf();
+                    }}
+                  >
                     Древо в PDF
                   </button>
-                  <button type="button" className="btn ghost" onClick={() => void exportShezhirePdf()}>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      closeMoreMenu();
+                      void exportShezhirePdf();
+                    }}
+                  >
                     Жеті ата PDF
                   </button>
                 </>
@@ -352,7 +371,10 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               <button
                 type="button"
                 className="btn ghost"
-                onClick={exportJson}
+                onClick={() => {
+                  closeMoreMenu();
+                  exportJson();
+                }}
                 title="Скачать все данные древа в JSON"
               >
                 Выгрузить JSON
@@ -360,12 +382,22 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               <button
                 type="button"
                 className="btn ghost"
-                onClick={() => jsonInputRef.current?.click()}
+                onClick={() => {
+                  closeMoreMenu();
+                  jsonInputRef.current?.click();
+                }}
                 title="Загрузить древо из JSON-файла"
               >
                 Загрузить JSON
               </button>
-              <button type="button" className="btn ghost" onClick={onHome}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  closeMoreMenu();
+                  onHome();
+                }}
+              >
                 На главную
               </button>
             </div>
