@@ -287,18 +287,18 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "create-ready" && (
           <div>
             <p className="sub">
-              Слова совпали. Скачайте ключ как JSON (`sejire/seed/v1`) — запас к бумаге. Это не
-              древо: древо шифруется отдельно в сейф.
+              Слова совпали. Дальше — ключ на диск, затем древо в сеть или локальный шифрованный
+              файл.
             </p>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={saveSeedFile}>
-                {seedFileSaved ? "Скачать ключ ещё раз" : "Скачать 12 слов (JSON)"}
+                {seedFileSaved ? "12 слов · JSON ещё раз" : "12 слов · JSON"}
               </button>
               <button className="btn ghost" type="button" onClick={() => void runPublish(mnemonic, true)}>
-                Сохранить древо в сеть
+                Древо в децентрализованную сеть
               </button>
               <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
-                Только зашифрованный сейф (без сети)
+                Зашифрованное древо · локально
               </button>
               <button className="btn ghost" type="button" onClick={() => setMode("create-confirm")}>
                 Назад
