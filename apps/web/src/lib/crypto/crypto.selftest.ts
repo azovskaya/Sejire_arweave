@@ -5,6 +5,7 @@
 import { createMnemonic, isValidMnemonic, normalizeMnemonic } from "./bip39";
 import { deriveKeysFromMnemonic } from "./keys";
 import { decryptJson, encryptJson } from "./encrypt";
+import { buildSeedBackup, parseSeedBackup } from "./seedBackup";
 import { emptyVault, putTree } from "./vault";
 import { createTree, commitDraft, upsertPersonFields } from "../treeEngine";
 
@@ -41,5 +42,11 @@ try {
   failed = true;
 }
 assert(failed, "wrong key cannot decrypt");
+
+const seedBackup = buildSeedBackup(m1);
+assert(seedBackup.schema === "sejire/seed/v1", "seed schema");
+assert(seedBackup.word_count === 12, "seed word_count");
+assert(parseSeedBackup(seedBackup) === m1, "seed backup roundtrip");
+assert(parseSeedBackup({ schema: "sejire/envelope/v1" }) === null, "reject non-seed");
 
 console.log("crypto.selftest: OK", { vaultId: keysA.vaultId.slice(0, 8) });

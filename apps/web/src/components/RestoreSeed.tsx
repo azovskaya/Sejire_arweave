@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { isValidMnemonic, normalizeMnemonic } from "../lib/crypto/bip39";
 import { deriveKeysFromMnemonic, fingerprintVaultId } from "../lib/crypto/keys";
 import type { EnvelopeV1 } from "../lib/crypto/encrypt";
+import { parseSeedBackup } from "../lib/crypto/seedBackup";
 import { openEnvelope, openLocalVault } from "../lib/crypto/vault";
 import { fetchLatestEnvelope } from "../lib/arweave/fetch";
 import { saveDraftTree, loadDraftTree } from "../lib/draftStorage";
@@ -76,16 +77,27 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
   }
 
   async function onFile(file: File) {
-    const phrase = normalizeMnemonic(input);
-    if (!isValidMnemonic(phrase)) {
-      setError("Сначала введите 12 слов.");
-      return;
-    }
     setBusy(true);
+    setError(null);
     try {
+      const raw = JSON.parse(await file.text()) as Record<string, unknown>;
+      const fromSeed = parseSeedBackup(raw);
+      if (fromSeed) {
+        setInput(fromSeed);
+        setStatus("12 слов загружены из sejire/seed/v1 — нажмите «Открыть»");
+        return;
+      }
+      if (raw.schema !== "sejire/envelope/v1") {
+        setError("Нужен файл sejire/seed/v1 (12 слов) или sejire/envelope/v1 (сейф).");
+        return;
+      }
+      const phrase = normalizeMnemonic(input);
+      if (!isValidMnemonic(phrase)) {
+        setError("Для сейфа сначала введите 12 слов (или загрузите seed JSON).");
+        return;
+      }
       const keys = deriveKeysFromMnemonic(phrase);
-      const envelope = JSON.parse(await file.text()) as EnvelopeV1;
-      const vault = await openEnvelope(keys, envelope);
+      const vault = await openEnvelope(keys, raw as EnvelopeV1);
       await finishWithVault(vault);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -132,7 +144,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
         </button>
         {showFile ? (
           <label className="full" style={{ marginTop: "0.55rem" }}>
-            Envelope-файл
+            JSON: 12 слов (seed) или сейф (envelope)
             <input
               type="file"
               accept="application/json,.json"
@@ -143,6 +155,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
             />
           </label>
         ) : null}
+        {status && !busy && <p className="sub">{status}</p>}
         {error && <p className="form-error">{error}</p>}
       </form>
     </section>

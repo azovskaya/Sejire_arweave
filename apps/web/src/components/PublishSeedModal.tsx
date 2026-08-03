@@ -7,6 +7,7 @@ import {
   splitWords,
 } from "../lib/crypto/bip39";
 import { deriveKeysFromMnemonic, fingerprintVaultId } from "../lib/crypto/keys";
+import { downloadSeedBackup } from "../lib/crypto/seedBackup";
 import type { TreeStore } from "../lib/types";
 import {
   downloadEnvelope,
@@ -50,27 +51,6 @@ function confirmDiscardSeed() {
   return window.confirm(
     "Сгенерированные 12 слов будут потеряны с экрана. Вы уже записали их на бумагу?"
   );
-}
-
-/** Plain-text backup of the 12 words — only after the user confirmed they wrote them down. */
-function downloadSeedWords(phrase: string) {
-  const words = splitWords(normalizeMnemonic(phrase));
-  const body = [
-    "SEJIRE — резервная копия 12 слов",
-    "Храните этот файл отдельно и надёжно. Кто знает слова — владеет древом.",
-    "",
-    ...words.map((w, i) => `${i + 1}. ${w}`),
-    "",
-    `Фраза одной строкой: ${normalizeMnemonic(phrase)}`,
-    "",
-  ].join("\n");
-  const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "sejire-12-words.txt";
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export function PublishSeedModal({ store, onClose, onPublished }: Props) {
@@ -190,9 +170,13 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       setError("Сначала повторите 12 слов.");
       return;
     }
-    downloadSeedWords(mnemonic);
-    setSeedFileSaved(true);
-    setStatus("Файл sejire-12-words.txt скачан");
+    try {
+      downloadSeedBackup(mnemonic);
+      setSeedFileSaved(true);
+      setStatus("Файл sejire-12-words….json (схема sejire/seed/v1) скачан");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }
 
   async function onExisting(e: FormEvent) {
@@ -303,12 +287,12 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "create-ready" && (
           <div>
             <p className="sub">
-              Слова совпали. Скачайте копию в файл — это запасной вариант к бумаге. Потом можно
-              сохранить древо в сеть.
+              Слова совпали. Скачайте ключ как JSON (`sejire/seed/v1`) — запас к бумаге. Это не
+              древо: древо шифруется отдельно в сейф.
             </p>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={saveSeedFile}>
-                {seedFileSaved ? "Скачать 12 слов ещё раз" : "Скачать 12 слов в файл"}
+                {seedFileSaved ? "Скачать ключ ещё раз" : "Скачать 12 слов (JSON)"}
               </button>
               <button className="btn ghost" type="button" onClick={() => void runPublish(mnemonic, true)}>
                 Сохранить древо в сеть
