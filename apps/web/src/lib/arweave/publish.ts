@@ -1,12 +1,8 @@
-import Arweave from "arweave";
 import type { JWKInterface } from "arweave/web/lib/wallet";
 import type { EnvelopeV1 } from "../crypto/encrypt";
+import { createArweaveClient } from "./client";
 
-const arweave = Arweave.init({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
+const arweave = createArweaveClient();
 
 export type PublishResult =
   | { ok: true; txId: string }

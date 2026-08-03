@@ -1,8 +1,8 @@
 import forge from "node-forge";
 import type { JWKInterface } from "arweave/web/lib/wallet";
-import Arweave from "arweave";
 import { bytesToHex } from "@noble/hashes/utils.js";
 import { sha256 } from "@noble/hashes/sha2.js";
+import { createArweaveClient } from "./client";
 
 /**
  * Deterministic RSA-2048 JWK from BIP-39 seed.
@@ -64,11 +64,7 @@ function bnToB64Url(bn: forge.jsbn.BigInteger): string {
 }
 
 export async function addressFromJwk(jwk: JWKInterface): Promise<string> {
-  const arweave = Arweave.init({
-    host: "arweave.net",
-    port: 443,
-    protocol: "https",
-  });
+  const arweave = createArweaveClient();
   return arweave.wallets.jwkToAddress(jwk);
 }
 
