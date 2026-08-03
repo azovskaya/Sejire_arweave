@@ -130,9 +130,9 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       if (!result.ok) {
         downloadEnvelope(envelope);
         const fundHint = result.needsFunds
-          ? " Переведите немного AR на адрес ниже (из ваших 12 слов). Отдельный кошелёк не нужен."
+          ? " Переведите AR на адрес ниже, затем нажмите «Отправить»."
           : "";
-        setError(`${result.error}${fundHint} Зашифрованный файл скачан как запасной вариант.`);
+        setError(`${result.error}${fundHint}`);
         setMnemonic(phrase);
         setMode(result.needsFunds ? "fund-wait" : "intro");
         return;
@@ -340,44 +340,30 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "fund-wait" && (
           <div>
             <p className="sub">
-              Те же 12 слов сохранены в этом окне. Пополните адрес и нажмите «Повторить отправку» —
-              не создавайте новую фразу.
+              На адресе из ваших 12 слов мало AR. Переведите немного AR, затем отправьте снова. Новые
+              слова создавать не нужно.
             </p>
-            {words.length > 0 && (
-              <ol className="seed-grid">
-                {words.map((w, i) => (
-                  <li key={`${w}-${i}`}>
-                    <span>{i + 1}.</span> {w}
-                  </li>
-                ))}
-              </ol>
-            )}
             {walletAddress && (
-              <p className="sub mono publish-meta">Адрес: {walletAddress}</p>
+              <button
+                type="button"
+                className="publish-address"
+                onClick={() => void copyAddress()}
+                title="Нажмите, чтобы скопировать"
+              >
+                {walletAddress}
+                <span className="publish-address-hint">
+                  {status === "Адрес скопирован" ? "Скопировано" : "Нажмите, чтобы скопировать"}
+                </span>
+              </button>
             )}
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={() => void runPublish(mnemonic, true)}>
-                Повторить отправку
+                Отправить
               </button>
-              <button className="btn ghost" type="button" onClick={() => void copyAddress()}>
-                Скопировать адрес
-              </button>
-              <button
-                className="btn ghost"
-                type="button"
-                onClick={() => {
-                  if (!confirmDiscardSeed()) return;
-                  setMnemonic("");
-                  setConfirm("");
-                  setWalletAddress(null);
-                  setError(null);
-                  setMode("intro");
-                }}
-              >
-                В начало (новые 12 слов — только если уверены)
+              <button className="welcome-link-quiet" type="button" onClick={requestClose}>
+                Закрыть
               </button>
             </div>
-            {status && <p className="sub">{status}</p>}
           </div>
         )}
 

@@ -1176,6 +1176,37 @@ a {
   font-size: 0.78rem !important;
 }
 
+.publish-address {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0.85rem 0 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 88%, var(--ink));
+  color: inherit;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.publish-address:hover,
+.publish-address:focus-visible {
+  border-color: color-mix(in srgb, var(--ink) 28%, transparent);
+  outline: none;
+}
+
+.publish-address-hint {
+  font-family: var(--font-ui, inherit);
+  font-size: 0.72rem;
+  opacity: 0.55;
+  letter-spacing: 0.01em;
+}
+
 .hero-create {
   width: min(640px, calc(100% - 2rem));
   margin: 0 auto;
