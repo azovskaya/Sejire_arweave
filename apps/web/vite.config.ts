@@ -11,13 +11,29 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["arweave/web/index.js", "node-forge", "@scure/bip39", "@noble/hashes"],
+    include: ["arweave/web/index.js", "node-forge", "@scure/bip39", "@noble/hashes", "jspdf"],
   },
   build: {
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        // Avoid circular async chunk with app entry (Safari: Importing a module script failed).
+        manualChunks(id) {
+          if (
+            id.includes("node_modules/jspdf") ||
+            id.includes("node_modules/html2canvas") ||
+            id.includes("node_modules/dompurify") ||
+            id.includes("node_modules/canvg") ||
+            id.includes("node_modules/fflate")
+          ) {
+            return "pdf-vendor";
+          }
+        },
+      },
+    },
   },
 });

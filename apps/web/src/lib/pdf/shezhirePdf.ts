@@ -1,3 +1,4 @@
+import { jsPDF } from "jspdf";
 import type { Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { maleLineUp, lifeDatesLine } from "./lineage";
@@ -12,11 +13,6 @@ import {
   drawTitleOrnament,
   type Rgb,
 } from "./ornaments";
-
-async function loadJsPdf() {
-  const mod = await import("jspdf");
-  return mod.jsPDF;
-}
 
 /**
  * Wall poster «Жеті ата»: vertical male line in Kazakh ornamental cartouches.
@@ -37,8 +33,7 @@ export async function downloadShezhirePdf(opts: {
   const line = [...ascending].reverse(); // oldest at top
   if (!line.length) throw new Error(t.noMaleLine);
 
-  const JsPDF = await loadJsPdf();
-  const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   await ensurePdfFont(doc);
 
   const pageW = doc.internal.pageSize.getWidth();

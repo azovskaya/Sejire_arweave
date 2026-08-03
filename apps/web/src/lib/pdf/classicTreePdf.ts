@@ -1,4 +1,4 @@
-import type { jsPDF } from "jspdf";
+import { jsPDF } from "jspdf";
 import type { Person, Snapshot, TreeMeta } from "../types";
 import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
@@ -13,11 +13,6 @@ import {
   safeFilename,
   wrapName,
 } from "./poster";
-
-async function loadJsPdf() {
-  const mod = await import("jspdf");
-  return mod.jsPDF;
-}
 
 function drawPersonCard(
   doc: jsPDF,
@@ -106,8 +101,7 @@ export async function downloadClassicTreePdf(opts: {
   const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, 5);
   if (!slots.length) throw new Error(t.noPeople);
 
-  const JsPDF = await loadJsPdf();
-  const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   await ensurePdfFont(doc);
 
   const pageW = doc.internal.pageSize.getWidth();
