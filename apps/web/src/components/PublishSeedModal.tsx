@@ -25,7 +25,14 @@ type Props = {
   onPublished: (info: { txId?: string; mode: "export" | "arweave"; address?: string }) => void;
 };
 
-type Mode = "intro" | "create-show" | "create-confirm" | "existing" | "busy" | "fund-wait";
+type Mode =
+  | "intro"
+  | "create-show"
+  | "create-confirm"
+  | "create-ready"
+  | "existing"
+  | "busy"
+  | "fund-wait";
 
 async function loadVault(keys: ReturnType<typeof deriveKeysFromMnemonic>): Promise<VaultV1> {
   const local = await openLocalVault(keys);
@@ -45,6 +52,27 @@ function confirmDiscardSeed() {
   );
 }
 
+/** Plain-text backup of the 12 words — only after the user confirmed they wrote them down. */
+function downloadSeedWords(phrase: string) {
+  const words = splitWords(normalizeMnemonic(phrase));
+  const body = [
+    "SEJIRE — резервная копия 12 слов",
+    "Храните этот файл отдельно и надёжно. Кто знает слова — владеет древом.",
+    "",
+    ...words.map((w, i) => `${i + 1}. ${w}`),
+    "",
+    `Фраза одной строкой: ${normalizeMnemonic(phrase)}`,
+    "",
+  ].join("\n");
+  const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sejire-12-words.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   const [mode, setMode] = useState<Mode>("intro");
   const [mnemonic, setMnemonic] = useState("");
@@ -53,9 +81,15 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [seedFileSaved, setSeedFileSaved] = useState(false);
   const words = useMemo(() => (mnemonic ? splitWords(mnemonic) : []), [mnemonic]);
 
-  const seedLocked = mode === "create-show" || mode === "create-confirm" || mode === "busy" || mode === "fund-wait";
+  const seedLocked =
+    mode === "create-show" ||
+    mode === "create-confirm" ||
+    mode === "create-ready" ||
+    mode === "busy" ||
+    mode === "fund-wait";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -64,7 +98,12 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         e.preventDefault();
         return;
       }
-      if (mode === "create-show" || mode === "create-confirm" || mode === "fund-wait") {
+      if (
+        mode === "create-show" ||
+        mode === "create-confirm" ||
+        mode === "create-ready" ||
+        mode === "fund-wait"
+      ) {
         e.preventDefault();
         if (!confirmDiscardSeed()) return;
         setMode("intro");
@@ -72,6 +111,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         setConfirm("");
         setError(null);
         setWalletAddress(null);
+        setSeedFileSaved(false);
         return;
       }
       onClose();
@@ -130,16 +170,29 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     setConfirm("");
     setError(null);
     setWalletAddress(null);
+    setSeedFileSaved(false);
     setMode("create-show");
   }
 
-  async function onConfirmCreate(e: FormEvent) {
+  function onConfirmCreate(e: FormEvent) {
     e.preventDefault();
     if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
       setError("Фраза не совпадает.");
       return;
     }
-    await runPublish(mnemonic, true);
+    setError(null);
+    setSeedFileSaved(false);
+    setMode("create-ready");
+  }
+
+  function saveSeedFile() {
+    if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
+      setError("Сначала повторите 12 слов.");
+      return;
+    }
+    downloadSeedWords(mnemonic);
+    setSeedFileSaved(true);
+    setStatus("Файл sejire-12-words.txt скачан");
   }
 
   async function onExisting(e: FormEvent) {
@@ -233,7 +286,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         )}
 
         {mode === "create-confirm" && (
-          <form onSubmit={(e) => void onConfirmCreate(e)}>
+          <form onSubmit={onConfirmCreate}>
             <p className="sub">Повторите 12 слов.</p>
             <textarea rows={3} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             <div className="actions">
@@ -241,18 +294,34 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
                 Назад
               </button>
               <button className="btn" type="submit">
-                Сохранить
+                Далее
               </button>
             </div>
-            <button
-              className="welcome-link-quiet"
-              type="button"
-              style={{ marginTop: "0.75rem", width: "100%", textAlign: "center" }}
-              onClick={() => void exportFileOnly()}
-            >
-              Только скачать файл (без сети)
-            </button>
           </form>
+        )}
+
+        {mode === "create-ready" && (
+          <div>
+            <p className="sub">
+              Слова совпали. Скачайте копию в файл — это запасной вариант к бумаге. Потом можно
+              сохранить древо в сеть.
+            </p>
+            <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
+              <button className="btn" type="button" onClick={saveSeedFile}>
+                {seedFileSaved ? "Скачать 12 слов ещё раз" : "Скачать 12 слов в файл"}
+              </button>
+              <button className="btn ghost" type="button" onClick={() => void runPublish(mnemonic, true)}>
+                Сохранить древо в сеть
+              </button>
+              <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
+                Только зашифрованный сейф (без сети)
+              </button>
+              <button className="btn ghost" type="button" onClick={() => setMode("create-confirm")}>
+                Назад
+              </button>
+            </div>
+            {seedFileSaved && status && <p className="sub">{status}</p>}
+          </div>
         )}
 
         {mode === "existing" && (
