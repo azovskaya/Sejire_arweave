@@ -319,7 +319,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         maxGenerations: SHEZHIRE_MAX_GENERATIONS,
         template,
       });
-      flash("Жеті ата PDF скачан");
+      flash("Шежіре PDF скачан");
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }
@@ -422,7 +422,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       openShezhirePdfPicker();
                     }}
                   >
-                    Жеті ата PDF
+                    Шежіре PDF
                   </button>
                 </>
               )}

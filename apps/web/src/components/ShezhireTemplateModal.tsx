@@ -12,8 +12,8 @@ export function ShezhireTemplateModal({ onPick, onClose }: Props) {
         className="modal panel shezhire-template-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2>Жеті ата</h2>
-        <p className="sub">Три разных PDF. Баспалдақ — альбомный лист.</p>
+        <h2>Шежіре</h2>
+        <p className="sub">Выберите оформление</p>
         <div className="shezhire-template-list">
           {SHEZHIRE_TEMPLATES.map((tpl) => (
             <button

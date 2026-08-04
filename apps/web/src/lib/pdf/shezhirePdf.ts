@@ -118,14 +118,18 @@ function renderManuscript(ctx: RenderCtx) {
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
   doc.setFontSize(line.length > 9 ? 20 : 24);
-  doc.text(t.shezhireTitle, pageW / 2, 20, { align: "center" });
-  setPdfFont(doc, "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...mute);
-  doc.text(t.shezhireSubtitle, pageW / 2, 25.5, { align: "center" });
-  drawTitleOrnament(doc, pageW / 2, 29, pageW / 2 - 28, gold);
+  doc.text(t.shezhireTitle, pageW / 2, 22, { align: "center" });
+  if (t.shezhireSubtitle) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...mute);
+    doc.text(t.shezhireSubtitle, pageW / 2, 27.5, { align: "center" });
+    drawTitleOrnament(doc, pageW / 2, 31, pageW / 2 - 28, gold);
+  } else {
+    drawTitleOrnament(doc, pageW / 2, 27, pageW / 2 - 28, gold);
+  }
 
-  let contentTop = drawAffiliationBlock(doc, pageW, 35, meta, locale, ink, mute);
+  let contentTop = drawAffiliationBlock(doc, pageW, 34, meta, locale, ink, mute);
   contentTop += 3;
 
   const n = line.length;
@@ -269,12 +273,7 @@ function renderRegistry(ctx: RenderCtx) {
   doc.circle(pageW / 2 - 36, 32, 1.2, "F");
   doc.circle(pageW / 2 + 36, 32, 1.2, "F");
 
-  setPdfFont(doc, "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...mute);
-  doc.text("Мужская линия · до 13 колен", pageW / 2, 38, { align: "center" });
-
-  let y = drawAffiliationBlock(doc, pageW, 44, meta, locale, ink, mute, contentW - 8);
+  let y = drawAffiliationBlock(doc, pageW, 40, meta, locale, ink, mute, contentW - 8);
   y += 6;
 
   const n = line.length;
@@ -390,13 +389,8 @@ function renderCascade(ctx: RenderCtx) {
   doc.setFillColor(...accent);
   doc.rect(pageW / 2 - 40, 23.5, 80, 0.7, "F");
 
-  setPdfFont(doc, "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...mute);
-  doc.text("Альбомный постер · от түп ата к себе", pageW / 2, 29, { align: "center" });
-
-  let headerBottom = drawAffiliationBlock(doc, pageW, 34, meta, locale, ink, mute, pageW - 36);
-  headerBottom += 3;
+  let headerBottom = drawAffiliationBlock(doc, pageW, 30, meta, locale, ink, mute, pageW - 36);
+  headerBottom += 4;
 
   const n = line.length;
   const marginX = 12;
@@ -412,15 +406,6 @@ function renderCascade(ctx: RenderCtx) {
   const startX = marginX + Math.max(0, (areaW - totalW) / 2);
   const cardY = top + Math.max(0, (areaH - cardH) / 2);
   const spineY = cardY - 4;
-
-  // Direction hint
-  setPdfFont(doc, "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(...mute);
-  if (n > 1) {
-    doc.text("← түп ата", startX, spineY - 2);
-    doc.text("өзі →", startX + totalW, spineY - 2, { align: "right" });
-  }
 
   // Spine above cards
   if (n > 1) {
