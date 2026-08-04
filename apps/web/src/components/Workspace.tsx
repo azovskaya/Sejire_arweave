@@ -16,6 +16,7 @@ import {
 } from "../lib/treeEngine";
 import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
 import { downloadShezhirePdf, type ShezhireTemplateId } from "../lib/pdf/shezhirePdf";
+import { SHEZHIRE_MAX_GENERATIONS } from "../lib/i18n/pdf";
 import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
@@ -315,7 +316,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         startId: id,
         meta: store.meta,
         locale: "ru",
-        maxGenerations: 7,
+        maxGenerations: SHEZHIRE_MAX_GENERATIONS,
         template,
       });
       flash("Жеті ата PDF скачан");
