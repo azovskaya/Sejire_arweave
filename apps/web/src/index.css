@@ -408,6 +408,24 @@ a {
   max-width: min(42vw, 280px);
 }
 
+.tree-shezhire {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ink-dim);
+  font-size: 0.7rem;
+  opacity: 0.72;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(42vw, 280px);
+}
+
+.shezhire-meta-modal label {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
 .top-actions {
   display: flex;
   align-items: center;
@@ -1268,6 +1286,10 @@ a {
   }
 
   .tree-title {
+    max-width: calc(100vw - 3rem);
+  }
+
+  .tree-shezhire {
     max-width: calc(100vw - 3rem);
   }
 

@@ -1,3 +1,5 @@
+import type { ZhuzId } from "./zhuzRu";
+
 export type MediaRef = {
   tx: string;
   kind: "image" | "document" | "audio" | "other";
@@ -49,7 +51,8 @@ export type TreeMeta = {
   next_version: number;
   created_at: string;
   author: string;
-  /** Optional clan / ру name for Шежіре header (future UI). */
+  zhuz?: ZhuzId | null;
+  /** Optional clan / ру name for Шежіре header. */
   clanName?: string | null;
   /** Optional tamga image as data URL or https URL (future UI). */
   tamgaUrl?: string | null;

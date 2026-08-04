@@ -10,6 +10,7 @@ type PdfMessages = {
   /** Labels by distance from focus: 0 = self, 1 = father, … */
   jetiAtaLabel: (distanceFromFocus: number) => string;
   clanLabel: string;
+  zhuzLabel: string;
   noPeople: string;
   noMaleLine: string;
   exportedWith: string;
@@ -32,6 +33,7 @@ const ru: PdfMessages = {
   shezhireSubtitle: "Шежіре",
   jetiAtaLabel: (d) => JETI_ATA_FROM_SELF[Math.min(Math.max(0, d), JETI_ATA_FROM_SELF.length - 1)] ?? `${d + 1}`,
   clanLabel: "Ру",
+  zhuzLabel: "Жүз",
   noPeople: "В древе нет людей для экспорта",
   noMaleLine: "Нет мужской линии для шежіре (нужен отец или выбран мужчина)",
   exportedWith: "SEJIRE",

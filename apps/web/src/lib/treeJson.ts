@@ -2,6 +2,7 @@ import type { GuideState } from "./guide";
 import { defaultGuide } from "./guide";
 import type { Person, Snapshot, TreeMeta, TreeStore } from "./types";
 import { safeFilename } from "./pdf/poster";
+import { isZhuzId } from "./zhuzRu";
 
 export const TREE_JSON_SCHEMA = "sejire/tree-export/v1" as const;
 
@@ -90,6 +91,7 @@ function normalizeMeta(raw: unknown): TreeMeta | null {
     next_version: typeof raw.next_version === "number" ? raw.next_version : 1,
     created_at: typeof raw.created_at === "string" ? raw.created_at : new Date().toISOString(),
     author: typeof raw.author === "string" ? raw.author : "local",
+    zhuz: isZhuzId(raw.zhuz) ? raw.zhuz : null,
     clanName: (raw.clanName as string | null | undefined) ?? null,
     tamgaUrl: (raw.tamgaUrl as string | null | undefined) ?? null,
   };
@@ -154,6 +156,7 @@ export function parseTreeJson(text: string): ParseTreeJsonResult {
           created_at: new Date().toISOString(),
           author: "local",
           clanName: null,
+          zhuz: null,
           tamgaUrl: null,
         },
         commits: {},

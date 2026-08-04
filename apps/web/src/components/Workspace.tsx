@@ -17,6 +17,8 @@ import {
 import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
 import { downloadShezhirePdf } from "../lib/pdf/shezhirePdf";
 import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
+import { formatShezhireAffiliation } from "../lib/zhuzRu";
+import { ShezhireMetaModal } from "./ShezhireMetaModal";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -54,6 +56,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const moreRef = useRef<HTMLDetailsElement | null>(null);
   const panelRef = useRef<PersonPanelHandle | null>(null);
   const [ancestorsHint, setAncestorsHint] = useState(false);
+  const [showShezhireMeta, setShowShezhireMeta] = useState(false);
+
+  const shezhireLine = useMemo(
+    () => formatShezhireAffiliation(store.meta.zhuz, store.meta.clanName),
+    [store.meta.zhuz, store.meta.clanName]
+  );
 
   function closeMoreMenu() {
     if (moreRef.current) moreRef.current.open = false;
@@ -349,6 +357,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <div>
             <strong>SEJIRE</strong>
             <span className="tree-title">{store.meta.title}</span>
+            {shezhireLine ? <span className="tree-shezhire">{shezhireLine}</span> : null}
           </div>
         </div>
         <nav className="top-actions">
@@ -384,6 +393,17 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   </button>
                 </>
               )}
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  closeMoreMenu();
+                  setShowShezhireMeta(true);
+                }}
+                title="Для казахского шежіре. Можно не заполнять"
+              >
+                Жүз и ру
+              </button>
               <button
                 type="button"
                 className="btn ghost"
@@ -545,6 +565,30 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               mode === "arweave"
                 ? `Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
                 : "Файл сейфа скачан. Храните вместе с 12 словами."
+            );
+          }}
+        />
+      )}
+
+      {showShezhireMeta && (
+        <ShezhireMetaModal
+          meta={store.meta}
+          onClose={() => setShowShezhireMeta(false)}
+          onSave={({ zhuz, clanName }) => {
+            onStoreChange((prev) => ({
+              ...prev,
+              dirty: true,
+              meta: {
+                ...prev.meta,
+                zhuz,
+                clanName,
+              },
+            }));
+            setShowShezhireMeta(false);
+            flash(
+              zhuz || clanName
+                ? "Жүз и ру сохранены для этого древа"
+                : "Жүз и ру очищены"
             );
           }}
         />

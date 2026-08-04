@@ -4,6 +4,7 @@ import { pdfT, type PdfLocale } from "../i18n/pdf";
 import { maleLineUp, lifeDatesLine } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import { drawBrandMark, fitText, safeFilename, wrapName } from "./poster";
+import { formatShezhireAffiliation, zhuzFullLabel } from "../zhuzRu";
 import {
   drawDiamondKnot,
   drawHornPair,
@@ -69,20 +70,31 @@ export async function downloadShezhirePdf(opts: {
   drawTitleOrnament(doc, pageW / 2, 31.5, pageW / 2 - 28, gold);
 
   const clan = (opts.meta.clanName || "").trim();
+  const zhuz = zhuzFullLabel(opts.meta.zhuz);
+  const affiliation = formatShezhireAffiliation(opts.meta.zhuz, opts.meta.clanName);
   let contentTop = 38;
 
-  if (clan) {
+  if (affiliation) {
     setPdfFont(doc, "normal");
     doc.setFontSize(7);
     doc.setTextColor(...mute);
-    doc.text(t.clanLabel, pageW / 2, contentTop, { align: "center" });
+    const label =
+      zhuz && clan ? `${t.zhuzLabel} · ${t.clanLabel}` : zhuz ? t.zhuzLabel : t.clanLabel;
+    doc.text(label, pageW / 2, contentTop, { align: "center" });
     setPdfFont(doc, "bold");
     doc.setFontSize(11);
     doc.setTextColor(...ink);
-    const { lines } = wrapName(doc, clan, pageW - 56, 2, 11, 8);
+    const { lines } = wrapName(doc, affiliation, pageW - 56, 2, 11, 8);
     doc.text(lines[0], pageW / 2, contentTop + 5.2, { align: "center" });
-    drawHornPair(doc, pageW / 2, contentTop + 8.5, 5.5, goldSoft, 0.28);
-    contentTop += 14;
+    if (lines[1]) {
+      doc.setFontSize(9);
+      doc.text(lines[1], pageW / 2, contentTop + 9.2, { align: "center" });
+      drawHornPair(doc, pageW / 2, contentTop + 12.2, 5.5, goldSoft, 0.28);
+      contentTop += 18;
+    } else {
+      drawHornPair(doc, pageW / 2, contentTop + 8.5, 5.5, goldSoft, 0.28);
+      contentTop += 14;
+    }
   }
 
   const n = line.length;
