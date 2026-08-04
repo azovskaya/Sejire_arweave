@@ -6,14 +6,14 @@ import { ensurePdfFont, setPdfFont } from "./font";
 import { drawBrandMark, fitText, safeFilename, wrapName } from "./poster";
 import { formatShezhireAffiliation, zhuzFullLabel } from "../zhuzRu";
 import {
+  drawAncientLabelBox,
+  drawAncientRule,
+  drawAncientTizimFrame,
   drawDiamondKnot,
-  drawGenerationRowFrame,
-  drawHornPair,
-  drawKoshkarMuyiz,
+  drawGeometricHornCell,
   drawLabelPlaque,
   drawNameCartouche,
   drawOrnamentBorder,
-  drawShezhireManuscriptBorder,
   drawTitleOrnament,
   type Rgb,
 } from "./ornaments";
@@ -39,7 +39,7 @@ export const SHEZHIRE_TEMPLATES: ShezhireTemplateInfo[] = [
   {
     id: "registry",
     title: "Тізім",
-    blurb: "Древний шежіре-список: қосқар мүйіз, рукописная рамка",
+    blurb: "Древний киіз-өрнек: қосқар мүйіз по всей рамке",
     format: "A4 книжный",
   },
   {
@@ -219,77 +219,73 @@ function renderManuscript(ctx: RenderCtx) {
 }
 
 /**
- * Тізім — classical shezhire manuscript list in ancient Kazakh ornament.
- * Triple frame, қосқар мүйіз corners, ornamental generation plaques, lineage spine.
+ * Тізім — archaic shezhire list in dense Kazakh өрнек (киіз / сырмақ).
+ * Wide geometric қосқар мүйіз belts, sharp frames, hand-ruled generations.
+ * No modern cards or rounded UI.
  */
 function renderRegistry(ctx: RenderCtx) {
   const { doc, pageW, pageH, line, meta, locale } = ctx;
   const t = pdfT(locale);
-  const parchment: Rgb = [236, 222, 196];
-  const parchmentDeep: Rgb = [224, 206, 172];
-  const plaque: Rgb = [250, 240, 218];
-  const plaqueSelf: Rgb = [246, 228, 190];
-  const ink: Rgb = [58, 32, 14];
-  const mute: Rgb = [108, 78, 44];
-  const gold: Rgb = [138, 92, 38];
-  const goldSoft: Rgb = [168, 124, 62];
+  // Traditional dye palette: soot ink, ochre felt, aged hide
+  const hide: Rgb = [214, 196, 160];
+  const parchment: Rgb = [232, 214, 178];
+  const dye: Rgb = [186, 148, 88];
+  const dyeDeep: Rgb = [158, 112, 52];
+  const ink: Rgb = [42, 22, 8];
+  const mute: Rgb = [88, 58, 28];
 
-  // Deep parchment field
-  doc.setFillColor(...parchmentDeep);
+  doc.setFillColor(...hide);
   doc.rect(0, 0, pageW, pageH, "F");
-  doc.setFillColor(...parchment);
-  doc.roundedRect(5, 5, pageW - 10, pageH - 10, 1.5, 1.5, "F");
 
-  // Full traditional manuscript border
-  drawShezhireManuscriptBorder(doc, pageW, pageH, 7, ink, gold);
+  const frame = drawAncientTizimFrame(doc, pageW, pageH, ink, dye, parchment);
+  const { contentX, contentY, contentW, contentH } = frame;
+  const cx = contentX + contentW / 2;
 
-  // Title with detailed қосқар мүйіз
-  drawKoshkarMuyiz(doc, pageW / 2, 18, 10, ink, 0.34);
+  // Large geometric қосқар мүйіз above title
+  drawGeometricHornCell(doc, cx, contentY + 6, 9, ink);
+  drawGeometricHornCell(doc, cx - 22, contentY + 7.5, 5.5, dyeDeep);
+  drawGeometricHornCell(doc, cx + 22, contentY + 7.5, 5.5, dyeDeep);
+
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(line.length > 10 ? 18 : 22);
-  doc.text(t.shezhireTitle, pageW / 2, 32, { align: "center" });
+  doc.setFontSize(line.length > 10 ? 17 : 20);
+  doc.text(t.shezhireTitle, cx, contentY + 20, { align: "center" });
 
-  // Double ornamental underline
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.55);
-  doc.line(pageW / 2 - 38, 35.5, pageW / 2 + 38, 35.5);
-  doc.setDrawColor(...goldSoft);
-  doc.setLineWidth(0.22);
-  doc.line(pageW / 2 - 28, 37, pageW / 2 + 28, 37);
-  drawDiamondKnot(doc, pageW / 2, 36.2, 2, ink, parchment);
-  drawHornPair(doc, pageW / 2 - 42, 36, 5, gold, 0.28);
-  drawHornPair(doc, pageW / 2 + 42, 36, 5, gold, 0.28);
+  // Ornamental title rule (not a thin modern underline)
+  drawAncientRule(doc, contentX + 8, contentX + contentW - 8, contentY + 24, ink);
 
-  let y = drawAffiliationBlock(doc, pageW, 42, meta, locale, ink, mute, pageW - 48);
-  y += 5;
+  let y = drawAffiliationBlock(doc, pageW, contentY + 30, meta, locale, ink, mute, contentW - 12);
+  y += 4;
+
+  // Inner list field — sharp double rect (manuscript tablet)
+  const listBottom = contentY + contentH - 8;
+  const listTop = y;
+  const listH = Math.max(36, listBottom - listTop);
+  const listX = contentX + 2;
+  const listW = contentW - 4;
+
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.7);
+  doc.rect(listX, listTop, listW, listH);
+  doc.setLineWidth(0.25);
+  doc.rect(listX + 1.6, listTop + 1.6, listW - 3.2, listH - 3.2);
+
+  // Faint vertical column rule (generation | name)
+  const labelColW = Math.min(36, listW * 0.3);
+  const colRuleX = listX + 4 + labelColW;
+  doc.setDrawColor(...dyeDeep);
+  doc.setLineWidth(0.3);
+  doc.line(colRuleX, listTop + 3, colRuleX, listTop + listH - 3);
+  // Second parallel rule (hand-ruled feel)
+  doc.setLineWidth(0.12);
+  doc.line(colRuleX + 1.1, listTop + 3, colRuleX + 1.1, listTop + listH - 3);
 
   const n = line.length;
-  const bottom = pageH - 16;
-  const listTop = y;
-  const listH = Math.max(40, bottom - listTop);
-  const gap = n > 10 ? 1.1 : n > 7 ? 1.6 : 2.2;
-  const rowH = Math.min(16, Math.max(7.2, (listH - gap * Math.max(0, n - 1)) / Math.max(1, n)));
-  const block = rowH + gap;
-  const stackH = n * rowH + Math.max(0, n - 1) * gap;
-  const stackTop = listTop + Math.max(0, (listH - stackH) / 2);
-
-  const spineX = 28;
-  const plaqueX = 38;
-  const plaqueW = pageW - plaqueX - 22;
-
-  // Vertical genealogical axis (double hand-ruled line)
-  if (n > 1) {
-    const y0 = stackTop + rowH / 2;
-    const y1 = stackTop + (n - 1) * block + rowH / 2;
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.7);
-    doc.line(spineX, y0, spineX, y1);
-    doc.setDrawColor(...goldSoft);
-    doc.setLineWidth(0.2);
-    doc.line(spineX - 1.1, y0, spineX - 1.1, y1);
-    doc.line(spineX + 1.1, y0, spineX + 1.1, y1);
-  }
+  const pad = 3.5;
+  const usable = listH - pad * 2;
+  const rowH = Math.min(15.5, Math.max(6.8, usable / Math.max(1, n)));
+  const stackH = n * rowH;
+  const stackTop = listTop + pad + Math.max(0, (usable - stackH) / 2);
 
   for (let i = 0; i < n; i += 1) {
     const person = line[i];
@@ -297,45 +293,47 @@ function renderRegistry(ctx: RenderCtx) {
     const isSelf = distanceFromFocus === 0;
     const label = t.jetiAtaLabel(distanceFromFocus);
     const life = lifeDatesLine(person, rowH < 11);
-    const ry = stackTop + i * block;
+    const ry = stackTop + i * rowH;
     const cy = ry + rowH / 2;
 
-    drawDiamondKnot(doc, spineX, cy, isSelf ? 2.4 : 1.7, ink, parchment);
-    doc.setDrawColor(...goldSoft);
-    doc.setLineWidth(0.3);
-    doc.line(spineX + 2.8, cy, plaqueX - 3.5, cy);
+    // Alternating ochre wash (felt strip rhythm) — sharp, no radius
+    if (i % 2 === 1) {
+      doc.setFillColor(222, 200, 158);
+      doc.rect(listX + 2.2, ry, listW - 4.4, rowH, "F");
+    }
+    if (isSelf) {
+      doc.setFillColor(210, 178, 120);
+      doc.rect(listX + 2.2, ry, listW - 4.4, rowH, "F");
+    }
 
-    drawGenerationRowFrame(
-      doc,
-      plaqueX,
-      ry,
-      plaqueW,
-      rowH,
-      ink,
-      isSelf ? plaqueSelf : plaque,
-      gold,
-      isSelf
-    );
+    // Horizontal rule between generations
+    if (i > 0) {
+      doc.setDrawColor(...ink);
+      doc.setLineWidth(0.22);
+      doc.line(listX + 3, ry, listX + listW - 3, ry);
+      // Small horn knot on the rule
+      drawGeometricHornCell(doc, colRuleX + 0.5, ry, 2.4, dyeDeep);
+    }
 
-    const labelW = Math.min(34, plaqueW * 0.28);
-    const nameX = plaqueX + labelW + 6;
-    const dateReserve = life && rowH >= 10 ? 28 : 8;
-    const nameMaxW = plaqueW - labelW - dateReserve - 10;
-    const fontName = rowH >= 13 ? 11 : rowH >= 10 ? 9.2 : 7.4;
-    const fontMeta = Math.max(5.8, fontName * 0.68);
+    // Angular generation label box
+    const boxH = Math.min(rowH - 1.4, 8.5);
+    const boxY = cy - boxH / 2;
+    drawAncientLabelBox(doc, listX + 4, boxY, labelColW - 2, boxH, ink, isSelf ? dyeDeep : dye);
 
-    // Generation label (left column inside plaque)
-    setPdfFont(doc, "normal");
+    const fontMeta = Math.max(5.6, Math.min(7.5, boxH * 0.72));
+    setPdfFont(doc, "bold");
     doc.setFontSize(fontMeta);
-    doc.setTextColor(...mute);
-    doc.text(fitText(doc, label, labelW - 4, fontMeta), plaqueX + 5, cy + fontMeta * 0.28);
+    doc.setTextColor(...(isSelf ? ([250, 240, 220] as Rgb) : ink));
+    doc.text(fitText(doc, label, labelColW - 6, fontMeta), listX + 4 + (labelColW - 2) / 2, cy + fontMeta * 0.28, {
+      align: "center",
+    });
 
-    // Vertical separator
-    doc.setDrawColor(...goldSoft);
-    doc.setLineWidth(0.18);
-    doc.line(plaqueX + labelW, ry + 2, plaqueX + labelW, ry + rowH - 2);
+    // Name on the manuscript line
+    const nameX = colRuleX + 5;
+    const dateReserve = life && rowH >= 10 ? 30 : 6;
+    const nameMaxW = listX + listW - 5 - nameX - dateReserve;
+    const fontName = rowH >= 13 ? 11 : rowH >= 10 ? 9.4 : 7.6;
 
-    // Name
     setPdfFont(doc, "bold");
     doc.setFontSize(fontName);
     doc.setTextColor(...ink);
@@ -347,9 +345,11 @@ function renderRegistry(ctx: RenderCtx) {
       fontName,
       5.6
     );
-    const lineH = fontSize * 0.42 + 0.2;
-    const nameBlockH = nameLines.length * lineH + (life && rowH >= 11 ? fontMeta + 0.8 : 0);
-    let ty = cy - nameBlockH / 2 + lineH * 0.75;
+    const lineH = fontSize * 0.42 + 0.18;
+    const metaSize = Math.max(5.4, fontName * 0.65);
+    const metaH = life && rowH >= 11 ? metaSize + 0.6 : 0;
+    const blockH = nameLines.length * lineH + metaH;
+    let ty = cy - blockH / 2 + lineH * 0.75;
     for (const nl of nameLines) {
       doc.text(nl, nameX, ty);
       ty += lineH;
@@ -357,34 +357,33 @@ function renderRegistry(ctx: RenderCtx) {
 
     if (life && rowH >= 10) {
       setPdfFont(doc, "normal");
-      doc.setFontSize(fontMeta);
+      doc.setFontSize(metaSize);
       doc.setTextColor(...mute);
       if (rowH >= 12 && nameLines.length === 1) {
-        doc.text(fitText(doc, life, nameMaxW, fontMeta), nameX, ty + 0.6);
+        doc.text(fitText(doc, life, nameMaxW, metaSize), nameX, ty + 0.4);
       } else {
-        doc.text(fitText(doc, life, 26, fontMeta), plaqueX + plaqueW - 5, cy + fontMeta * 0.28, {
+        doc.text(fitText(doc, life, 28, metaSize), listX + listW - 5, cy + metaSize * 0.28, {
           align: "right",
         });
       }
     }
 
-    // Tiny trailing horn on self row
-    if (isSelf) {
-      drawHornPair(doc, plaqueX + plaqueW - 6, cy - 0.5, Math.min(4, rowH * 0.4), gold, 0.25);
-    }
+    // End-of-row diamond knot (traditional)
+    doc.setFillColor(...ink);
+    const knx = listX + listW - 5;
+    const kr = isSelf ? 1.6 : 1.1;
+    doc.triangle(knx, cy - kr, knx + kr, cy, knx, cy + kr, "F");
+    doc.triangle(knx, cy - kr, knx - kr, cy, knx, cy + kr, "F");
   }
 
-  // Footer seal with side horns
-  const fy = pageH - 11;
-  doc.setDrawColor(...goldSoft);
-  doc.setLineWidth(0.25);
-  doc.line(pageW / 2 - 36, fy - 4.5, pageW / 2 + 36, fy - 4.5);
-  drawDiamondKnot(doc, pageW / 2, fy - 4.5, 1.6, ink, parchment);
-  drawHornPair(doc, pageW / 2 - 44, fy - 5.5, 4.2, gold, 0.25);
-  drawHornPair(doc, pageW / 2 + 44, fy - 5.5, 4.2, gold, 0.25);
+  // Footer: miniature horn strip, no modern seal line
+  const fy = contentY + contentH - 2;
+  drawGeometricHornCell(doc, cx, fy, 4, ink);
+  drawGeometricHornCell(doc, cx - 14, fy + 0.5, 3, dyeDeep);
+  drawGeometricHornCell(doc, cx + 14, fy + 0.5, 3, dyeDeep);
 
   setPdfFont(doc, "bold");
-  drawBrandMark(doc, pageW, pageH, t.exportedWith, [130, 95, 55]);
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [100, 70, 35]);
 }
 
 /**

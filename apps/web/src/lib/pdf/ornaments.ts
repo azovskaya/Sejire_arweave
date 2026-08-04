@@ -185,209 +185,317 @@ export function drawLabelPlaque(
 }
 
 /**
- * Detailed қосқар мүйіз — multi-stroke ram-horn curl (ancient мүйіз family).
- * Used on ceremonial шежіре posters.
+ * Dense ancient Kazakh өрнек for Тізім — киіз / сырмақ geometry.
+ * Angular қосқар мүйіз units, filled bands, no modern rounded UI.
  */
-export function drawKoshkarMuyiz(
+
+/** Single geometric қосқар мүйіз cell (angular S-horns + center knot). */
+export function drawGeometricHornCell(
   doc: jsPDF,
   cx: number,
   cy: number,
   size: number,
   ink: Rgb,
-  lineW = 0.32
+  fill?: Rgb
 ) {
-  doc.setDrawColor(...ink);
   const s = size;
-  // Outer left horn (3 parallel strokes for density)
-  for (const o of [0, 0.45, 0.9]) {
-    doc.setLineWidth(lineW * (o === 0 ? 1.15 : 0.7));
-    const dx = o * 0.15;
-    doc.line(cx - dx, cy, cx - s * 0.42 - dx, cy - s * 0.08);
-    doc.line(cx - s * 0.42 - dx, cy - s * 0.08, cx - s * 0.78 - dx, cy - s * 0.42);
-    doc.line(cx - s * 0.78 - dx, cy - s * 0.42, cx - s * 0.92 - dx, cy - s * 0.78);
-    doc.line(cx - s * 0.92 - dx, cy - s * 0.78, cx - s * 0.55 - dx, cy - s * 0.95);
-    doc.line(cx - s * 0.55 - dx, cy - s * 0.95, cx - s * 0.28 - dx, cy - s * 0.72);
+  if (fill) {
+    doc.setFillColor(...fill);
+    doc.rect(cx - s * 0.95, cy - s * 0.85, s * 1.9, s * 1.7, "F");
   }
-  // Outer right horn
-  for (const o of [0, 0.45, 0.9]) {
-    doc.setLineWidth(lineW * (o === 0 ? 1.15 : 0.7));
-    const dx = o * 0.15;
-    doc.line(cx + dx, cy, cx + s * 0.42 + dx, cy - s * 0.08);
-    doc.line(cx + s * 0.42 + dx, cy - s * 0.08, cx + s * 0.78 + dx, cy - s * 0.42);
-    doc.line(cx + s * 0.78 + dx, cy - s * 0.42, cx + s * 0.92 + dx, cy - s * 0.78);
-    doc.line(cx + s * 0.92 + dx, cy - s * 0.78, cx + s * 0.55 + dx, cy - s * 0.95);
-    doc.line(cx + s * 0.55 + dx, cy - s * 0.95, cx + s * 0.28 + dx, cy - s * 0.72);
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(Math.max(0.35, s * 0.08));
+
+  // Left horn — angular hook (ancient киіз cut)
+  const lx = [
+    [cx, cy],
+    [cx - s * 0.35, cy - s * 0.05],
+    [cx - s * 0.72, cy - s * 0.38],
+    [cx - s * 0.88, cy - s * 0.72],
+    [cx - s * 0.55, cy - s * 0.88],
+    [cx - s * 0.32, cy - s * 0.62],
+    [cx - s * 0.48, cy - s * 0.42],
+    [cx - s * 0.22, cy - s * 0.18],
+  ] as const;
+  for (let i = 0; i < lx.length - 1; i += 1) {
+    doc.line(lx[i][0], lx[i][1], lx[i + 1][0], lx[i + 1][1]);
   }
-  // Center knot (түйін)
+  // Inner left parallel
+  doc.setLineWidth(Math.max(0.2, s * 0.045));
+  doc.line(cx - s * 0.12, cy - s * 0.08, cx - s * 0.4, cy - s * 0.12);
+  doc.line(cx - s * 0.4, cy - s * 0.12, cx - s * 0.62, cy - s * 0.4);
+  doc.line(cx - s * 0.62, cy - s * 0.4, cx - s * 0.7, cy - s * 0.62);
+
+  // Right horn (mirror)
+  doc.setLineWidth(Math.max(0.35, s * 0.08));
+  const rx = [
+    [cx, cy],
+    [cx + s * 0.35, cy - s * 0.05],
+    [cx + s * 0.72, cy - s * 0.38],
+    [cx + s * 0.88, cy - s * 0.72],
+    [cx + s * 0.55, cy - s * 0.88],
+    [cx + s * 0.32, cy - s * 0.62],
+    [cx + s * 0.48, cy - s * 0.42],
+    [cx + s * 0.22, cy - s * 0.18],
+  ] as const;
+  for (let i = 0; i < rx.length - 1; i += 1) {
+    doc.line(rx[i][0], rx[i][1], rx[i + 1][0], rx[i + 1][1]);
+  }
+  doc.setLineWidth(Math.max(0.2, s * 0.045));
+  doc.line(cx + s * 0.12, cy - s * 0.08, cx + s * 0.4, cy - s * 0.12);
+  doc.line(cx + s * 0.4, cy - s * 0.12, cx + s * 0.62, cy - s * 0.4);
+  doc.line(cx + s * 0.62, cy - s * 0.4, cx + s * 0.7, cy - s * 0.62);
+
+  // Center түйін — filled diamond (traditional knot)
   doc.setFillColor(...ink);
-  doc.circle(cx, cy, s * 0.12, "F");
-  doc.setLineWidth(lineW * 0.8);
-  doc.circle(cx, cy, s * 0.22, "S");
+  const d = s * 0.18;
+  doc.triangle(cx, cy - d, cx + d, cy, cx, cy + d, "F");
+  doc.triangle(cx, cy - d, cx - d, cy, cx, cy + d, "F");
 }
 
-/** Corner block with layered қосқар мүйіз for manuscript frames. */
-export function drawKoshkarCorner(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  facing: "tl" | "tr" | "bl" | "br",
-  ink: Rgb,
-  size = 11
-) {
-  const sx = facing === "tl" || facing === "bl" ? 1 : -1;
-  const sy = facing === "tl" || facing === "tr" ? 1 : -1;
-  doc.setDrawColor(...ink);
-
-  // Outer L-frame
-  doc.setLineWidth(0.7);
-  doc.line(x, y, x + sx * size, y);
-  doc.line(x, y, x, y + sy * size);
-  doc.setLineWidth(0.28);
-  doc.line(x + sx * 1.6, y + sy * 1.6, x + sx * (size - 1.2), y + sy * 1.6);
-  doc.line(x + sx * 1.6, y + sy * 1.6, x + sx * 1.6, y + sy * (size - 1.2));
-
-  // Inner stepped bands
-  doc.setLineWidth(0.35);
-  doc.line(x + sx * 2.4, y + sy * 2.4, x + sx * size * 0.72, y + sy * 2.4);
-  doc.line(x + sx * 2.4, y + sy * 2.4, x + sx * 2.4, y + sy * size * 0.72);
-
-  // Horn curl into the corner
-  const hx = x + sx * size * 0.42;
-  const hy = y + sy * size * 0.42;
-  doc.setLineWidth(0.4);
-  doc.line(hx, hy, hx + sx * size * 0.28, hy + sy * size * 0.06);
-  doc.line(hx + sx * size * 0.28, hy + sy * size * 0.06, hx + sx * size * 0.48, hy + sy * size * 0.32);
-  doc.line(hx + sx * size * 0.48, hy + sy * size * 0.32, hx + sx * size * 0.22, hy + sy * size * 0.48);
-  doc.line(hx, hy, hx + sx * size * 0.06, hy + sy * size * 0.28);
-  doc.line(hx + sx * size * 0.06, hy + sy * size * 0.28, hx + sx * size * 0.32, hy + sy * size * 0.48);
-
-  // Tiny diamond at corner origin
-  const d = 1.4;
-  doc.setFillColor(...ink);
-  doc.triangle(x + sx * d, y, x, y + sy * d, x + sx * d, y + sy * 2 * d, "F");
-}
-
-/**
- * Full ceremonial border for Тізім: triple frame, corners, mid-side and mid-edge horns.
- */
-export function drawShezhireManuscriptBorder(
-  doc: jsPDF,
-  pageW: number,
-  pageH: number,
-  inset: number,
-  ink: Rgb,
-  gold: Rgb
-) {
-  // Outer heavy frame
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(1.35);
-  doc.rect(inset, inset, pageW - inset * 2, pageH - inset * 2);
-  // Gold middle
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.4);
-  doc.rect(inset + 2.2, inset + 2.2, pageW - (inset + 2.2) * 2, pageH - (inset + 2.2) * 2);
-  // Inner hairline
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(0.55);
-  doc.rect(inset + 4.2, inset + 4.2, pageW - (inset + 4.2) * 2, pageH - (inset + 4.2) * 2);
-
-  // Thin ornamental band between outer and gold frame
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(0.18);
-  const band = inset + 1.1;
-  doc.rect(band, band, pageW - band * 2, pageH - band * 2);
-
-  const c = inset + 5.5;
-  drawKoshkarCorner(doc, c, c, "tl", ink, 12);
-  drawKoshkarCorner(doc, pageW - c, c, "tr", ink, 12);
-  drawKoshkarCorner(doc, c, pageH - c, "bl", ink, 12);
-  drawKoshkarCorner(doc, pageW - c, pageH - c, "br", ink, 12);
-
-  // Mid-edge қосқар мүйіз (top / bottom) — detailed
-  drawKoshkarMuyiz(doc, pageW / 2, inset + 3.2, 7.5, gold, 0.28);
-  drawKoshkarMuyiz(doc, pageW / 2, pageH - inset - 3.2, 7.5, gold, 0.28);
-
-  // Quarter-edge diamond ticks along top/bottom (ancient қоршау rhythm)
-  doc.setFillColor(...ink);
-  const edgeYs = [inset + 2.8, pageH - inset - 2.8];
-  for (const ey of edgeYs) {
-    for (const frac of [0.22, 0.35, 0.65, 0.78]) {
-      const ex = pageW * frac;
-      doc.circle(ex, ey, 0.55, "F");
-      doc.setDrawColor(...gold);
-      doc.setLineWidth(0.2);
-      doc.line(ex - 2.2, ey, ex - 0.9, ey);
-      doc.line(ex + 0.9, ey, ex + 2.2, ey);
-    }
-  }
-
-  // Side mid motifs — vertical twin horns + diamond knot
-  const midY = pageH / 2;
-  for (const x of [inset + 2.8, pageW - inset - 2.8]) {
-    doc.setDrawColor(...ink);
-    doc.setLineWidth(0.35);
-    doc.line(x, midY - 16, x, midY + 16);
-    drawDiamondKnot(doc, x, midY, 2.4, ink, [242, 228, 198]);
-    drawHornPair(doc, x, midY - 9, 4.4, gold, 0.25);
-    drawHornPair(doc, x, midY + 9, 4.4, gold, 0.25);
-    // Extra small knots above/below
-    drawDiamondKnot(doc, x, midY - 16, 1.2, gold, [242, 228, 198]);
-    drawDiamondKnot(doc, x, midY + 16, 1.2, gold, [242, 228, 198]);
-  }
-}
-
-/** Ornamental horizontal row plaque for a generation entry. */
-export function drawGenerationRowFrame(
+/** Horizontal repeating өрнек band (сырмақ strip). */
+export function drawOrnamentStripH(
   doc: jsPDF,
   x: number,
   y: number,
   w: number,
   h: number,
   ink: Rgb,
-  fill: Rgb,
-  accent: Rgb,
-  emphasize: boolean
+  dye: Rgb
 ) {
-  doc.setFillColor(...fill);
+  doc.setFillColor(...dye);
+  doc.rect(x, y, w, h, "F");
   doc.setDrawColor(...ink);
-  doc.setLineWidth(emphasize ? 0.7 : 0.42);
-  doc.roundedRect(x, y, w, h, 1.2, 1.2, "FD");
-
-  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.55);
+  doc.rect(x, y, w, h);
   doc.setLineWidth(0.22);
-  doc.roundedRect(x + 1.15, y + 1.15, w - 2.3, h - 2.3, 0.9, 0.9, "S");
+  doc.rect(x + 0.9, y + 0.9, w - 1.8, h - 1.8);
 
-  // Left accent bar (мүйіз-stripe)
-  doc.setFillColor(...accent);
-  doc.rect(x, y + 1.4, 1.6, h - 2.8, "F");
-  if (emphasize) {
-    doc.setFillColor(...ink);
-    doc.rect(x + 1.6, y + 1.8, 0.45, h - 3.6, "F");
+  const cell = Math.max(7, Math.min(h * 0.72, 11));
+  const cy = y + h / 2 + cell * 0.15;
+  const count = Math.max(3, Math.floor((w - 4) / (cell * 1.85)));
+  const step = (w - 4) / count;
+  for (let i = 0; i < count; i += 1) {
+    const cx = x + 2 + step * (i + 0.5);
+    drawGeometricHornCell(doc, cx, cy, cell * 0.55, ink);
+    // Linking diamond between cells
+    if (i < count - 1) {
+      const mx = x + 2 + step * (i + 1);
+      doc.setFillColor(...ink);
+      const r = Math.min(1.3, h * 0.12);
+      doc.triangle(mx, cy - r - cell * 0.25, mx + r, cy - cell * 0.25, mx, cy + r - cell * 0.25, "F");
+      doc.triangle(mx, cy - r - cell * 0.25, mx - r, cy - cell * 0.25, mx, cy + r - cell * 0.25, "F");
+    }
+  }
+}
+
+/** Vertical repeating өрнек band. */
+export function drawOrnamentStripV(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  ink: Rgb,
+  dye: Rgb
+) {
+  doc.setFillColor(...dye);
+  doc.rect(x, y, w, h, "F");
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.55);
+  doc.rect(x, y, w, h);
+  doc.setLineWidth(0.22);
+  doc.rect(x + 0.9, y + 0.9, w - 1.8, h - 1.8);
+
+  const cell = Math.max(6.5, Math.min(w * 0.7, 10));
+  const cx = x + w / 2;
+  const count = Math.max(4, Math.floor((h - 4) / (cell * 1.9)));
+  const step = (h - 4) / count;
+  for (let i = 0; i < count; i += 1) {
+    const cy = y + 2 + step * (i + 0.5) + cell * 0.1;
+    drawGeometricHornCell(doc, cx, cy, cell * 0.5, ink);
+  }
+}
+
+/** Dense corner medallion — layered angular horns. */
+export function drawAncientCornerMedallion(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  facing: "tl" | "tr" | "bl" | "br",
+  ink: Rgb,
+  dye: Rgb,
+  size = 16
+) {
+  const sx = facing === "tl" || facing === "bl" ? 1 : -1;
+  const sy = facing === "tl" || facing === "tr" ? 1 : -1;
+
+  doc.setFillColor(...dye);
+  doc.rect(
+    Math.min(x, x + sx * size),
+    Math.min(y, y + sy * size),
+    size,
+    size,
+    "F"
+  );
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.7);
+  doc.rect(
+    Math.min(x, x + sx * size),
+    Math.min(y, y + sy * size),
+    size,
+    size
+  );
+
+  // Nested stepped L frames
+  for (const o of [1.6, 3.2, 4.8]) {
+    doc.setLineWidth(o === 1.6 ? 0.55 : 0.28);
+    doc.line(x + sx * o, y + sy * o, x + sx * (size - o * 0.4), y + sy * o);
+    doc.line(x + sx * o, y + sy * o, x + sx * o, y + sy * (size - o * 0.4));
   }
 
-  // Corner micro-ticks inside plaque
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(0.28);
-  const t = Math.min(2.6, h * 0.28);
-  doc.line(x + 3.2, y + 2, x + 3.2 + t, y + 2);
-  doc.line(x + 3.2, y + 2, x + 3.2, y + 2 + t);
-  doc.line(x + w - 2.2, y + 2, x + w - 2.2 - t, y + 2);
-  doc.line(x + w - 2.2, y + 2, x + w - 2.2, y + 2 + t);
-  doc.line(x + 3.2, y + h - 2, x + 3.2 + t, y + h - 2);
-  doc.line(x + 3.2, y + h - 2, x + 3.2, y + h - 2 - t);
-  doc.line(x + w - 2.2, y + h - 2, x + w - 2.2 - t, y + h - 2);
-  doc.line(x + w - 2.2, y + h - 2, x + w - 2.2, y + h - 2 - t);
+  // Horn curl into corner (dense multi-stroke)
+  const hx = x + sx * size * 0.48;
+  const hy = y + sy * size * 0.48;
+  for (const o of [0, 0.7, 1.4]) {
+    doc.setLineWidth(0.4 - o * 0.08);
+    doc.line(hx - sx * o * 0.2, hy - sy * o * 0.2, hx + sx * size * 0.28, hy + sy * size * 0.05);
+    doc.line(hx + sx * size * 0.28, hy + sy * size * 0.05, hx + sx * size * 0.42, hy + sy * size * 0.32);
+    doc.line(hx + sx * size * 0.42, hy + sy * size * 0.32, hx + sx * size * 0.18, hy + sy * size * 0.46);
+    doc.line(hx - sx * o * 0.2, hy - sy * o * 0.2, hx + sx * size * 0.05, hy + sy * size * 0.28);
+    doc.line(hx + sx * size * 0.05, hy + sy * size * 0.28, hx + sx * size * 0.28, hy + sy * size * 0.44);
+  }
 
-  // Side mini-horns (қосқар tip flourishes)
-  const mid = y + h / 2;
-  doc.setDrawColor(...accent);
-  doc.setLineWidth(0.28);
-  doc.line(x - 0.3, mid, x - 2.8, mid - 2);
-  doc.line(x - 2.8, mid - 2, x - 3.6, mid);
-  doc.line(x - 0.3, mid, x - 2.8, mid + 2);
-  doc.line(x - 2.8, mid + 2, x - 3.6, mid);
-  doc.line(x + w + 0.3, mid, x + w + 2.8, mid - 2);
-  doc.line(x + w + 2.8, mid - 2, x + w + 3.6, mid);
-  doc.line(x + w + 0.3, mid, x + w + 2.8, mid + 2);
-  doc.line(x + w + 2.8, mid + 2, x + w + 3.6, mid);
+  // Filled diamond at origin
+  doc.setFillColor(...ink);
+  const d = 2.2;
+  doc.triangle(x + sx * d, y, x, y + sy * d, x + sx * d, y + sy * 2 * d, "F");
+  doc.triangle(x + sx * d * 2, y + sy * d, x + sx * d, y, x + sx * d, y + sy * 2 * d, "F");
+}
+
+/**
+ * Full ancient Тізім frame: wide өрнек belts on all sides + corner medallions.
+ * Looks like a киіз / сырмақ panel, not a modern certificate.
+ */
+export function drawAncientTizimFrame(
+  doc: jsPDF,
+  pageW: number,
+  pageH: number,
+  ink: Rgb,
+  dye: Rgb,
+  parchment: Rgb
+) {
+  const outer = 5;
+  const belt = 11;
+
+  // Outer soot frame
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(1.8);
+  doc.rect(outer, outer, pageW - outer * 2, pageH - outer * 2);
+
+  // Dye fill for belt area (between outer and inner)
+  doc.setFillColor(...dye);
+  // top
+  doc.rect(outer + 1.2, outer + 1.2, pageW - (outer + 1.2) * 2, belt, "F");
+  // bottom
+  doc.rect(outer + 1.2, pageH - outer - 1.2 - belt, pageW - (outer + 1.2) * 2, belt, "F");
+  // left
+  doc.rect(outer + 1.2, outer + 1.2 + belt, belt, pageH - (outer + 1.2) * 2 - belt * 2, "F");
+  // right
+  doc.rect(
+    pageW - outer - 1.2 - belt,
+    outer + 1.2 + belt,
+    belt,
+    pageH - (outer + 1.2) * 2 - belt * 2,
+    "F"
+  );
+
+  // Ornament strips
+  drawOrnamentStripH(doc, outer + 1.2 + belt, outer + 1.2, pageW - (outer + 1.2) * 2 - belt * 2, belt, ink, dye);
+  drawOrnamentStripH(
+    doc,
+    outer + 1.2 + belt,
+    pageH - outer - 1.2 - belt,
+    pageW - (outer + 1.2) * 2 - belt * 2,
+    belt,
+    ink,
+    dye
+  );
+  drawOrnamentStripV(doc, outer + 1.2, outer + 1.2 + belt, belt, pageH - (outer + 1.2) * 2 - belt * 2, ink, dye);
+  drawOrnamentStripV(
+    doc,
+    pageW - outer - 1.2 - belt,
+    outer + 1.2 + belt,
+    belt,
+    pageH - (outer + 1.2) * 2 - belt * 2,
+    ink,
+    dye
+  );
+
+  // Corner medallions (overlap belt junctions)
+  const c = outer + 1.2;
+  drawAncientCornerMedallion(doc, c, c, "tl", ink, dye, belt + 1);
+  drawAncientCornerMedallion(doc, pageW - c, c, "tr", ink, dye, belt + 1);
+  drawAncientCornerMedallion(doc, c, pageH - c, "bl", ink, dye, belt + 1);
+  drawAncientCornerMedallion(doc, pageW - c, pageH - c, "br", ink, dye, belt + 1);
+
+  // Inner field frame (sharp, triple)
+  const ix = outer + 1.2 + belt + 1.5;
+  const iy = outer + 1.2 + belt + 1.5;
+  const iw = pageW - ix * 2;
+  const ih = pageH - iy * 2;
+  doc.setFillColor(...parchment);
+  doc.rect(ix, iy, iw, ih, "F");
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(1.1);
+  doc.rect(ix, iy, iw, ih);
+  doc.setLineWidth(0.35);
+  doc.rect(ix + 1.8, iy + 1.8, iw - 3.6, ih - 3.6);
+  doc.setLineWidth(0.18);
+  doc.rect(ix + 3.2, iy + 3.2, iw - 6.4, ih - 6.4);
+
+  return { contentX: ix + 5, contentY: iy + 5, contentW: iw - 10, contentH: ih - 10 };
+}
+
+/** Hand-ruled manuscript separator with horn knot. */
+export function drawAncientRule(
+  doc: jsPDF,
+  x1: number,
+  x2: number,
+  y: number,
+  ink: Rgb
+) {
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.35);
+  doc.line(x1, y, x2, y);
+  doc.setLineWidth(0.15);
+  doc.line(x1, y + 0.7, x2, y + 0.7);
+  const mx = (x1 + x2) / 2;
+  drawGeometricHornCell(doc, mx, y + 0.2, 3.2, ink);
+}
+
+/** Angular label box for generation name (Өзі, Әке…) — no radius. */
+export function drawAncientLabelBox(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  ink: Rgb,
+  dye: Rgb
+) {
+  doc.setFillColor(...dye);
+  doc.rect(x, y, w, h, "F");
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.5);
+  doc.rect(x, y, w, h);
+  doc.setLineWidth(0.2);
+  doc.rect(x + 1, y + 1, w - 2, h - 2);
+  // Corner ticks
+  const t = Math.min(2.2, h * 0.35);
+  doc.setLineWidth(0.35);
+  doc.line(x + 1.5, y + 1.5, x + 1.5 + t, y + 1.5);
+  doc.line(x + 1.5, y + 1.5, x + 1.5, y + 1.5 + t);
+  doc.line(x + w - 1.5, y + 1.5, x + w - 1.5 - t, y + 1.5);
+  doc.line(x + w - 1.5, y + 1.5, x + w - 1.5, y + 1.5 + t);
 }
