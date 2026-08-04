@@ -4,287 +4,289 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SEJIRE — Investor Deck</title>
-  <meta name="description" content="SEJIRE: бесплатное семейное древо. PDF, почта, печать. Вечное хранение на Arweave — по желанию." />
+  <meta name="description" content="SEJIRE: бесплатное шежіре сейчас. Вечный зашифрованный сейф рода на Arweave — когда готовы. Без токенов у семьи." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="grain" aria-hidden="true"></div>
-  <div class="ambient" aria-hidden="true"></div>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="atmosphere-slash"></div>
+    <div class="atmosphere-grid"></div>
+  </div>
 
   <header class="chrome">
     <div class="brand-mark">
-      <span class="brand-glyph" aria-hidden="true"></span>
+      <span class="brand-slash" aria-hidden="true"></span>
       <span class="brand-name">SEJIRE</span>
     </div>
     <div class="chrome-meta">
-      <span class="slide-counter" id="slideCounter">01 / 12</span>
-      <a class="arch-link" href="SEJIRE-investor-deck.pdf" download>PDF ⬇</a>
-      <a class="arch-link" href="https://azovskaya.github.io/Sejire_arweave/" target="_blank" rel="noopener">Открыть MVP ↗</a>
+      <span class="slide-counter" id="slideCounter">01 / 14</span>
+      <a class="arch-link" href="SEJIRE-investor-deck.pdf" download>PDF</a>
+      <a class="arch-link accent" href="https://azovskaya.github.io/Sejire_arweave/" target="_blank" rel="noopener">MVP ↗</a>
     </div>
   </header>
 
   <main class="deck" id="deck" tabindex="0" aria-live="polite">
 
-    <!-- 1 -->
-    <section class="slide is-active" data-title="Титул">
+    <!-- 01 TITLE -->
+    <section class="slide slide-ink is-active" data-title="Титул">
       <div class="slide-stage hero-stage">
-        <p class="eyebrow animate-in">Investor deck · 2026</p>
+        <p class="eyebrow animate-in">Investor deck · 2026 · Казахстан → мир</p>
         <h1 class="hero-brand animate-in delay-1">SEJIRE</h1>
-        <p class="hero-sub animate-in delay-2">Семейное древо, которое собирается за минуты.<br />Бесплатно. Просто. Навсегда — когда будете готовы.</p>
-        <div class="hero-cta animate-in delay-3">
-          <button class="btn primary" data-next type="button">Смотреть</button>
-          <span class="hint">← → или пробел</span>
+        <p class="hero-line animate-in delay-2">Род.<br />Бесплатно.<br /><span class="accent-word">Навсегда.</span></p>
+        <p class="hero-sub animate-in delay-3">Семейное шежіре, которое собирается за минуты.<br />Вечный сейф на Arweave — когда семья готова.</p>
+        <div class="hero-cta animate-in delay-4">
+          <button class="btn primary" data-next type="button">Войти в питч →</button>
+          <span class="hint">← → · пробел · свайп</span>
         </div>
       </div>
     </section>
 
-    <!-- 2 -->
+    <!-- 02 PROVOCATION -->
+    <section class="slide slide-strike" data-title="Провокация">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">00 · Ставка</p>
+        <h2 class="mega animate-in delay-1">Чужая компания<br />не должна владеть<br />вашими предками.</h2>
+        <p class="lede animate-in delay-2">Ancestry и MyHeritage держат историю рода на своих серверах — пока платите. SEJIRE отдаёт память семье: 12 слов, шифр на устройстве, Arweave на века.</p>
+      </div>
+    </section>
+
+    <!-- 03 PROBLEM -->
     <section class="slide" data-title="Проблема">
       <div class="slide-stage">
         <p class="eyebrow animate-in">01 · Проблема</p>
-        <h2 class="animate-in delay-1">Род живёт в чатах, Excel и чужих облаках</h2>
-        <ul class="point-grid animate-in delay-2">
-          <li>
-            <h3>Сложно начать</h3>
-            <p>Генеалогические сервисы перегружены. Людям нужен простой старт с себя.</p>
-          </li>
-          <li>
-            <h3>Нечем поделиться</h3>
-            <p>Хочется PDF на стену, письмо родным, распечатку на той — без подписки.</p>
-          </li>
-          <li>
-            <h3>Данные не ваши</h3>
-            <p>Ancestry и MyHeritage держат историю на своих серверах.</p>
-          </li>
-          <li>
-            <h3>Вечность недоступна</h3>
-            <p>Permaweb уже умеет хранить века, но обычная семья не покупает токены.</p>
-          </li>
-        </ul>
+        <h2 class="animate-in delay-1">Род размазан по чатам,<br />Excel и чужим облакам</h2>
+        <div class="brutal-list animate-in delay-2">
+          <div class="brutal-row">
+            <span class="brutal-num">01</span>
+            <div>
+              <h3>Сложно начать</h3>
+              <p>Генеалогия перегружена. Людям нужен старт с себя — не с диссертации.</p>
+            </div>
+          </div>
+          <div class="brutal-row">
+            <span class="brutal-num">02</span>
+            <div>
+              <h3>Нечем поделиться</h3>
+              <p>PDF на стену, письмо родным, распечатка на той — без подписки.</p>
+            </div>
+          </div>
+          <div class="brutal-row">
+            <span class="brutal-num">03</span>
+            <div>
+              <h3>Данные не ваши</h3>
+              <p>История живёт, пока жива компания и ваш тариф.</p>
+            </div>
+          </div>
+          <div class="brutal-row">
+            <span class="brutal-num">04</span>
+            <div>
+              <h3>Вечность закрыта</h3>
+              <p>Permaweb умеет хранить века. Обычная семья не покупает токены.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- 3 -->
+    <!-- 04 INSIGHT -->
+    <section class="slide slide-orange" data-title="Инсайт">
+      <div class="slide-stage">
+        <p class="eyebrow on-dark animate-in">02 · Инсайт</p>
+        <h2 class="mega on-dark animate-in delay-1">Жеті ата —<br />готовый клин<br />в рынок.</h2>
+        <p class="lede on-dark animate-in delay-2">В Казахстане знание семи колен — норма, а не «надо объяснять зачем». Один PDF уходит в чат рода — следующие приходят сами. Культурный продукт бьёт универсальный «family tree».</p>
+      </div>
+    </section>
+
+    <!-- 05 SOLUTION -->
     <section class="slide" data-title="Решение">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">02 · Решение</p>
-        <h2 class="animate-in delay-1">SEJIRE — простое шежіре для всей семьи</h2>
-        <div class="two-col animate-in delay-2">
-          <ul class="free-list">
-            <li>
-              <span class="free-ico">1</span>
-              <div>
-                <h3>Начать с себя</h3>
-                <p>Добавить маму и папу карточками «+». Всё сохраняется само в браузере.</p>
-              </div>
-            </li>
-            <li>
-              <span class="free-ico">2</span>
-              <div>
-                <h3>Скачать PDF</h3>
-                <p>Генеалогическое древо или жеті ата — отправить на почту или распечатать.</p>
-              </div>
-            </li>
-            <li>
-              <span class="free-ico">3</span>
-              <div>
-                <h3>По желанию — навсегда</h3>
-                <p>Кнопка «В Arweave»: 12 слов + оплата картой. Без покупки крипты.</p>
-              </div>
-            </li>
-          </ul>
-          <aside class="spec-panel">
-            <div class="spec"><span>Создать древо</span><strong>бесплатно</strong></div>
-            <div class="spec"><span>PDF / печать</span><strong>бесплатно</strong></div>
-            <div class="spec"><span>Поделиться</span><strong>файл / почта</strong></div>
-            <div class="spec"><span>Вечная фиксация</span><strong>$3 · опция</strong></div>
-          </aside>
+        <p class="eyebrow animate-in">03 · Решение</p>
+        <h2 class="animate-in delay-1">SEJIRE — шежіре<br />для всей семьи</h2>
+        <div class="flow-steps animate-in delay-2">
+          <article class="flow-step">
+            <span class="flow-idx">01</span>
+            <h3>Начать с себя</h3>
+            <p>Мама, папа, дети — карточками «+». Черновик сам живёт в браузере.</p>
+          </article>
+          <article class="flow-step">
+            <span class="flow-idx">02</span>
+            <h3>Скачать PDF</h3>
+            <p>Древо или орнаментальное шежіре — почта, печать, той.</p>
+          </article>
+          <article class="flow-step highlight">
+            <span class="flow-idx">03</span>
+            <h3>По желанию — навсегда</h3>
+            <p>12 слов + оплата ~$3. Без покупки крипты. Шифр → Arweave.</p>
+          </article>
+        </div>
+        <div class="stat-strip animate-in delay-3">
+          <div><strong>0 ₸</strong><span>создать · PDF · шаринг</span></div>
+          <div><strong>~$3</strong><span>вечная опция</span></div>
+          <div><strong>200+</strong><span>лет модели Arweave</span></div>
+          <div><strong>12</strong><span>слов = ключ семьи</span></div>
         </div>
       </div>
     </section>
 
-    <!-- 4 screens -->
-    <section class="slide" data-title="Продукт">
-      <div class="slide-stage">
-        <p class="eyebrow animate-in">03 · Продукт</p>
-        <h2 class="animate-in delay-1">Так выглядит SEJIRE</h2>
-        <div class="shot-grid animate-in delay-2">
-          <figure class="shot-frame">
+    <!-- 06 PRODUCT -->
+    <section class="slide slide-product" data-title="Продукт">
+      <div class="slide-stage wide">
+        <div class="product-copy animate-in">
+          <p class="eyebrow">04 · Продукт</p>
+          <h2>Так выглядит<br />память рода</h2>
+          <p class="lede tight">Тихий Apple-like UX. Культурные поля — по желанию. Бренд впереди функций.</p>
+        </div>
+        <div class="product-shots animate-in delay-2">
+          <figure class="shot primary">
             <img src="assets/screens/05-tree-wide.png" alt="Семейное древо SEJIRE" />
-            <figcaption class="shot-caption">Древо · мама, папа, дети</figcaption>
+            <figcaption>Древо · живой черновик</figcaption>
           </figure>
-          <figure class="shot-frame">
+          <figure class="shot">
             <img src="assets/screens/01-welcome.png" alt="Главный экран SEJIRE" />
-            <figcaption class="shot-caption">Главная — только бренд</figcaption>
+            <figcaption>Вход — только SEJIRE</figcaption>
           </figure>
-          <figure class="shot-frame">
-            <img src="assets/screens/04-tree-family.png" alt="Карточка профиля в дереве" />
-            <figcaption class="shot-caption">Профиль · автосохранение</figcaption>
+          <figure class="shot">
+            <img src="assets/screens/04-tree-family.png" alt="Профиль в дереве" />
+            <figcaption>Профиль · автосейв</figcaption>
           </figure>
         </div>
       </div>
     </section>
 
-    <!-- 5 free -->
+    <!-- 07 FREE LAYER -->
     <section class="slide" data-title="Бесплатно">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">04 · Бесплатный слой</p>
-        <h2 class="animate-in delay-1">Каждый может собрать род без оплаты</h2>
-        <p class="lede animate-in delay-2">Никакой карты и крипты, чтобы просто пользоваться. Платите только если хотите вечную копию в сети.</p>
-        <ul class="point-grid animate-in delay-3">
-          <li>
-            <h3>Создать</h3>
-            <p>Любой человек открывает сайт и строит своё дерево.</p>
-          </li>
-          <li>
-            <h3>Сохранить</h3>
-            <p>Черновик живёт в браузере сам — без аккаунта.</p>
-          </li>
-          <li>
-            <h3>PDF</h3>
-            <p>«Древо в PDF» и «Жеті ата PDF» — скачал и готов.</p>
-          </li>
-          <li>
-            <h3>Почта и печать</h3>
-            <p>Отправить файл родственникам или распечатать для стены / тоя.</p>
-          </li>
-        </ul>
-        <figure class="shot-frame animate-in delay-3" style="margin-top:1rem">
-          <img src="assets/screens/06-topbar.png" alt="Кнопки Древо в PDF и Жеті ата PDF" />
-          <figcaption class="shot-caption">Экспорт в один клик</figcaption>
+        <p class="eyebrow animate-in">05 · Бесплатный слой</p>
+        <h2 class="animate-in delay-1">Платить не нужно,<br />чтобы пользоваться</h2>
+        <p class="lede animate-in delay-2">Карта и крипта — только если хотите вечную копию. Весь повседневный цикл рода — бесплатно и навсегда в этом слое.</p>
+        <div class="quad animate-in delay-3">
+          <div><h3>Создать</h3><p>Открыл сайт — строишь дерево.</p></div>
+          <div><h3>Сохранить</h3><p>Черновик в браузере. Без аккаунта.</p></div>
+          <div><h3>PDF</h3><p>Древо и жеті ата / шежіре.</p></div>
+          <div><h3>Шаринг</h3><p>Почта, файл, печать на стену.</p></div>
+        </div>
+        <figure class="shot-bar animate-in delay-4">
+          <img src="assets/screens/06-topbar.png" alt="Экспорт PDF в один клик" />
+          <figcaption>Экспорт в один клик</figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- 6 eternal optional -->
-    <section class="slide" data-title="Навсегда">
+    <!-- 08 ETERNAL -->
+    <section class="slide slide-ink" data-title="Навсегда">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">05 · Опция вечности</p>
-        <h2 class="animate-in delay-1">Когда готовы — зафиксировать на 200+ лет</h2>
-        <div class="two-col animate-in delay-2">
-          <div class="stack-blocks">
-            <article>
-              <h3>12 слов — ваш ключ</h3>
-              <p>Доступ к сейфу только у семьи. Без аккаунта сервиса.</p>
-            </article>
-            <article>
-              <h3>$3 картой</h3>
-              <p>Пользователь не покупает токены. Оплату сети берёт на себя SEJIRE.</p>
-            </article>
-            <article>
-              <h3>Arweave</h3>
-              <p>Зашифрованный снимок рода хранится по модели вечного хранения.</p>
-            </article>
+        <p class="eyebrow animate-in">06 · Опция вечности</p>
+        <h2 class="animate-in delay-1">Зафиксировать род<br />на <span class="accent-word">200+ лет</span></h2>
+        <div class="eternal-grid animate-in delay-2">
+          <article>
+            <span class="eternal-kicker">Ключ</span>
+            <h3>12 слов</h3>
+            <p>BIP-39. Seed не уходит на сервер. Открыть сейф — только у семьи.</p>
+          </article>
+          <article>
+            <span class="eternal-kicker">Оплата</span>
+            <h3>~$3 фиатом</h3>
+            <p>Kaspi / карта. Пользователь не покупает AR. Сеть платит казна SEJIRE.</p>
+          </article>
+          <article>
+            <span class="eternal-kicker">Хранение</span>
+            <h3>Arweave</h3>
+            <p>AES-GCM ciphertext. Endowment-модель. Неизменяемый снимок рода.</p>
+          </article>
+        </div>
+        <p class="tagline animate-in delay-3">Обязательно? <strong>Нет.</strong> · Крипта у юзера? <strong>0.</strong> · Аккаунт SEJIRE? <strong>Не нужен.</strong></p>
+      </div>
+    </section>
+
+    <!-- 09 MOAT -->
+    <section class="slide" data-title="Моат">
+      <div class="slide-stage">
+        <p class="eyebrow animate-in">07 · Почему мы</p>
+        <h2 class="animate-in delay-1">Не Ancestry.<br />Не DeepFamily.<br /><span class="accent-word">SEJIRE.</span></h2>
+        <div class="versus animate-in delay-2">
+          <div class="versus-col">
+            <h3>Ancestry</h3>
+            <ul>
+              <li>Подписка и lock-in</li>
+              <li>Данные у компании</li>
+              <li>Нет вечности</li>
+              <li>Запад + ДНК</li>
+            </ul>
           </div>
-          <aside class="spec-panel">
-            <div class="spec"><span>Обязательно?</span><strong>нет</strong></div>
-            <div class="spec"><span>Цена</span><strong>$3</strong></div>
-            <div class="spec"><span>Крипта у юзера</span><strong>0</strong></div>
-            <div class="spec"><span>Срок</span><strong>200+ лет</strong></div>
-          </aside>
+          <div class="versus-col">
+            <h3>DeepFamily</h3>
+            <ul>
+              <li>Нужен EVM-кошелёк</li>
+              <li>Не permaweb</li>
+              <li>Crypto-native UX</li>
+              <li>Не шежіре</li>
+            </ul>
+          </div>
+          <div class="versus-col win">
+            <h3>SEJIRE</h3>
+            <ul>
+              <li>Бесплатный вход</li>
+              <li>12 слов у семьи</li>
+              <li>Arweave · опция $3</li>
+              <li>Шежіре / жеті ата</li>
+            </ul>
+          </div>
         </div>
+        <p class="punch animate-in delay-3">На Arweave живого аналога шежіре нет. Ниша почти пустая.</p>
       </div>
     </section>
 
-    <!-- 7 stack short -->
-    <section class="slide" data-title="Стек">
-      <div class="slide-stage">
-        <p class="eyebrow animate-in">06 · Технологии</p>
-        <h2 class="animate-in delay-1">Короткий стек</h2>
-        <p class="lede animate-in delay-2">Достаточно знать, на чём стоит продукт — без глубокого погружения.</p>
-        <div class="stack-row animate-in delay-3">
-          <span class="stack-chip">React · Vite</span>
-          <span class="stack-chip">BIP-39 · AES-GCM</span>
-          <span class="stack-chip">Arweave · Turbo</span>
-          <span class="stack-chip">Stripe (fiat $3)</span>
-          <span class="stack-chip">PDF (jsPDF)</span>
-          <span class="stack-chip">ArNS · permaweb UI</span>
-        </div>
-        <ul class="pill-row animate-in delay-3">
-          <li>Клиент шифрует на устройстве</li>
-          <li>Казна проекта платит сеть</li>
-          <li>MVP уже онлайн</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- 8 competition -->
+    <!-- 10 MARKET -->
     <section class="slide" data-title="Рынок">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">07 · Рынок</p>
-        <h2 class="animate-in delay-1">Рядом с лидерами — другая обещание</h2>
-        <div class="table-wrap animate-in delay-2">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Ancestry / MyHeritage</th>
-                <th>DeepFamily</th>
-                <th class="hl">SEJIRE</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Собрать древо</td>
-                <td>Подписка / freemium</td>
-                <td>Нужен кошелёк</td>
-                <td class="hl">Бесплатно</td>
-              </tr>
-              <tr>
-                <td>PDF / печать</td>
-                <td>В тарифах</td>
-                <td>Не фокус</td>
-                <td class="hl">Бесплатно</td>
-              </tr>
-              <tr>
-                <td>Владение</td>
-                <td>У компании</td>
-                <td>У ключей EVM</td>
-                <td class="hl">12 слов у семьи</td>
-              </tr>
-              <tr>
-                <td>Вечность</td>
-                <td>Нет</td>
-                <td>EVM / IPFS</td>
-                <td class="hl">Arweave · опция $3</td>
-              </tr>
-              <tr>
-                <td>Фокус</td>
-                <td>ДНК, Запад</td>
-                <td>Crypto-протокол</td>
-                <td class="hl">Шежіре / жеті ата</td>
-              </tr>
-            </tbody>
-          </table>
+        <p class="eyebrow animate-in">08 · Beachhead</p>
+        <h2 class="animate-in delay-1">Казахстан — не пивот.<br />Это оружие.</h2>
+        <div class="weapon-grid animate-in delay-2">
+          <div>
+            <h3>Культура уже куплена</h3>
+            <p>Жеті ата — норма. Не надо продавать «зачем знать предков».</p>
+          </div>
+          <div>
+            <h3>Вирусность рода</h3>
+            <p>Один PDF в семейный чат = органический рост без CAC-лекции.</p>
+          </div>
+          <div>
+            <h3>Web3 без боли</h3>
+            <p>Бесплатный слой снимает страх. Вечность — тихий апселл.</p>
+          </div>
+          <div>
+            <h3>Имя уже наше</h3>
+            <p><code>sejire</code> на ArNS. Канон: <strong>sejire.ar.io</strong>.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 9 GTM -->
-    <section class="slide" data-title="GTM">
+    <!-- 11 GTM -->
+    <section class="slide slide-ink" data-title="GTM">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">08 · Go-to-market</p>
-        <h2 class="animate-in delay-1">Казахстан → СНГ → мир</h2>
-        <ol class="gtm-ladder animate-in delay-2">
+        <p class="eyebrow animate-in">09 · Go-to-market</p>
+        <h2 class="animate-in delay-1">KZ → пояс → мир</h2>
+        <ol class="ladder animate-in delay-2">
           <li>
-            <span class="gtm-phase">I</span>
+            <span class="ladder-phase">I</span>
             <div>
               <h3>Казахстан</h3>
-              <p>Жеті ата как культурный клин. PDF на той. Каз/рус. Родовые сообщества.</p>
+              <p>Жеті ата, PDF на той, каз/рус, родовые сообщества, Kaspi.</p>
             </div>
           </li>
           <li>
-            <span class="gtm-phase">II</span>
+            <span class="ladder-phase">II</span>
             <div>
               <h3>СНГ / тюркский пояс</h3>
-              <p>Та же традиция семи колен — Кыргызстан, Узбекистан и соседние рынки.</p>
+              <p>Та же традиция семи колен — Кыргызстан, Узбекистан и соседи.</p>
             </div>
           </li>
           <li>
-            <span class="gtm-phase">III</span>
+            <span class="ladder-phase">III</span>
             <div>
               <h3>Мир</h3>
               <p>«Eternal family vault» для диаспор и всех, кто устал от подписок.</p>
@@ -294,64 +296,72 @@
       </div>
     </section>
 
-    <!-- 10 why KZ -->
-    <section class="slide" data-title="Казахстан">
+    <!-- 12 LIVE -->
+    <section class="slide" data-title="Сейчас">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">09 · Beachhead</p>
-        <h2 class="animate-in delay-1">Почему начинаем с Казахстана</h2>
-        <ul class="point-grid animate-in delay-2">
-          <li>
-            <h3>Культура уже есть</h3>
-            <p>Знание жеті ата — норма, а не «надо объяснять зачем».</p>
-          </li>
-          <li>
-            <h3>Вирусность семьи</h3>
-            <p>Один PDF уходит в чат рода — следующие люди приходят сами.</p>
-          </li>
-          <li>
-            <h3>Простой вход</h3>
-            <p>Бесплатный слой снимает страх перед Web3.</p>
-          </li>
-          <li>
-            <h3>Пустая ниша</h3>
-            <p>На Arweave живого аналога шежіре нет.</p>
-          </li>
-        </ul>
+        <p class="eyebrow animate-in">10 · Traction</p>
+        <h2 class="animate-in delay-1">MVP уже онлайн.<br />Не слайд — продукт.</h2>
+        <div class="live-grid animate-in delay-2">
+          <div class="live-card">
+            <h3>Live</h3>
+            <p>Древо, автосейв, PDF, орнаментальное шежіре, JSON, шифр-пайплайн.</p>
+          </div>
+          <div class="live-card">
+            <h3>Стек</h3>
+            <p>React · Vite · BIP-39 · AES-GCM · Arweave/Turbo · jsPDF · ArNS</p>
+          </div>
+          <div class="live-card accent">
+            <h3>Следом</h3>
+            <p>Kaspi $3 · казна Turbo · сайт на permaweb · sejire.ar.io</p>
+          </div>
+        </div>
+        <a class="live-link animate-in delay-3" href="https://azovskaya.github.io/Sejire_arweave/" target="_blank" rel="noopener">
+          azovskaya.github.io/Sejire_arweave ↗
+        </a>
       </div>
     </section>
 
-    <!-- 11 ask -->
-    <section class="slide" data-title="Ask">
+    <!-- 13 ASK -->
+    <section class="slide slide-orange" data-title="Ask">
       <div class="slide-stage">
-        <p class="eyebrow animate-in">10 · Ask</p>
-        <h2 class="animate-in delay-1">Что ускоряем сейчас</h2>
-        <div class="stack-blocks animate-in delay-2">
-          <article>
-            <h3>Запуск оплаты $3</h3>
-            <p>Stripe + казна Turbo — вечная фиксация без токенов у пользователя.</p>
-          </article>
-          <article>
-            <h3>Сайт на permaweb</h3>
-            <p>Выкладка SEJIRE на Arweave + имя (ArNS).</p>
-          </article>
-          <article>
-            <h3>Рост в Казахстане</h3>
-            <p>Локализация, контент, пилоты с родами — первые тысячи бесплатных древьев и первые платные сейфы.</p>
-          </article>
+        <p class="eyebrow on-dark animate-in">11 · Ask</p>
+        <h2 class="mega on-dark animate-in delay-1">Ускоряем три<br />удара.</h2>
+        <div class="ask-rows animate-in delay-2">
+          <div>
+            <span>01</span>
+            <div>
+              <h3>Оплата ~$3</h3>
+              <p>Kaspi / мерчант + казна Turbo — вечность без токенов у семьи.</p>
+            </div>
+          </div>
+          <div>
+            <span>02</span>
+            <div>
+              <h3>Permaweb + ArNS</h3>
+              <p>SEJIRE на Arweave. Канон: sejire.ar.io.</p>
+            </div>
+          </div>
+          <div>
+            <span>03</span>
+            <div>
+              <h3>Рост в KZ</h3>
+              <p>Контент, пилоты с родами, первые тысячи древьев и первые сейфы.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 12 close -->
-    <section class="slide" data-title="Финал">
+    <!-- 14 CLOSE -->
+    <section class="slide slide-ink" data-title="Финал">
       <div class="slide-stage hero-stage">
         <p class="eyebrow animate-in">SEJIRE</p>
-        <h2 class="hero-brand smaller animate-in delay-1">Сначала бесплатно. Потом — навсегда.</h2>
+        <h2 class="hero-brand close-brand animate-in delay-1">Сначала<br />бесплатно.<br /><span class="accent-word">Потом —<br />навсегда.</span></h2>
         <p class="hero-sub animate-in delay-2">Создать. Сохранить. Отправить. Распечатать.<br />А когда нужно — закрепить род в Arweave.</p>
         <footer class="closing animate-in delay-3">
           <strong>Live MVP</strong>
           <a href="https://azovskaya.github.io/Sejire_arweave/" target="_blank" rel="noopener">azovskaya.github.io/Sejire_arweave ↗</a>
-          <span>Казахстан → СНГ → мир</span>
+          <span>Казахстан → СНГ → мир · sejire.ar.io</span>
         </footer>
       </div>
     </section>
