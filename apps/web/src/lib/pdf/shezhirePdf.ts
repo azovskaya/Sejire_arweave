@@ -20,6 +20,8 @@ export type ShezhireTemplateInfo = {
   id: ShezhireTemplateId;
   title: string;
   blurb: string;
+  /** Shown in picker — page orientation */
+  format: string;
 };
 
 /** Three distinct presentation styles for жеті ата / deep male line. */
@@ -27,17 +29,20 @@ export const SHEZHIRE_TEMPLATES: ShezhireTemplateInfo[] = [
   {
     id: "manuscript",
     title: "Қолжазба",
-    blurb: "Пергамент и орнамент — настенный свиток",
+    blurb: "Пергамент, орнамент, вертикальный свиток",
+    format: "A4 книжный",
   },
   {
     id: "registry",
     title: "Тізім",
-    blurb: "Книжный постер в рамке — список до 13 колен",
+    blurb: "Торжественный список в широкой рамке, до 13 колен",
+    format: "A4 книжный",
   },
   {
     id: "cascade",
     title: "Баспалдақ",
-    blurb: "Альбомный формат — линия от түп ата к себе",
+    blurb: "Горизонтальная линия предков — для широкой рамы",
+    format: "A4 альбомный",
   },
 ];
 
@@ -90,37 +95,6 @@ function drawAffiliationBlock(
     return y + 14;
   }
   return y + 10;
-}
-
-/** Elegant double frame for wall posters (no horn overlay). */
-function drawPosterFrame(
-  doc: jsPDF,
-  pageW: number,
-  pageH: number,
-  inset: number,
-  ink: Rgb,
-  accent: Rgb
-) {
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(0.7);
-  doc.rect(inset, inset, pageW - inset * 2, pageH - inset * 2);
-  doc.setLineWidth(0.25);
-  doc.setDrawColor(...accent);
-  doc.rect(inset + 2.4, inset + 2.4, pageW - (inset + 2.4) * 2, pageH - (inset + 2.4) * 2);
-
-  const c = 4.5;
-  doc.setDrawColor(...ink);
-  doc.setLineWidth(0.45);
-  // corner ticks
-  for (const [x, y, sx, sy] of [
-    [inset + 3.2, inset + 3.2, 1, 1],
-    [pageW - inset - 3.2, inset + 3.2, -1, 1],
-    [inset + 3.2, pageH - inset - 3.2, 1, -1],
-    [pageW - inset - 3.2, pageH - inset - 3.2, -1, -1],
-  ] as const) {
-    doc.line(x, y, x + sx * c, y);
-    doc.line(x, y, x, y + sy * c);
-  }
 }
 
 function renderManuscript(ctx: RenderCtx) {
@@ -237,74 +211,97 @@ function renderManuscript(ctx: RenderCtx) {
 }
 
 /**
- * Тізім — framed registry poster (portrait). Wall-ready book of generations.
+ * Тізім — framed registry poster (portrait). Wall-ready ceremonial list.
+ * Visually distinct from Қолжазба: no parchment side panels, no spine cartouches —
+ * wide certificate frame + numbered generation rows.
  */
 function renderRegistry(ctx: RenderCtx) {
   const { doc, pageW, pageH, line, meta, locale } = ctx;
   const t = pdfT(locale);
-  const paper: Rgb = [250, 246, 238];
-  const panel: Rgb = [255, 252, 246];
-  const ink: Rgb = [42, 32, 22];
-  const mute: Rgb = [105, 90, 72];
-  const rule: Rgb = [168, 148, 118];
-  const accent: Rgb = [138, 98, 52];
-  const band: Rgb = [244, 236, 220];
+  const paper: Rgb = [248, 244, 235];
+  const panel: Rgb = [255, 253, 248];
+  const ink: Rgb = [36, 28, 20];
+  const mute: Rgb = [98, 84, 66];
+  const rule: Rgb = [160, 140, 110];
+  const accent: Rgb = [120, 72, 36];
+  const band: Rgb = [238, 228, 208];
+  const gold: Rgb = [150, 110, 55];
 
   doc.setFillColor(...paper);
   doc.rect(0, 0, pageW, pageH, "F");
-  drawPosterFrame(doc, pageW, pageH, 10, ink, accent);
 
-  const marginX = 18;
+  // Wide ceremonial triple frame
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(1.4);
+  doc.rect(7, 7, pageW - 14, pageH - 14);
+  doc.setLineWidth(0.35);
+  doc.setDrawColor(...gold);
+  doc.rect(9.5, 9.5, pageW - 19, pageH - 19);
+  doc.setLineWidth(0.55);
+  doc.setDrawColor(...ink);
+  doc.rect(12, 12, pageW - 24, pageH - 24);
+
+  // Corner squares
+  const cs = 5;
+  doc.setFillColor(...accent);
+  for (const [x, y] of [
+    [12, 12],
+    [pageW - 12 - cs, 12],
+    [12, pageH - 12 - cs],
+    [pageW - 12 - cs, pageH - 12 - cs],
+  ] as const) {
+    doc.rect(x, y, cs, cs, "F");
+  }
+
+  const marginX = 20;
   const contentW = pageW - marginX * 2;
 
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(22);
-  doc.text(t.shezhireTitle, pageW / 2, 24, { align: "center" });
+  doc.setFontSize(26);
+  doc.text(t.shezhireTitle, pageW / 2, 28, { align: "center" });
 
+  // Title underline with end caps
   doc.setDrawColor(...accent);
-  doc.setLineWidth(0.35);
-  doc.line(pageW / 2 - 28, 27.5, pageW / 2 - 6, 27.5);
-  doc.line(pageW / 2 + 6, 27.5, pageW / 2 + 28, 27.5);
+  doc.setLineWidth(0.55);
+  doc.line(pageW / 2 - 36, 32, pageW / 2 + 36, 32);
   doc.setFillColor(...accent);
-  doc.circle(pageW / 2, 27.5, 1.05, "F");
+  doc.circle(pageW / 2 - 36, 32, 1.2, "F");
+  doc.circle(pageW / 2 + 36, 32, 1.2, "F");
 
   setPdfFont(doc, "normal");
   doc.setFontSize(9);
   doc.setTextColor(...mute);
-  doc.text(t.shezhireSubtitle, pageW / 2, 32.5, { align: "center" });
+  doc.text("Мужская линия · до 13 колен", pageW / 2, 38, { align: "center" });
 
-  let y = drawAffiliationBlock(doc, pageW, 38, meta, locale, ink, mute, contentW - 8);
-  y += 5;
+  let y = drawAffiliationBlock(doc, pageW, 44, meta, locale, ink, mute, contentW - 8);
+  y += 6;
 
   const n = line.length;
-  const bottom = pageH - 16;
-  const headerH = 8;
+  const bottom = pageH - 18;
+  const headerH = 9;
   const tableTop = y;
   const tableH = bottom - tableTop;
-  const rowH = Math.min(16.5, Math.max(8.2, (tableH - headerH) / Math.max(1, n)));
+  const rowH = Math.min(17, Math.max(8, (tableH - headerH - 2) / Math.max(1, n)));
 
-  // table panel
   doc.setFillColor(...panel);
-  doc.setDrawColor(...rule);
-  doc.setLineWidth(0.35);
-  doc.roundedRect(marginX, tableTop, contentW, headerH + n * rowH + 2, 1.4, 1.4, "FD");
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(0.45);
+  doc.rect(marginX, tableTop, contentW, headerH + n * rowH + 3, "FD");
 
-  // header
-  doc.setFillColor(...band);
-  doc.roundedRect(marginX, tableTop, contentW, headerH, 1.4, 1.4, "F");
-  doc.rect(marginX, tableTop + headerH - 1.4, contentW, 1.4, "F");
+  doc.setFillColor(...accent);
+  doc.rect(marginX, tableTop, contentW, headerH, "F");
 
-  const colNo = marginX + 6;
-  const colGen = marginX + 18;
-  const colName = marginX + 48;
-  const colDate = marginX + contentW - 6;
-  const nameMaxW = contentW - 54 - 28;
+  const colNo = marginX + 7;
+  const colGen = marginX + 20;
+  const colName = marginX + 52;
+  const colDate = marginX + contentW - 7;
+  const nameMaxW = contentW - 58 - 30;
 
   setPdfFont(doc, "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(...mute);
-  const hy = tableTop + 5.4;
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 250, 242);
+  const hy = tableTop + 6;
   doc.text(t.colNumber, colNo, hy);
   doc.text(t.colGeneration, colGen, hy);
   doc.text(t.colName, colName, hy);
@@ -319,18 +316,28 @@ function renderRegistry(ctx: RenderCtx) {
 
     if (i % 2 === 1) {
       doc.setFillColor(...band);
-      doc.rect(marginX + 0.6, rowY, contentW - 1.2, rowH, "F");
+      doc.rect(marginX + 0.5, rowY, contentW - 1, rowH, "F");
     }
 
-    const baseline = rowY + rowH * 0.62;
-    const fontName = rowH >= 12 ? 10.5 : rowH >= 10 ? 9.2 : 8;
-    const fontMeta = Math.max(6.2, fontName * 0.72);
+    const baseline = rowY + rowH * 0.64;
+    const fontName = rowH >= 13 ? 11 : rowH >= 10 ? 9.5 : 8;
+    const fontMeta = Math.max(6.4, fontName * 0.7);
+
+    // Number in circle
+    const cx = colNo + 2.2;
+    const cy = rowY + rowH / 2;
+    const cr = Math.min(3.4, rowH * 0.32);
+    doc.setFillColor(...(i === n - 1 ? accent : rule));
+    doc.circle(cx, cy, cr, "F");
+    setPdfFont(doc, "bold");
+    doc.setFontSize(Math.max(5.5, cr * 1.4));
+    doc.setTextColor(255, 252, 246);
+    doc.text(String(i + 1), cx, cy + cr * 0.35, { align: "center" });
 
     setPdfFont(doc, "normal");
     doc.setFontSize(fontMeta);
     doc.setTextColor(...mute);
-    doc.text(String(i + 1), colNo, baseline);
-    doc.text(fitText(doc, label, 28, fontMeta), colGen, baseline);
+    doc.text(fitText(doc, label, 30, fontMeta), colGen, baseline);
 
     setPdfFont(doc, "bold");
     doc.setFontSize(fontName);
@@ -343,79 +350,83 @@ function renderRegistry(ctx: RenderCtx) {
       doc.setTextColor(...mute);
       doc.text(life, colDate, baseline, { align: "right" });
     }
-
-    if (i < n - 1) {
-      doc.setDrawColor(...rule);
-      doc.setLineWidth(0.12);
-      doc.line(marginX + 4, rowY + rowH, marginX + contentW - 4, rowY + rowH);
-    }
   }
 
   setPdfFont(doc, "bold");
-  drawBrandMark(doc, pageW, pageH, t.exportedWith, [130, 110, 85]);
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [120, 100, 75]);
 }
 
 /**
- * Баспалдақ — landscape wall chart: oldest → self along a horizontal spine.
+ * Баспалдақ — A4 landscape wall chart (album). Unmistakably wide format.
+ * Oldest left → self right on a horizontal spine.
  */
 function renderCascade(ctx: RenderCtx) {
   const { doc, pageW, pageH, line, meta, locale } = ctx;
   const t = pdfT(locale);
-  const bg: Rgb = [245, 240, 230];
-  const ink: Rgb = [48, 34, 22];
-  const mute: Rgb = [108, 90, 70];
-  const accent: Rgb = [132, 86, 42];
-  const goldSoft: Rgb = [170, 130, 78];
-  const fill: Rgb = [255, 251, 244];
-  const fillSelf: Rgb = [252, 240, 220];
+  const bg: Rgb = [236, 228, 214];
+  const ink: Rgb = [40, 28, 18];
+  const mute: Rgb = [100, 82, 62];
+  const accent: Rgb = [110, 62, 28];
+  const goldSoft: Rgb = [168, 128, 72];
+  const fill: Rgb = [255, 250, 242];
+  const fillSelf: Rgb = [248, 228, 196];
 
   doc.setFillColor(...bg);
   doc.rect(0, 0, pageW, pageH, "F");
-  drawPosterFrame(doc, pageW, pageH, 8, ink, accent);
+
+  // Landscape frame — thicker, clearly a wall plaque
+  doc.setDrawColor(...ink);
+  doc.setLineWidth(1.6);
+  doc.rect(6, 6, pageW - 12, pageH - 12);
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(...goldSoft);
+  doc.rect(9, 9, pageW - 18, pageH - 18);
 
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(20);
-  doc.text(t.shezhireTitle, pageW / 2, 18, { align: "center" });
-  doc.setDrawColor(...accent);
-  doc.setLineWidth(0.35);
-  doc.line(pageW / 2 - 32, 21, pageW / 2 - 7, 21);
-  doc.line(pageW / 2 + 7, 21, pageW / 2 + 32, 21);
+  doc.setFontSize(22);
+  doc.text(t.shezhireTitle, pageW / 2, 20, { align: "center" });
+
   doc.setFillColor(...accent);
-  doc.circle(pageW / 2, 21, 1, "F");
+  doc.rect(pageW / 2 - 40, 23.5, 80, 0.7, "F");
 
   setPdfFont(doc, "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(...mute);
-  doc.text(t.shezhireSubtitle, pageW / 2, 26, { align: "center" });
+  doc.text("Альбомный постер · от түп ата к себе", pageW / 2, 29, { align: "center" });
 
-  let headerBottom = drawAffiliationBlock(doc, pageW, 31, meta, locale, ink, mute, pageW - 40);
-  headerBottom += 4;
+  let headerBottom = drawAffiliationBlock(doc, pageW, 34, meta, locale, ink, mute, pageW - 36);
+  headerBottom += 3;
 
   const n = line.length;
-  const marginX = 14;
-  const bottom = pageH - 12;
+  const marginX = 12;
+  const bottom = pageH - 11;
   const top = headerBottom;
-  const areaH = Math.max(40, bottom - top);
+  const areaH = Math.max(36, bottom - top);
   const areaW = pageW - marginX * 2;
 
-  const gap = n > 10 ? 2.2 : n > 7 ? 3.2 : 4.5;
-  const cardW = Math.min(42, Math.max(16, (areaW - gap * Math.max(0, n - 1)) / n));
-  const cardH = Math.min(areaH * 0.72, Math.max(28, areaH * 0.82));
+  const gap = n > 10 ? 1.8 : n > 7 ? 2.8 : 4;
+  const cardW = Math.min(46, Math.max(15, (areaW - gap * Math.max(0, n - 1)) / n));
+  const cardH = Math.min(areaH * 0.78, Math.max(32, areaH * 0.88));
   const totalW = n * cardW + Math.max(0, n - 1) * gap;
   const startX = marginX + Math.max(0, (areaW - totalW) / 2);
   const cardY = top + Math.max(0, (areaH - cardH) / 2);
-  const spineY = cardY + cardH / 2;
+  const spineY = cardY - 4;
 
-  // horizontal spine behind cards
+  // Direction hint
+  setPdfFont(doc, "normal");
+  doc.setFontSize(6);
+  doc.setTextColor(...mute);
   if (n > 1) {
-    doc.setDrawColor(...goldSoft);
-    doc.setLineWidth(1.1);
-    doc.line(startX + cardW / 2, spineY, startX + totalW - cardW / 2, spineY);
-    doc.setLineWidth(0.3);
+    doc.text("← түп ата", startX, spineY - 2);
+    doc.text("өзі →", startX + totalW, spineY - 2, { align: "right" });
+  }
+
+  // Spine above cards
+  if (n > 1) {
     doc.setDrawColor(...accent);
-    doc.line(startX + cardW / 2, spineY - 1.2, startX + totalW - cardW / 2, spineY - 1.2);
-    doc.line(startX + cardW / 2, spineY + 1.2, startX + totalW - cardW / 2, spineY + 1.2);
+    doc.setLineWidth(1.4);
+    doc.line(startX + cardW / 2, spineY, startX + totalW - cardW / 2, spineY);
   }
 
   for (let i = 0; i < n; i += 1) {
@@ -423,49 +434,51 @@ function renderCascade(ctx: RenderCtx) {
     const distanceFromFocus = n - 1 - i;
     const isSelf = distanceFromFocus === 0;
     const label = t.jetiAtaLabel(distanceFromFocus);
-    const life = lifeDatesLine(person, cardW < 24);
+    const life = lifeDatesLine(person, cardW < 26);
     const x = startX + i * (cardW + gap);
 
-    // diamond on spine
-    drawDiamondKnot(doc, x + cardW / 2, spineY, Math.min(2.6, cardW * 0.08), ink, bg);
+    doc.setFillColor(...accent);
+    doc.circle(x + cardW / 2, spineY, 2.1, "F");
+    doc.setDrawColor(...ink);
+    doc.setLineWidth(0.35);
+    doc.line(x + cardW / 2, spineY + 2.1, x + cardW / 2, cardY);
 
     doc.setFillColor(...(isSelf ? fillSelf : fill));
     doc.setDrawColor(...ink);
-    doc.setLineWidth(isSelf ? 0.65 : 0.4);
-    doc.roundedRect(x, cardY, cardW, cardH, 1.3, 1.3, "FD");
-    doc.setDrawColor(...accent);
-    doc.setLineWidth(0.2);
-    doc.roundedRect(x + 1.2, cardY + 1.2, cardW - 2.4, cardH - 2.4, 0.9, 0.9, "S");
-    doc.setFillColor(...accent);
-    doc.rect(x, cardY, cardW, 1.35, "F");
+    doc.setLineWidth(isSelf ? 0.85 : 0.45);
+    doc.roundedRect(x, cardY, cardW, cardH, 1.5, 1.5, "FD");
 
-    setPdfFont(doc, "normal");
-    doc.setFontSize(cardW < 20 ? 5.4 : 6.4);
-    doc.setTextColor(...mute);
-    doc.text(fitText(doc, label, cardW - 4, cardW < 20 ? 5.4 : 6.4), x + cardW / 2, cardY + 6.2, {
+    doc.setFillColor(...accent);
+    doc.roundedRect(x, cardY, cardW, 8.5, 1.5, 1.5, "F");
+    doc.rect(x, cardY + 6, cardW, 2.5, "F");
+
+    setPdfFont(doc, "bold");
+    doc.setFontSize(cardW < 18 ? 5.2 : 6.2);
+    doc.setTextColor(255, 250, 242);
+    doc.text(fitText(doc, label, cardW - 3, cardW < 18 ? 5.2 : 6.2), x + cardW / 2, cardY + 5.5, {
       align: "center",
     });
 
-    const nameMaxW = cardW - 5;
+    const nameMaxW = cardW - 4;
     const hasMeta = Boolean(life);
-    const prefer = cardW >= 32 ? 10 : cardW >= 24 ? 8.5 : cardW >= 18 ? 7.2 : 6.2;
+    const prefer = cardW >= 34 ? 10.5 : cardW >= 26 ? 9 : cardW >= 20 ? 7.5 : 6.2;
     const { lines: nameLines, fontSize } = wrapName(
       doc,
       person.name || "—",
       nameMaxW,
-      hasMeta ? (cardH > 40 ? 3 : 2) : cardH > 40 ? 4 : 3,
+      hasMeta ? 2 : 3,
       prefer,
-      5.5
+      5.4
     );
 
     setPdfFont(doc, "bold");
     doc.setFontSize(fontSize);
     doc.setTextColor(...ink);
     const lineH = fontSize * 0.42 + 0.25;
-    const metaSize = Math.min(6.4, fontSize * 0.75);
-    const metaH = hasMeta ? metaSize + 2 : 0;
+    const metaSize = Math.min(6.2, fontSize * 0.72);
+    const metaH = hasMeta ? metaSize + 2.2 : 0;
     const blockH = nameLines.length * lineH + metaH;
-    let ty = cardY + (cardH - blockH) / 2 + lineH * 0.85 + 1.5;
+    let ty = cardY + 12 + Math.max(0, (cardH - 14 - blockH) / 2) + lineH * 0.8;
 
     for (const nl of nameLines) {
       doc.text(nl, x + cardW / 2, ty, { align: "center" });
@@ -475,14 +488,14 @@ function renderCascade(ctx: RenderCtx) {
       setPdfFont(doc, "normal");
       doc.setFontSize(metaSize);
       doc.setTextColor(...mute);
-      doc.text(fitText(doc, life, nameMaxW, metaSize), x + cardW / 2, ty + 1.4, {
+      doc.text(fitText(doc, life, nameMaxW, metaSize), x + cardW / 2, ty + 1.6, {
         align: "center",
       });
     }
   }
 
   setPdfFont(doc, "bold");
-  drawBrandMark(doc, pageW, pageH, t.exportedWith, [130, 105, 75]);
+  drawBrandMark(doc, pageW, pageH, t.exportedWith, [120, 95, 70]);
 }
 
 /**

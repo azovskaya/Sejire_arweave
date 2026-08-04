@@ -13,7 +13,7 @@ export function ShezhireTemplateModal({ onPick, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2>Жеті ата</h2>
-        <p className="sub">Выберите оформление PDF</p>
+        <p className="sub">Три разных PDF. Баспалдақ — альбомный лист.</p>
         <div className="shezhire-template-list">
           {SHEZHIRE_TEMPLATES.map((tpl) => (
             <button
@@ -22,7 +22,10 @@ export function ShezhireTemplateModal({ onPick, onClose }: Props) {
               className="shezhire-template-option"
               onClick={() => onPick(tpl.id)}
             >
-              <strong>{tpl.title}</strong>
+              <span className="shezhire-template-head">
+                <strong>{tpl.title}</strong>
+                <em>{tpl.format}</em>
+              </span>
               <span>{tpl.blurb}</span>
             </button>
           ))}

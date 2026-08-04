@@ -370,7 +370,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <span className="brand-glyph" aria-hidden />
           <div>
             <strong>SEJIRE</strong>
-            <span className="tree-title">{store.meta.title}</span>
             {shezhireLine ? (
               <button
                 type="button"
@@ -401,7 +400,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 }}
                 title="Для казахского шежіре. Можно не заполнять"
               >
-                Шежіре · жүз и ру
+                Жүз и ру
               </button>
               {people.length >= 1 && (
                 <>

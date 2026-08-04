@@ -467,6 +467,21 @@ a {
   font-size: 0.95rem;
 }
 
+.shezhire-template-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.shezhire-template-head em {
+  font-style: normal;
+  font-size: 0.68rem;
+  opacity: 0.55;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .shezhire-template-option span {
   font-size: 0.78rem;
   opacity: 0.62;
