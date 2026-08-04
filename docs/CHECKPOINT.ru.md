@@ -18,6 +18,7 @@
 |-----|-----|
 | Приложение (зеркало Pages) | https://azovskaya.github.io/Sejire_arweave/ |
 | Investor deck (HTML) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
+| Investor deck (PPTX) | https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx |
 | Investor deck (PDF) | https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf |
 | Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; сайт ещё не привязан |
 

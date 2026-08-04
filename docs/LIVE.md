@@ -11,8 +11,9 @@
 
 **https://azovskaya.github.io/Sejire_arweave/**
 
-Презентация: https://azovskaya.github.io/Sejire_arweave/presentation/  
-PDF deck: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf
+Презентация (HTML): https://azovskaya.github.io/Sejire_arweave/presentation/  
+PPTX: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx  
+PDF: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf
 
 Источник деплоя: ветка [`gh-pages`](https://github.com/azovskaya/Sejire_arweave/tree/gh-pages).
 

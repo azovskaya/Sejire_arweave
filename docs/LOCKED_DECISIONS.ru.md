@@ -18,7 +18,8 @@
 | **Написание бренда:** всегда **`SEJIRE`** (латиница, caps) | Да — сайт, презентация, PDF |
 | Wordmark на сайте / в деке: Work Sans 700; крупный `letter-spacing: -0.04em`; в топбаре оранжевый диск + `0.12em` | Да |
 | GitHub Pages = **зеркало**, не канон | Да |
-| Investor deck PDF уже есть | `presentation/SEJIRE-investor-deck.pdf` |
+| Investor deck PDF | `presentation/SEJIRE-investor-deck.pdf` |
+| Investor deck PPTX | `presentation/SEJIRE-investor-deck.pptx` (`npm run deck:pptx`) |
 | JSON выгрузка / загрузка всех данных древа | Да (`sejire/tree-export/v1`) |
 | PDF: ФИО + даты рождения/смерти у всех, у кого заполнены | Да |
 | PDF древо без пересечения связей (слоты отец/мать) | Да |
