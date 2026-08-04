@@ -411,13 +411,25 @@ a {
 .tree-shezhire {
   display: block;
   margin-top: 0.15rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--ink-dim);
+  font: inherit;
   font-size: 0.7rem;
   opacity: 0.72;
+  text-align: left;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: min(42vw, 280px);
+}
+
+.tree-shezhire:hover,
+.tree-shezhire:focus-visible {
+  opacity: 0.95;
+  outline: none;
 }
 
 .shezhire-meta-modal label {

@@ -357,7 +357,16 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <div>
             <strong>SEJIRE</strong>
             <span className="tree-title">{store.meta.title}</span>
-            {shezhireLine ? <span className="tree-shezhire">{shezhireLine}</span> : null}
+            {shezhireLine ? (
+              <button
+                type="button"
+                className="tree-shezhire is-set"
+                onClick={() => setShowShezhireMeta(true)}
+                title="Изменить жүз и ру"
+              >
+                {shezhireLine}
+              </button>
+            ) : null}
           </div>
         </div>
         <nav className="top-actions">
@@ -369,6 +378,17 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               ⋯
             </summary>
             <div className="top-more-menu" role="menu">
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  closeMoreMenu();
+                  setShowShezhireMeta(true);
+                }}
+                title="Для казахского шежіре. Можно не заполнять"
+              >
+                Шежіре · жүз и ру
+              </button>
               {people.length >= 1 && (
                 <>
                   <button
@@ -393,17 +413,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   </button>
                 </>
               )}
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => {
-                  closeMoreMenu();
-                  setShowShezhireMeta(true);
-                }}
-                title="Для казахского шежіре. Можно не заполнять"
-              >
-                Жүз и ру
-              </button>
               <button
                 type="button"
                 className="btn ghost"
