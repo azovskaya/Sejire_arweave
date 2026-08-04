@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+dist/
+.cache/
+*.log
+node_modules/
+apps/web/dist/

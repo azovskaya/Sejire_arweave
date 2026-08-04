@@ -1,0 +1,14 @@
+{
+  "name": "sejire-sponsor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json",
+    "dev": "echo 'Use wrangler dev when Cloudflare credentials are available'"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250705.0",
+    "typescript": "^5.8.3"
+  }
+}
