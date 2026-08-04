@@ -438,6 +438,41 @@ a {
   margin-bottom: 0.85rem;
 }
 
+.shezhire-template-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.85rem 0 1rem;
+}
+
+.shezhire-template-option {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shezhire-template-option:hover,
+.shezhire-template-option:focus-visible {
+  border-color: color-mix(in srgb, var(--ink) 28%, transparent);
+  outline: none;
+}
+
+.shezhire-template-option strong {
+  font-size: 0.95rem;
+}
+
+.shezhire-template-option span {
+  font-size: 0.78rem;
+  opacity: 0.62;
+  line-height: 1.35;
+}
+
 .top-actions {
   display: flex;
   align-items: center;

@@ -15,10 +15,11 @@ import {
   setDraftPerson,
 } from "../lib/treeEngine";
 import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
-import { downloadShezhirePdf } from "../lib/pdf/shezhirePdf";
+import { downloadShezhirePdf, type ShezhireTemplateId } from "../lib/pdf/shezhirePdf";
 import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
+import { ShezhireTemplateModal } from "./ShezhireTemplateModal";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -57,6 +58,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const panelRef = useRef<PersonPanelHandle | null>(null);
   const [ancestorsHint, setAncestorsHint] = useState(false);
   const [showShezhireMeta, setShowShezhireMeta] = useState(false);
+  const [showShezhireTemplate, setShowShezhireTemplate] = useState(false);
 
   const shezhireLine = useMemo(
     () => formatShezhireAffiliation(store.meta.zhuz, store.meta.clanName),
@@ -291,12 +293,22 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     }
   }
 
-  async function exportShezhirePdf() {
+  function openShezhirePdfPicker() {
     const id = selectedId ?? homeFocusId ?? focusId;
     if (!id || !people.length) {
       flash("Сначала добавьте человека на древо");
       return;
     }
+    setShowShezhireTemplate(true);
+  }
+
+  async function exportShezhirePdf(template: ShezhireTemplateId) {
+    const id = selectedId ?? homeFocusId ?? focusId;
+    if (!id || !people.length) {
+      flash("Сначала добавьте человека на древо");
+      return;
+    }
+    setShowShezhireTemplate(false);
     try {
       await downloadShezhirePdf({
         snapshot: store.draft,
@@ -304,6 +316,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         meta: store.meta,
         locale: "ru",
         maxGenerations: 7,
+        template,
       });
       flash("Жеті ата PDF скачан");
     } catch (e) {
@@ -406,7 +419,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                     className="btn ghost"
                     onClick={() => {
                       closeMoreMenu();
-                      void exportShezhirePdf();
+                      openShezhirePdfPicker();
                     }}
                   >
                     Жеті ата PDF
@@ -576,6 +589,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 : "Файл сейфа скачан. Храните вместе с 12 словами."
             );
           }}
+        />
+      )}
+
+      {showShezhireTemplate && (
+        <ShezhireTemplateModal
+          onClose={() => setShowShezhireTemplate(false)}
+          onPick={(template) => void exportShezhirePdf(template)}
         />
       )}
 
