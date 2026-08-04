@@ -55,7 +55,6 @@
   }
 
   function go(next) {
-    if (locked && !pdfMode) return;
     const total = slides.length;
     index = ((next % total) + total) % total;
     slides.forEach((slide, i) => {

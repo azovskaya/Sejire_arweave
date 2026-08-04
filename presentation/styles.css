@@ -10,9 +10,9 @@
   --ink-soft: #1c1a17;
   --on-dark: #f7f4ee;
   --on-dark-muted: rgba(247, 244, 238, 0.72);
-  --font-display: "Syne", sans-serif;
-  --font-body: "DM Sans", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Work Sans", "Helvetica Neue", sans-serif;
+  --font-body: "Work Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -110,19 +110,21 @@ a:hover {
 .brand-mark {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
-.brand-slash {
+/* Same mark as apps/web topbar: orange disc + tracked SEJIRE */
+.brand-glyph {
   width: 14px;
-  height: 22px;
+  height: 14px;
+  flex-shrink: 0;
   background: var(--orange);
-  clip-path: polygon(35% 0, 100% 0, 65% 100%, 0 100%);
+  border-radius: 50%;
 }
 
 .brand-name {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.12em;
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -225,6 +227,14 @@ body.chrome-on-dark .progress {
   overflow: hidden;
 }
 
+.slide:not(.is-active) {
+  /* Hard hide — prevents ink/title bleed under the next slide */
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .slide.is-active {
   opacity: 1;
   visibility: visible;
@@ -282,9 +292,9 @@ body.chrome-on-dark .progress {
 h2 {
   margin: 0 0 1rem;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(1.85rem, 4.2vw, 3rem);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
   line-height: 1.05;
   max-width: 16ch;
 }
@@ -304,18 +314,21 @@ h2.on-dark,
   text-align: left;
 }
 
+/* Hero SEJIRE — same as welcome-brand on the site */
 .hero-brand {
   margin: 0 0 0.45rem;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(2.8rem, 9vw, 5.8rem);
-  letter-spacing: -0.05em;
-  line-height: 0.88;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
 }
 
 .hero-brand.close-brand {
   font-size: clamp(2.1rem, 6vw, 3.8rem);
-  max-width: 12ch;
+  max-width: 14ch;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .hero-line {
@@ -328,8 +341,10 @@ h2.on-dark,
   color: var(--on-dark);
 }
 
-.accent-word {
-  color: var(--orange);
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .slide-orange .accent-word {
@@ -1049,7 +1064,7 @@ h2.on-dark,
   to {
     opacity: 1;
     transform: none;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.04em;
   }
 }
 
@@ -1270,4 +1285,12 @@ body.is-static .ladder-phase {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
+}
+
+body.is-static .slide {
+  transition: none !important;
+}
+
+body.is-static .slide:not(.is-active) {
+  display: none !important;
 }
