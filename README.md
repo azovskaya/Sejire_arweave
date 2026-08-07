@@ -1,1 +1,46 @@
-# Sejire_arweave
+# SEJIRE
+
+**Создание неизменяемой ткани человеческой истории.**
+
+Протокол вечного версионного хранения родовых деревьев.  
+Сначала собираете древо (я → мама/папа → бабушки/дедушки).  
+**12 слов — только при отправке в Arweave.**
+
+## Продолжить разработку отсюда
+
+См. **[`docs/CHECKPOINT.ru.md`](./docs/CHECKPOINT.ru.md)** — что готово, решения, очередь задач.  
+Ветка: `cursor/from-baseline-5d33` · тег: `sejire-v0.4-checkpoint`
+
+## Открыть приложение
+
+**https://azovskaya.github.io/Sejire_arweave/**
+
+Репозиторий: https://github.com/azovskaya/Sejire_arweave
+
+## Локально
+
+```bash
+git checkout cursor/from-baseline-5d33   # или sejire-v0.4-checkpoint
+cd apps/web && npm install && npm test && npm run dev
+```
+
+Обновить GitHub Pages из этого репо:
+
+```bash
+npm run deploy:pages
+```
+
+## Структура
+
+| Путь | Содержание |
+|------|------------|
+| `apps/web` | Клиент (сбор древа + PDF + JSON + публикация) |
+| `apps/sponsor` | Скелет кассира оплаты (Kaspi/Stripe later) |
+| `docs/` | Протокол, чекпоинт, locked decisions, rollout |
+| `ao/processes` | Lua Tree / Factory (позже) |
+| `packages/schema` | JSON Schema |
+| `presentation/` | Investor deck + PDF |
+| ветка `gh-pages` | Собранный сайт для Pages |
+
+Подробнее: [`docs/LIVE.md`](./docs/LIVE.md) · [`docs/README.md`](./docs/README.md) · [`docs/LOCKED_DECISIONS.ru.md`](./docs/LOCKED_DECISIONS.ru.md)
+
