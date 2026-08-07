@@ -10,9 +10,12 @@
     "web:build": "npm run build --prefix apps/web",
     "sponsor:test": "npm test --prefix apps/sponsor",
     "test": "npm test --prefix apps/web && npm test --prefix apps/sponsor",
-    "deploy:pages": "bash scripts/deploy-pages.sh"
+    "deploy:pages": "bash scripts/deploy-pages.sh",
+    "deploy:permaweb": "bash scripts/deploy-permaweb.sh",
+    "web:build:arns": "VITE_PUBLISH_MODE=self npm run build --prefix apps/web"
   },
   "devDependencies": {
+    "permaweb-deploy": "^5.0.0",
     "pptxgenjs": "^4.0.1"
   }
 }
