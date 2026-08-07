@@ -35,6 +35,10 @@ if [[ ! -f "$DIST/index.html" ]]; then
   exit 1
 fi
 
+# ArNS gateways often request "/" — without manifest fallback that returns "Not found".
+# permaweb-deploy treats 404.html as SPA fallback for manifest v0.2.0.
+cp "$DIST/index.html" "$DIST/404.html"
+
 SIZE=$(du -sh "$DIST" | awk '{print $1}')
 echo "Uploading $DIST ($SIZE)…"
 echo "ArNS не обновляем автоматически (имя sejire в Phantom)."
