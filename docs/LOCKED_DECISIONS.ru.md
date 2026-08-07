@@ -104,6 +104,7 @@
 |------|-----------|
 | UI, дерево, PDF, шифрование, restore | TypeScript + React (`apps/web`) |
 | Кассир оплаты (когда будет мерчант) | TypeScript Worker; для KZ — Kaspi, не Stripe |
+| До мерчанта | `PAYMENT_PROVIDER=mock` + `VITE_PUBLISH_MODE=sponsor` для проводки UX; self-fund AR — fallback |
 | Деплой сайта | Vite build + Turbo / permaweb-deploy |
 | Имя | ArNS UI / ARIO |
 | AO Lua Tree | Позже; для MVP сайта+сейфа не блокер |

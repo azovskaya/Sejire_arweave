@@ -580,14 +580,20 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
             setShowPublish(false);
             setPublishStore(null);
           }}
-          onPublished={({ mode, txId }) => {
+          onPublished={({ mode, txId, mock }) => {
             setShowPublish(false);
             setPublishStore(null);
-            flash(
-              mode === "arweave"
-                ? `Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
-                : "Файл сейфа скачан. Храните вместе с 12 словами."
-            );
+            if (mode === "sponsor") {
+              flash(
+                mock
+                  ? `Mock-кассир: сейф принят (${txId?.slice(0, 10)}…). Когда будет Turbo — это станет реальным TX. Храните 12 слов.`
+                  : `Навсегда в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
+              );
+            } else if (mode === "arweave") {
+              flash(`Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`);
+            } else {
+              flash("Файл сейфа скачан. Храните вместе с 12 словами.");
+            }
           }}
         />
       )}

@@ -1,14 +1,13 @@
 # ADR-0006 — Fiat-sponsored Arweave publish + permaweb UI
 
-- **Status:** Proposed → Accepted for Phase 3.5
-- **Date:** 2026-07-27
+- **Status:** Accepted for Phase 3.5
+- **Date:** 2026-07-27 · **Payment rail updated:** 2026-08-07
 - **Supersedes (partially):** ADR-0001 “no app backend” — a **thin sponsor edge** is allowed; it never receives the BIP-39 seed.
+- **Payment rail (locked):** **Kaspi Pay Business (₸)** for Kazakhstan — not Stripe. See `LOCKED_DECISIONS.ru.md` §3. Until ИП/ТОО + merchant API exist, Worker runs `PAYMENT_PROVIDER=mock`.
 
 ## Context
 
-Users must not buy AR tokens. Product goal: click **В Arweave** → pay **$3 by card** → encrypted vault is permanently stored. The SPA itself should also live on the permaweb (not only GitHub Pages).
-
-Naive scheme (user card → our bank → we manually top up Arweave) works but is slow, operationally heavy, and easy to desync from publish events.
+Users must not buy AR tokens. Product goal: click **Навсегда** → pay ~$3 / local ₸ → encrypted vault is permanently stored. The SPA itself should also live on the permaweb (not only GitHub Pages).
 
 ## Decision
 
@@ -16,23 +15,23 @@ Naive scheme (user card → our bank → we manually top up Arweave) works but i
 
 1. Keep GitHub Pages as a **mirror / bootstrap** during transition.
 2. Deploy `apps/web/dist` to Arweave via **Turbo + permaweb-deploy**.
-3. Point an **ArNS** name (e.g. `sejire`) at the latest manifest TX.
+3. Point **ArNS** `sejire` at the latest manifest TX → `https://sejire.ar.io`.
 4. Fund site redeploys from the **project Turbo wallet** (treasury), not from end users.
 
-### B. Vault publish (user pays $3, we sponsor storage)
+### B. Vault publish (user pays fiat, we sponsor storage)
 
 **Invariant:** 12 words never leave the device (see `SEED_ACCESS.md`).
 
-**MVP flow (recommended):**
+**MVP flow:**
 
 ```
-Client                         Stripe              Sponsor edge              Turbo / Arweave
+Client                         Kaspi               Sponsor edge              Turbo / Arweave
   |                              |                      |                         |
   | seal vault locally           |                      |                         |
-  | create Checkout ($3)  ------>|                      |                         |
-  | pay card                     |                      |                         |
-  | <---- success + session_id --|                      |                         |
-  | POST envelope + session_id ------------------------>|                         |
+  | create checkout  ---------------------------------->|                         |
+  | <---- sessionId (+ payUrl) -------------------------|                         |
+  | pay ₸  --------------------->|                      |                         |
+  | POST envelope + sessionId ------------------------->|                         |
   |                              |   verify paid ------>|                         |
   |                              |                      | upload envelope ------->|
   |                              |                      |<------ txId ------------|
@@ -40,29 +39,30 @@ Client                         Stripe              Sponsor edge              Tur
 ```
 
 - Client encrypts with keys from the seed (**seed stays local**).
-- Sponsor edge verifies Stripe `session_id` / PaymentIntent is paid **exactly once**.
+- Sponsor edge verifies the payment session is paid **exactly once**.
 - Edge uploads the sealed envelope with the **project Turbo wallet**.
 - Tags stay the same (`App-Name`, `Vault-Id`, …) so restore-by-phrase still works via GraphQL.
 
-**Price:** fixed **USD 3.00** covers typical vault size (≪ $0.10 storage), Stripe fees (~3%+$0.30), Turbo top-up overhead, and margin / site endowment amortisation.
+**Price:** fixed local ₸ equivalent of ~USD 3 covers storage (cents), Kaspi fees, Turbo overhead, and margin / site endowment.
 
 ### C. Why not “fund the user’s AR address”
 
-Possible, but worse for UX and ops: AR volatility, wait for confirmation, user still sees crypto balances. Rejected for MVP.
+Possible, but worse for UX and ops. Kept only as **fallback** behind `VITE_PUBLISH_MODE=self` / secondary button.
 
 ### D. Better-than-MVP (Phase 3.6)
 
-**Turbo Credit Share Approval:** after payment, edge shares credits to the user’s derived address; client uploads with the user JWK so the data item is user-signed. Same fiat UX, stronger on-chain attribution. Schedule after MVP is live.
+**Turbo Credit Share Approval:** after payment, edge shares credits to the user’s derived address; client uploads with the user JWK. Schedule after MVP is live.
 
 ## Consequences
 
-- Need a tiny backend (Cloudflare Worker / similar) with secrets: Stripe, Turbo/JWK.
-- ADR-0001 amended: “no SEJIRE business backend” → “no SEJIRE backend that touches seeds or plaintext trees”.
-- Abuse controls: one publish per successful payment; size cap; rate limit by card fingerprint / IP.
-- Refunds: if upload fails after payment, auto-retry then Stripe refund.
+- Need a tiny Worker with secrets: Kaspi merchant token, Turbo/JWK.
+- ADR-0001 amended: “no SEJIRE backend that touches seeds or plaintext trees”.
+- Abuse controls: one publish per successful payment; size cap; rate limit.
+- Refunds: if upload fails after payment, auto-retry then refund via Kaspi process.
 
 ## Non-goals (this ADR)
 
-- Users buying AR / connecting Wander / ArConnect for publish.
+- Users buying AR / connecting ArConnect for the primary publish path.
 - Server-side access to mnemonics or plaintext genealogy.
 - Replacing local draft storage.
+- Stripe as the KZ primary rail.

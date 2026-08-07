@@ -1,29 +1,43 @@
-# Flow 10 — Fiat publish ($3) → sponsored Arweave
+# Flow 10 — Fiat publish (Kaspi) → sponsored Arweave
 
-Related ADR: [0006-sponsored-fiat-publish.md](../adr/0006-sponsored-fiat-publish.md)
+Related ADR: [0006-sponsored-fiat-publish.md](../adr/0006-sponsored-fiat-publish.md)  
+Locked rail: [LOCKED_DECISIONS.ru.md](../LOCKED_DECISIONS.ru.md) §3 — **Kaspi**, не Stripe.
 
 ## Happy path
 
 1. User builds a tree (local draft).
-2. Clicks **В Arweave**.
-3. Creates or enters **12 words** (device only) → vault sealed.
-4. Pays **$3** via Stripe Checkout (card).
-5. Client sends `{ envelope, stripeSessionId }` to sponsor edge.
-6. Edge verifies payment, uploads via Turbo, returns `txId`.
-7. UI shows success + explorer link; restore still works from 12 words.
+2. Clicks **Сохранить** → 12 words (device only) → vault sealed.
+3. Chooses **Навсегда · оплата** (when `VITE_PUBLISH_MODE=sponsor`).
+4. Client `POST /v1/checkout` → `sessionId` (+ Kaspi `payUrl` when live).
+5. User pays via **Kaspi Pay Business** (or mock-pay in dev).
+6. Client `POST /v1/publish` with `{ sessionId, envelope }` only — **no seed**.
+7. Edge verifies paid, uploads via Turbo (treasury), returns `txId`.
+8. UI shows success; restore still works from 12 words alone.
+
+## Flags
+
+| Env | Meaning |
+|-----|---------|
+| `VITE_PUBLISH_MODE=self` | Default: user funds derived AR address |
+| `VITE_PUBLISH_MODE=sponsor` | Cashier path |
+| `VITE_SPONSOR_URL` | Worker origin |
+
+Self-fund remains available as fallback button in the modal.
 
 ## Failure path
 
 | Failure | Handling |
 |---------|----------|
-| Card declined | No upload |
-| Payment ok, upload fails | Edge retries; then refund |
-| Envelope too large | Reject before charge or after quote |
-| Replay same session | Idempotent: return existing txId |
+| Payment declined / not paid | No upload |
+| Payment ok, upload fails | Edge retries; then refund (live) |
+| Envelope too large | Reject (`413`) |
+| Replay same session | Idempotent: return existing `txId` |
+| Body contains mnemonic/trees | Reject (`forbidden_field`) |
 
 ## Security
 
 - Seed / mnemonic: never in request body.
-- Envelope: ciphertext only.
-- Edge auth: Stripe signature + paid session check.
-- Size limit: e.g. 512 KiB MVP (genealogy JSON + meta).
+- Envelope: ciphertext only (`sejire/envelope/v1`).
+- Edge auth: paid Kaspi/mock session check.
+- Size limit: 512 KiB MVP.
+- Restore: no cashier required.
