@@ -92,9 +92,14 @@ export async function sponsorMockPay(sessionId: string): Promise<void> {
 
 export async function sponsorPublish(
   sessionId: string,
-  envelope: EnvelopeV1
+  envelope: EnvelopeV1,
+  opts?: { parentTxId?: string | null }
 ): Promise<PublishResponse> {
-  const payload = { sessionId, envelope };
+  const payload = {
+    sessionId,
+    envelope,
+    ...(opts?.parentTxId ? { parentTxId: opts.parentTxId } : {}),
+  };
   assertEnvelopeOnly(payload);
   const res = await sponsorFetch("/v1/publish", {
     method: "POST",

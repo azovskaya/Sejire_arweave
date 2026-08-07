@@ -12,6 +12,7 @@ import {
   startGuidedTree,
   type GuideState,
 } from "./lib/guide";
+import { clearVaultSession } from "./lib/vaultSession/session";
 
 type Screen = "welcome" | "work" | "restore";
 
@@ -23,6 +24,7 @@ export default function App() {
   function startNew(title: string) {
     clearDraftTree();
     clearGuide();
+    clearVaultSession();
     const started = startGuidedTree(title);
     saveDraftTree(started.store);
     saveGuide(started.guide);
