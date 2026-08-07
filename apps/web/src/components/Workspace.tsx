@@ -635,8 +635,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           onPublished={({ mode, txId, mock, isNewVersion }) => {
             setShowPublish(false);
             setPublishStore(null);
-            const ver = isNewVersion ? " Новая версия; прошлые доступны в «Версии сейфа»." : "";
-            if (mode === "sponsor") {
+            const ver = isNewVersion ? " Новая версия; прошлые — в «Версии сейфа»." : "";
+            if (mode === "demo") {
+              flash(
+                `Демо-версия сохранена в этом браузере (${txId?.slice(0, 10)}…). Храните 12 слов.${ver}`
+              );
+            } else if (mode === "sponsor") {
               flash(
                 mock
                   ? `Mock-кассир: сейф принят (${txId?.slice(0, 10)}…). Когда будет Turbo — это станет реальным TX. Храните 12 слов.${ver}`
@@ -645,7 +649,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
             } else if (mode === "arweave") {
               flash(`Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.${ver}`);
             } else {
-              flash("Файл сейфа скачан. Храните вместе с 12 словами.");
+              flash(`Файл сейфа скачан${txId ? ` · версия ${txId.slice(0, 10)}…` : ""}. Храните 12 слов.${ver}`);
             }
           }}
         />

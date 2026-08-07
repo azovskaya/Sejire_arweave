@@ -13,6 +13,11 @@ import {
   getVaultSession,
   setVaultSession,
 } from "../lib/vaultSession/session";
+import {
+  getLocalVaultVersion,
+  listLocalVaultVersions,
+  type LocalVaultVersion,
+} from "../lib/vaultSession/localArchive";
 import { activePersons } from "../lib/treeEngine";
 
 type Props = {
@@ -20,9 +25,43 @@ type Props = {
   onOpenVersion: (vault: VaultV1) => void;
 };
 
+type ListedVersion =
+  | { kind: "network"; meta: VaultVersionMeta }
+  | { kind: "archive"; entry: LocalVaultVersion };
+
+function formatArchiveWhen(iso: string): string {
+  const d = Date.parse(iso);
+  if (Number.isNaN(d)) return "время неизвестно";
+  return new Date(d).toLocaleString("ru-RU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function mergeVersionLists(
+  network: VaultVersionMeta[],
+  archive: LocalVaultVersion[]
+): ListedVersion[] {
+  const seen = new Set<string>();
+  const out: ListedVersion[] = [];
+  for (const meta of network) {
+    seen.add(meta.txId);
+    out.push({ kind: "network", meta });
+  }
+  for (const entry of archive) {
+    if (seen.has(entry.id)) continue;
+    seen.add(entry.id);
+    out.push({ kind: "archive", entry });
+  }
+  return out;
+}
+
 export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
   const session = getVaultSession();
-  const [versions, setVersions] = useState<VaultVersionMeta[]>([]);
+  const [versions, setVersions] = useState<ListedVersion[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
@@ -48,10 +87,19 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
     (async () => {
       try {
         setStatus(`Сейф ${fingerprintVaultId(session.vaultId)}…`);
-        const list = await listVaultVersions(session.vaultId);
+        let network: VaultVersionMeta[] = [];
+        try {
+          network = await listVaultVersions(session.vaultId);
+        } catch {
+          network = [];
+        }
+        const archive = listLocalVaultVersions(session.vaultId);
+        const merged = mergeVersionLists(network, archive);
         if (!cancelled) {
-          setVersions(list);
-          if (list.length === 0) setError("В сети пока нет версий этого сейфа.");
+          setVersions(merged);
+          if (merged.length === 0) {
+            setError("Пока нет сохранённых версий этого сейфа (ни в сети, ни в браузере).");
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -67,7 +115,7 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
     };
   }, [session?.vaultId]);
 
-  async function openTx(txId: string) {
+  async function openListed(item: ListedVersion) {
     if (!session?.vaultId) return;
     const raw = normalizeMnemonic(phrase);
     if (!isValidMnemonic(raw)) {
@@ -75,20 +123,28 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
       setError("Введите 12 слов, чтобы открыть версию.");
       return;
     }
-    setOpeningId(txId);
+    const id = item.kind === "network" ? item.meta.txId : item.entry.id;
+    setOpeningId(id);
     setError(null);
     try {
       const keys = deriveKeysFromMnemonic(raw);
       if (keys.vaultId !== session.vaultId) {
         throw new Error("Эти 12 слов относятся к другому сейфу.");
       }
-      const remote = await fetchVaultEnvelope(session.vaultId, txId);
-      if (!remote) throw new Error("Не удалось скачать эту версию.");
-      const vault = await openEnvelope(keys, remote.envelope);
-      setVaultSession(
-        { vaultId: keys.vaultId, headTxId: txId, source: "network" },
-        raw
-      );
+      let vault: VaultV1 | null = null;
+      if (item.kind === "network") {
+        const remote = await fetchVaultEnvelope(session.vaultId, id);
+        if (remote) vault = await openEnvelope(keys, remote.envelope);
+      }
+      if (!vault) {
+        const archived =
+          item.kind === "archive"
+            ? item.entry
+            : getLocalVaultVersion(session.vaultId, id);
+        if (!archived) throw new Error("Не удалось открыть эту версию.");
+        vault = await openEnvelope(keys, archived.envelope);
+      }
+      setVaultSession({ vaultId: keys.vaultId, headTxId: id, source: "network" }, raw);
       onOpenVersion(vault);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -132,8 +188,8 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
       <div className="modal panel">
         <h2>Версии сейфа</h2>
         <p className="sub">
-          Каждое сохранение в сеть — новая неизменяемая версия под теми же 12 словами. Старые
-          остаются. Новая версия снова оплачивается.
+          Каждое сохранение — новая версия под теми же 12 словами. Старые остаются. На демо-сайте
+          версии лежат в этом браузере; в проде — в Arweave.
         </p>
         {session?.vaultId && (
           <p className="sub mono publish-meta">
@@ -161,25 +217,36 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
 
         {!busy && versions.length > 0 && (
           <ul className="vault-version-list">
-            {versions.map((v, i) => {
-              const isHead = session?.headTxId === v.txId || (i === 0 && !session?.headTxId);
-              const peopleHint = "";
+            {versions.map((item, i) => {
+              const id = item.kind === "network" ? item.meta.txId : item.entry.id;
+              const isHead = session?.headTxId === id || (i === 0 && !session?.headTxId);
+              const when =
+                item.kind === "network"
+                  ? formatVersionWhen(item.meta)
+                  : formatArchiveWhen(item.entry.savedAt);
+              const where =
+                item.kind === "network"
+                  ? "Arweave"
+                  : item.entry.source === "demo"
+                    ? "демо · браузер"
+                    : item.entry.source === "sponsor"
+                      ? "кассир / архив"
+                      : "браузер";
               return (
-                <li key={v.txId}>
+                <li key={`${item.kind}-${id}`}>
                   <button
                     type="button"
                     className="vault-version-item"
                     disabled={openingId !== null}
-                    onClick={() => void openTx(v.txId)}
+                    onClick={() => void openListed(item)}
                   >
                     <span className="vault-version-title">
                       {i === 0 ? "Последняя" : `Версия ${versions.length - i}`}
                       {isHead ? " · сейчас" : ""}
-                      {openingId === v.txId ? "…" : ""}
+                      {openingId === id ? "…" : ""}
                     </span>
                     <span className="vault-version-meta">
-                      {formatVersionWhen(v)} · {v.txId.slice(0, 10)}…
-                      {peopleHint}
+                      {when} · {where} · {id.slice(0, 10)}…
                     </span>
                   </button>
                 </li>
@@ -196,7 +263,7 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
               disabled={openingId !== null}
               onClick={() => void openLocal()}
             >
-              Локальная копия в браузере
+              Текущая локальная копия
             </button>
             <button type="button" className="btn ghost" onClick={onClose}>
               Закрыть
