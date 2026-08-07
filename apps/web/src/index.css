@@ -1201,6 +1201,49 @@ a {
   margin-top: 0.55rem;
 }
 
+.vault-version-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+  max-height: min(48vh, 360px);
+  overflow: auto;
+}
+
+.vault-version-item {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.vault-version-item:hover:not(:disabled) {
+  border-color: #8a8d93;
+}
+
+.vault-version-item:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.vault-version-title {
+  font-weight: 600;
+}
+
+.vault-version-meta {
+  font-size: 0.85rem;
+  color: #5c6068;
+  font-variant-numeric: tabular-nums;
+}
+
 .add-modal {
   display: grid;
   gap: 0.7rem;

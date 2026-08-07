@@ -11,16 +11,13 @@ import { downloadSeedBackup } from "../lib/crypto/seedBackup";
 import type { TreeStore } from "../lib/types";
 import {
   downloadEnvelope,
-  emptyVault,
-  openEnvelope,
-  openLocalVault,
   putTree,
   sealVault,
-  type VaultV1,
 } from "../lib/crypto/vault";
 import type { EnvelopeV1 } from "../lib/crypto/encrypt";
+import { loadVaultForPublish } from "../lib/arweave/loadVault";
 import { fetchLatestEnvelope } from "../lib/arweave/fetch";
-import { isSponsorPublishEnabled } from "../lib/sponsor/config";
+import { isDemoPublishEnabled, isSponsorPublishEnabled } from "../lib/sponsor/config";
 import {
   sponsorCheckout,
   sponsorHealth,
@@ -28,16 +25,31 @@ import {
   sponsorPublish,
   type CheckoutResponse,
 } from "../lib/sponsor/client";
+import {
+  getSessionMnemonic,
+  getVaultSession,
+  setVaultSession,
+  updateVaultHead,
+} from "../lib/vaultSession/session";
+import {
+  archiveLocalVaultVersion,
+  makeLocalVersionId,
+} from "../lib/vaultSession/localArchive";
 
 type Props = {
   store: TreeStore;
   onClose: () => void;
   onPublished: (info: {
     txId?: string;
-    mode: "export" | "arweave" | "sponsor";
+    mode: "export" | "arweave" | "sponsor" | "demo";
     address?: string;
     mock?: boolean;
+    isNewVersion?: boolean;
   }) => void;
+  /** Previous network TX under the same 12 words (for Parent-Tx). */
+  parentTxId?: string | null;
+  /** Session mnemonic — skip re-entry when saving a new version. */
+  knownMnemonic?: string | null;
 };
 
 type Mode =
@@ -46,21 +58,10 @@ type Mode =
   | "create-confirm"
   | "create-ready"
   | "existing"
+  | "new-version"
   | "busy"
   | "fund-wait"
   | "pay";
-
-async function loadVault(keys: ReturnType<typeof deriveKeysFromMnemonic>): Promise<VaultV1> {
-  const local = await openLocalVault(keys);
-  if (local) return local;
-  try {
-    const remote = await fetchLatestEnvelope(keys.vaultId);
-    if (remote) return await openEnvelope(keys, remote.envelope);
-  } catch {
-    // offline / GraphQL unavailable — start fresh vault
-  }
-  return emptyVault(keys.vaultId);
-}
 
 function confirmDiscardSeed() {
   return window.confirm(
@@ -75,10 +76,22 @@ function formatPrice(amountMinor: number, currency: string): string {
   return `${amountMinor} ${cur}`;
 }
 
-export function PublishSeedModal({ store, onClose, onPublished }: Props) {
+export function PublishSeedModal({
+  store,
+  onClose,
+  onPublished,
+  parentTxId: parentTxProp,
+  knownMnemonic: knownMnemonicProp,
+}: Props) {
   const sponsorOn = isSponsorPublishEnabled();
-  const [mode, setMode] = useState<Mode>("intro");
-  const [mnemonic, setMnemonic] = useState("");
+  const demoOn = isDemoPublishEnabled();
+  const session = getVaultSession();
+  const knownMnemonic = knownMnemonicProp ?? getSessionMnemonic();
+  const parentTxId = parentTxProp ?? session?.headTxId ?? null;
+  const hasSessionKey = Boolean(knownMnemonic && isValidMnemonic(normalizeMnemonic(knownMnemonic)));
+
+  const [mode, setMode] = useState<Mode>(hasSessionKey ? "new-version" : "intro");
+  const [mnemonic, setMnemonic] = useState(hasSessionKey ? normalizeMnemonic(knownMnemonic!) : "");
   const [confirm, setConfirm] = useState("");
   const [existing, setExisting] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +101,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   const [sealedEnvelope, setSealedEnvelope] = useState<EnvelopeV1 | null>(null);
   const [checkout, setCheckout] = useState<CheckoutResponse | null>(null);
   const [priceHint, setPriceHint] = useState<string | null>(null);
+  const [publishParentTx, setPublishParentTx] = useState<string | null>(parentTxId);
   const words = useMemo(() => (mnemonic ? splitWords(mnemonic) : []), [mnemonic]);
 
   const seedLocked =
@@ -96,7 +110,8 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     mode === "create-ready" ||
     mode === "busy" ||
     mode === "fund-wait" ||
-    mode === "pay";
+    mode === "pay" ||
+    mode === "new-version";
 
   useEffect(() => {
     if (!sponsorOn) return;
@@ -123,9 +138,14 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         mode === "create-confirm" ||
         mode === "create-ready" ||
         mode === "fund-wait" ||
-        mode === "pay"
+        mode === "pay" ||
+        mode === "new-version"
       ) {
         e.preventDefault();
+        if (mode === "new-version") {
+          onClose();
+          return;
+        }
         if (!confirmDiscardSeed()) return;
         setMode("intro");
         setMnemonic("");
@@ -146,14 +166,78 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
   async function sealForPhrase(phrase: string): Promise<{
     keys: ReturnType<typeof deriveKeysFromMnemonic>;
     envelope: EnvelopeV1;
+    parentTx: string | null;
   }> {
     const keys = deriveKeysFromMnemonic(phrase);
     setStatus(`Сейф ${fingerprintVaultId(keys.vaultId)}…`);
-    let vault = await loadVault(keys);
+    let parentTx = publishParentTx;
+    if (!parentTx) {
+      try {
+        const latest = await fetchLatestEnvelope(keys.vaultId);
+        if (latest) parentTx = latest.txId;
+      } catch {
+        /* offline — first publish or no chain link */
+      }
+    }
+    setPublishParentTx(parentTx);
+    let vault = await loadVaultForPublish(keys, { parentTxId: parentTx });
     vault = putTree(vault, store);
     setStatus("Шифруем сейф ключом из 12 слов…");
     const envelope = await sealVault(keys, vault);
-    return { keys, envelope };
+    return { keys, envelope, parentTx };
+  }
+
+  function rememberSession(
+    keys: ReturnType<typeof deriveKeysFromMnemonic>,
+    phrase: string,
+    txId?: string
+  ) {
+    setVaultSession(
+      {
+        vaultId: keys.vaultId,
+        headTxId: txId ?? publishParentTx,
+        source: txId ? "publish" : session?.source ?? "publish",
+      },
+      phrase
+    );
+    if (txId) updateVaultHead(txId);
+  }
+
+  function archiveVersion(
+    keys: ReturnType<typeof deriveKeysFromMnemonic>,
+    envelope: EnvelopeV1,
+    id: string,
+    parentTx: string | null,
+    source: "network" | "sponsor" | "export" | "demo"
+  ) {
+    archiveLocalVaultVersion({
+      id,
+      vaultId: keys.vaultId,
+      parentId: parentTx,
+      source,
+      envelope,
+    });
+  }
+
+  async function runDemoPublish(phrase: string) {
+    setMode("busy");
+    setError(null);
+    setWalletAddress(null);
+    try {
+      const { keys, envelope, parentTx } = await sealForPhrase(phrase);
+      setStatus("Сохраняем демо-версию в этом браузере…");
+      const id = makeLocalVersionId("demo");
+      archiveVersion(keys, envelope, id, parentTx, "demo");
+      rememberSession(keys, phrase, id);
+      onPublished({
+        mode: "demo",
+        txId: id,
+        isNewVersion: Boolean(parentTx),
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setMode(hasSessionKey ? "new-version" : "create-ready");
+    }
   }
 
   async function runSelfFundPublish(phrase: string) {
@@ -161,7 +245,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     setError(null);
     setWalletAddress(null);
     try {
-      const { keys, envelope } = await sealForPhrase(phrase);
+      const { keys, envelope, parentTx } = await sealForPhrase(phrase);
       setStatus("Из 12 слов создаём адрес Arweave (без стороннего кошелька, 10–40 сек)…");
       const { jwkFromSeed, addressFromJwk } = await import("../lib/arweave/wallet");
       const { publishEnvelope, getWalletBalanceAr } = await import("../lib/arweave/publish");
@@ -170,7 +254,10 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
       setWalletAddress(address);
       const balance = await getWalletBalanceAr(jwk);
       setStatus(`Адрес из фразы ${address.slice(0, 8)}… · баланс ${balance} AR. Отправляем…`);
-      const result = await publishEnvelope(jwk, envelope);
+      const result = await publishEnvelope(jwk, envelope, {
+        parentTxId: parentTx,
+        updatedAt: new Date().toISOString(),
+      });
       if (!result.ok) {
         downloadEnvelope(envelope);
         const fundHint = result.needsFunds
@@ -181,10 +268,17 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         setMode(result.needsFunds ? "fund-wait" : "intro");
         return;
       }
-      onPublished({ mode: "arweave", txId: result.txId, address });
+      archiveVersion(keys, envelope, result.txId, parentTx, "network");
+      rememberSession(keys, phrase, result.txId);
+      onPublished({
+        mode: "arweave",
+        txId: result.txId,
+        address,
+        isNewVersion: Boolean(parentTx),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setMode(mnemonic ? "fund-wait" : "intro");
+      setMode(mnemonic ? "fund-wait" : hasSessionKey ? "new-version" : "intro");
     }
   }
 
@@ -193,12 +287,15 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     setError(null);
     setWalletAddress(null);
     try {
-      const { envelope } = await sealForPhrase(phrase);
+      const { keys, envelope, parentTx } = await sealForPhrase(phrase);
+      const id = makeLocalVersionId("local");
+      archiveVersion(keys, envelope, id, parentTx, "export");
       downloadEnvelope(envelope);
-      onPublished({ mode: "export" });
+      rememberSession(keys, phrase, id);
+      onPublished({ mode: "export", txId: id, isNewVersion: Boolean(parentTx) });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setMode("intro");
+      setMode(hasSessionKey ? "new-version" : "intro");
     }
   }
 
@@ -210,20 +307,22 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     setCheckout(null);
     setSealedEnvelope(null);
     try {
-      const { envelope } = await sealForPhrase(phrase);
+      const { keys, envelope, parentTx } = await sealForPhrase(phrase);
       setSealedEnvelope(envelope);
+      setPublishParentTx(parentTx);
       setStatus("Создаём сессию оплаты…");
-      const session = await sponsorCheckout({
+      const sessionPay = await sponsorCheckout({
         successUrl: typeof window !== "undefined" ? window.location.href : undefined,
         cancelUrl: typeof window !== "undefined" ? window.location.href : undefined,
       });
-      setCheckout(session);
+      setCheckout(sessionPay);
       setMnemonic(phrase);
+      rememberSession(keys, phrase);
       setMode("pay");
       setStatus("");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setMode("create-ready");
+      setMode(hasSessionKey ? "new-version" : "create-ready");
     }
   }
 
@@ -242,11 +341,17 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         setStatus("Проверяем оплату у кассира…");
       }
       setStatus("Отправляем только шифр в сеть…");
-      const result = await sponsorPublish(checkout.sessionId, sealedEnvelope);
+      const result = await sponsorPublish(checkout.sessionId, sealedEnvelope, {
+        parentTxId: publishParentTx,
+      });
+      const keys = deriveKeysFromMnemonic(mnemonic);
+      archiveVersion(keys, sealedEnvelope, result.txId, publishParentTx, "sponsor");
+      rememberSession(keys, mnemonic, result.txId);
       onPublished({
         mode: "sponsor",
         txId: result.txId,
         mock: result.mock,
+        isNewVersion: Boolean(publishParentTx),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -263,6 +368,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     setSeedFileSaved(false);
     setSealedEnvelope(null);
     setCheckout(null);
+    setPublishParentTx(null);
     setMode("create-show");
   }
 
@@ -300,6 +406,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
     }
     setMnemonic(phrase);
     if (sponsorOn) await startSponsorFlow(phrase);
+    else if (demoOn) await runDemoPublish(phrase);
     else await runSelfFundPublish(phrase);
   }
 
@@ -323,18 +430,29 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
   function requestClose() {
     if (mode === "busy") return;
-    if (seedLocked && mnemonic) {
+    if (seedLocked && mnemonic && mode !== "new-version") {
       if (!confirmDiscardSeed()) return;
     }
     onClose();
   }
+
+  const primarySaveLabel = demoOn
+    ? "Демо · новая версия в браузере"
+    : sponsorOn
+      ? `Новая версия · оплата${priceHint ? ` ~${priceHint}` : ""}`
+      : "Новая версия в сеть";
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal panel">
         <h2>Сохранить</h2>
         <p className="sub">
-          <strong>12 слов</strong> — ваш ключ. Без них дерево потом не открыть. Запишите на бумагу.
+          <strong>12 слов</strong> — ваш ключ. Каждое сохранение —{" "}
+          <strong>новая версия</strong> под теми же словами; прошлые остаются.
+          {demoOn && (
+            <> Сейчас на сайте включён <strong>демо-режим</strong>: версии хранятся в этом браузере
+            (без оплаты и без Arweave), чтобы проверить сценарий.</>
+          )}
           {sponsorOn && (
             <>
               {" "}
@@ -344,13 +462,66 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
           )}
         </p>
 
+        {mode === "new-version" && (
+          <div>
+            <p className="sub">
+              Сохранить текущее древо как <strong>новую версию</strong> теми же 12 словами
+              {session?.vaultId ? ` (сейф ${fingerprintVaultId(session.vaultId)})` : ""}.
+              {publishParentTx
+                ? ` Предыдущая версия останется (${publishParentTx.slice(0, 8)}…).`
+                : " Если сейф уже сохраняли — старые версии останутся."}
+            </p>
+            <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
+              {demoOn && (
+                <button className="btn" type="button" onClick={() => void runDemoPublish(mnemonic)}>
+                  {primarySaveLabel}
+                </button>
+              )}
+              {sponsorOn && (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => void startSponsorFlow(mnemonic)}
+                >
+                  {primarySaveLabel}
+                </button>
+              )}
+              {!demoOn && (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={() => void runSelfFundPublish(mnemonic)}
+                >
+                  {sponsorOn ? "Новая версия за свой AR" : "Новая версия в сеть"}
+                </button>
+              )}
+              <button className="btn ghost" type="button" onClick={() => void runLocalExport(mnemonic)}>
+                Только локальный шифр / файл
+              </button>
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => {
+                  setMode("intro");
+                  setMnemonic("");
+                }}
+              >
+                Другие 12 слов
+              </button>
+              <button className="btn ghost" type="button" onClick={requestClose}>
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+
         {mode === "intro" && (
           <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
             <button className="btn" type="button" onClick={startCreate}>
               Создать 12 слов
             </button>
             <button className="btn ghost" type="button" onClick={() => setMode("existing")}>
-              У меня уже есть слова
+              У меня уже есть слова (новая версия)
             </button>
             <button className="btn ghost" type="button" onClick={requestClose}>
               Отмена
@@ -415,13 +586,18 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
         {mode === "create-ready" && (
           <div>
             <p className="sub">
-              Слова совпали. Ключ — на бумагу или JSON. Дальше: вечность через оплату, свой AR, или
-              только локальный шифр.
+              Слова совпали. Ключ — на бумагу или JSON. Дальше сохраните версию; позже можно снова
+              сохранить под этими словами — это будет новая версия.
             </p>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={saveSeedFile}>
                 {seedFileSaved ? "12 слов · JSON ещё раз" : "12 слов · JSON"}
               </button>
+              {demoOn && (
+                <button className="btn" type="button" onClick={() => void runDemoPublish(mnemonic)}>
+                  Демо · сохранить версию в браузере
+                </button>
+              )}
               {sponsorOn && (
                 <button
                   className="btn"
@@ -431,13 +607,15 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
                   Навсегда · оплата{priceHint ? ` ~${priceHint}` : ""}
                 </button>
               )}
-              <button
-                className="btn ghost"
-                type="button"
-                onClick={() => void runSelfFundPublish(mnemonic)}
-              >
-                {sponsorOn ? "В сеть за свой AR (fallback)" : "Древо в децентрализованную сеть"}
-              </button>
+              {!demoOn && (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={() => void runSelfFundPublish(mnemonic)}
+                >
+                  {sponsorOn ? "В сеть за свой AR (fallback)" : "Древо в децентрализованную сеть"}
+                </button>
+              )}
               <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
                 Зашифрованное древо · локально
               </button>
@@ -454,8 +632,9 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
             <p className="sub">
               Оплата{" "}
               <strong>{formatPrice(checkout.amountMinor, checkout.currency)}</strong>
-              {checkout.provider === "mock" ? " (mock-кассир, без банка)" : " через Kaspi"}. На
-              кассир уходит только зашифрованный сейф — не 12 слов.
+              {checkout.provider === "mock" ? " (mock-кассир, без банка)" : " через Kaspi"}
+              {publishParentTx ? " · новая версия" : ""}. На кассир уходит только зашифрованный сейф —
+              не 12 слов.
             </p>
             {checkout.payUrl && (
               <p className="sub">
@@ -466,7 +645,9 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
             )}
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={() => void confirmPaidAndPublish()}>
-                {checkout.mockPayable ? "Оплачено (mock) · сохранить навсегда" : "Я оплатил(а) · сохранить"}
+                {checkout.mockPayable
+                  ? "Оплачено (mock) · сохранить навсегда"
+                  : "Я оплатил(а) · сохранить"}
               </button>
               <button
                 className="btn ghost"
@@ -474,7 +655,7 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
                 onClick={() => {
                   setCheckout(null);
                   setSealedEnvelope(null);
-                  setMode("create-ready");
+                  setMode(hasSessionKey ? "new-version" : "create-ready");
                 }}
               >
                 Назад
@@ -485,6 +666,10 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
 
         {mode === "existing" && (
           <form onSubmit={(e) => void onExisting(e)}>
+            <p className="sub">
+              Те же 12 слов → тот же сейф. Сохранение создаст <strong>новую</strong> версию; старые
+              версии останутся.
+            </p>
             <textarea
               rows={3}
               value={existing}
@@ -500,7 +685,11 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
                 Назад
               </button>
               <button className="btn" type="submit">
-                {sponsorOn ? "Зашифровать и оплатить" : "Зашифровать и отправить"}
+                {demoOn
+                  ? "Сохранить демо-версию"
+                  : sponsorOn
+                    ? "Зашифровать и оплатить"
+                    : "Зашифровать и отправить"}
               </button>
             </div>
           </form>
@@ -539,8 +728,17 @@ export function PublishSeedModal({ store, onClose, onPublished }: Props) {
                 Отправить
               </button>
               {sponsorOn && (
-                <button className="btn ghost" type="button" onClick={() => void startSponsorFlow(mnemonic)}>
+                <button
+                  className="btn ghost"
+                  type="button"
+                  onClick={() => void startSponsorFlow(mnemonic)}
+                >
                   Оплатить через кассир вместо AR
+                </button>
+              )}
+              {demoOn && (
+                <button className="btn ghost" type="button" onClick={() => void runDemoPublish(mnemonic)}>
+                  Сохранить демо-версию в браузере
                 </button>
               )}
               <button className="welcome-link-quiet" type="button" onClick={requestClose}>

@@ -200,6 +200,8 @@ async function publishEnvelope(
     /** @deprecated Stripe-era alias */
     stripeSessionId?: string;
     envelope?: unknown;
+    /** Previous vault TX (same Vault-Id) — optional chain link. */
+    parentTxId?: string | null;
   };
 
   const sessionId = body.sessionId || body.stripeSessionId;
@@ -232,6 +234,8 @@ async function publishEnvelope(
   const uploaded = await uploadEnvelope(envelope, {
     turboJwk: env.TURBO_JWK,
     allowMockUpload: provider === "mock",
+    parentTxId: body.parentTxId ?? null,
+    updatedAt: new Date().toISOString(),
   });
 
   const next = {

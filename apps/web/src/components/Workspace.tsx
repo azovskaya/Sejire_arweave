@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Person, TreeStore } from "../lib/types";
 import { saveDraftTree } from "../lib/draftStorage";
-import { type GuideState, saveGuide } from "../lib/guide";
+import { type GuideState, defaultGuide, saveGuide } from "../lib/guide";
 import { pickDefaultFocus, pickHomeFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
 import { PedigreeView } from "./PedigreeView";
 import { PersonPanel, type PersonPanelHandle } from "./PersonPanel";
 import { AddPersonModal, type AddPersonPayload } from "./AddPersonModal";
 import { PublishSeedModal } from "./PublishSeedModal";
+import { VaultVersionsModal, vaultPersonCount } from "./VaultVersionsModal";
 import {
   activePersons,
   commitDraft,
@@ -21,6 +22,12 @@ import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
 import { ShezhireTemplateModal } from "./ShezhireTemplateModal";
+import {
+  clearVaultSession,
+  getSessionMnemonic,
+  getVaultSession,
+} from "../lib/vaultSession/session";
+import type { VaultV1 } from "../lib/crypto/vault";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -60,6 +67,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const [ancestorsHint, setAncestorsHint] = useState(false);
   const [showShezhireMeta, setShowShezhireMeta] = useState(false);
   const [showShezhireTemplate, setShowShezhireTemplate] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
+  const vaultSession = getVaultSession();
 
   const shezhireLine = useMemo(
     () => formatShezhireAffiliation(store.meta.zhuz, store.meta.clanName),
@@ -165,8 +174,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      // PublishSeedModal handles its own Escape (seed-safe).
-      if (showPublish) return;
+      // PublishSeedModal / VaultVersionsModal handle their own Escape (seed-safe).
+      if (showPublish || showVersions) return;
       if (pending) {
         setPending(null);
         return;
@@ -177,7 +186,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showPublish, pending, profileOpen]);
+  }, [showPublish, showVersions, pending, profileOpen]);
 
   const onPersonChange = useCallback(
     (person: Person) => {
@@ -334,6 +343,34 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     }
   }
 
+  function applyVaultVersion(vault: VaultV1) {
+    const treeId = vault.active_tree_id;
+    const next = treeId ? vault.trees[treeId] : Object.values(vault.trees)[0];
+    if (!next) {
+      flash("В этой версии нет деревьев");
+      return;
+    }
+    if (!confirmReplaceDraft("открытие другой версии сейфа")) return;
+    const selfId = pickHomeFocus(next.draft, null);
+    const nextGuide = { ...defaultGuide(), step: "done" as const, selfId };
+    saveDraftTree(next);
+    saveGuide(nextGuide);
+    onStoreChange(next);
+    onGuideChange(nextGuide);
+    setFocusId(selfId);
+    setSelectedId(selfId);
+    setProfileOpen(false);
+    setShowVersions(false);
+    flash(
+      `Открыта версия · ${vaultPersonCount(vault)} чел. Можно править и снова сохранить (новая оплата).`
+    );
+  }
+
+  function goHome() {
+    clearVaultSession();
+    onHome();
+  }
+
   async function importJsonFile(file: File | null) {
     if (!file) return;
     if (!confirmReplaceDraft("загрузка JSON")) return;
@@ -448,12 +485,25 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               >
                 Загрузить JSON
               </button>
+              {vaultSession?.vaultId ? (
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => {
+                    closeMoreMenu();
+                    setShowVersions(true);
+                  }}
+                  title="Все сохранения под теми же 12 словами"
+                >
+                  Версии сейфа
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="btn ghost"
                 onClick={() => {
                   closeMoreMenu();
-                  onHome();
+                  goHome();
                 }}
               >
                 На главную
@@ -576,25 +626,39 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       {showPublish && publishStore && (
         <PublishSeedModal
           store={publishStore}
+          parentTxId={getVaultSession()?.headTxId ?? null}
+          knownMnemonic={getSessionMnemonic()}
           onClose={() => {
             setShowPublish(false);
             setPublishStore(null);
           }}
-          onPublished={({ mode, txId, mock }) => {
+          onPublished={({ mode, txId, mock, isNewVersion }) => {
             setShowPublish(false);
             setPublishStore(null);
-            if (mode === "sponsor") {
+            const ver = isNewVersion ? " Новая версия; прошлые — в «Версии сейфа»." : "";
+            if (mode === "demo") {
+              flash(
+                `Демо-версия сохранена в этом браузере (${txId?.slice(0, 10)}…). Храните 12 слов.${ver}`
+              );
+            } else if (mode === "sponsor") {
               flash(
                 mock
-                  ? `Mock-кассир: сейф принят (${txId?.slice(0, 10)}…). Когда будет Turbo — это станет реальным TX. Храните 12 слов.`
-                  : `Навсегда в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`
+                  ? `Mock-кассир: сейф принят (${txId?.slice(0, 10)}…). Когда будет Turbo — это станет реальным TX. Храните 12 слов.${ver}`
+                  : `Навсегда в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.${ver}`
               );
             } else if (mode === "arweave") {
-              flash(`Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.`);
+              flash(`Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.${ver}`);
             } else {
-              flash("Файл сейфа скачан. Храните вместе с 12 словами.");
+              flash(`Файл сейфа скачан${txId ? ` · версия ${txId.slice(0, 10)}…` : ""}. Храните 12 слов.${ver}`);
             }
           }}
+        />
+      )}
+
+      {showVersions && (
+        <VaultVersionsModal
+          onClose={() => setShowVersions(false)}
+          onOpenVersion={applyVaultVersion}
         />
       )}
 

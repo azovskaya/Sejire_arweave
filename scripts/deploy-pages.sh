@@ -4,6 +4,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/apps/web"
+# Pages mirror: demo mode so versioned save is testable without Worker/AR.
+# Override with VITE_PUBLISH_MODE=self|sponsor when deploying a production build.
+export VITE_PUBLISH_MODE="${VITE_PUBLISH_MODE:-demo}"
+echo "Building Pages with VITE_PUBLISH_MODE=${VITE_PUBLISH_MODE}"
 npm run build
 STAGE=$(mktemp -d)
 cp -R dist/. "$STAGE/"

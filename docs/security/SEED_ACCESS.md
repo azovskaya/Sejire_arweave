@@ -53,14 +53,17 @@ Arweave tags:
 | `Protocol` | `sejire/v0.3` |
 | `Type` | `vault-envelope` |
 | `Vault-Id` | `vaultId` |
+| `Updated-At` | ISO timestamp of this save |
+| `Parent-Tx` | previous vault TX under the same `Vault-Id` (optional chain) |
 
 ## Recovery algorithm
 
 1. User opens app and builds tree **without** seed (local draft + guide)
 2. On **Publish to Arweave**, user creates/enters 12 words
 3. Client derives `encKey` + `vaultId` (+ wallet)
-4. Encrypt vault envelope and publish with tag `Vault-Id`
-5. Later / other device: enter 12 words → GraphQL by vaultId → decrypt
+4. Encrypt vault envelope and publish with tag `Vault-Id` (+ `Updated-At`, optional `Parent-Tx`)
+5. Later / other device: enter 12 words → GraphQL lists **all** versions by vaultId → user picks one → decrypt
+6. Edit + publish again with the **same** 12 words → new TX (new payment); old versions remain
 
 **Restore does not need** SEJIRE payment cashier, Kaspi, Stripe, or any project backend — only the SPA + Arweave gateways. Locked for the team: `docs/LOCKED_DECISIONS.ru.md` §4.
 

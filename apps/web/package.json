@@ -17,7 +17,9 @@
     "test:json": "tsx src/lib/treeJson.selftest.ts",
     "test:zhuz": "tsx src/lib/zhuzRu.selftest.ts",
     "test:sponsor": "tsx src/lib/sponsor/client.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor"
+    "test:fetch": "tsx src/lib/arweave/fetch.selftest.ts",
+    "test:archive": "tsx src/lib/vaultSession/localArchive.selftest.ts",
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor && npm run test:fetch && npm run test:archive"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",

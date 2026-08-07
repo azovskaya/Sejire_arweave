@@ -8,13 +8,22 @@ export type PublishResult =
   | { ok: true; txId: string }
   | { ok: false; error: string; needsFunds?: boolean };
 
+export type PublishEnvelopeOptions = {
+  /** Previous vault TX under the same Vault-Id (immutable version chain). */
+  parentTxId?: string | null;
+  /** ISO timestamp stamped on the TX for version lists. */
+  updatedAt?: string;
+};
+
 /**
  * Publish encrypted vault envelope to Arweave.
  * Requires wallet with AR for the one-time endowment fee.
+ * Each successful publish is a new immutable version (same Vault-Id).
  */
 export async function publishEnvelope(
   jwk: JWKInterface,
-  envelope: EnvelopeV1
+  envelope: EnvelopeV1,
+  opts?: PublishEnvelopeOptions
 ): Promise<PublishResult> {
   try {
     const data = JSON.stringify(envelope);
@@ -25,6 +34,10 @@ export async function publishEnvelope(
     tx.addTag("Type", "vault-envelope");
     tx.addTag("Vault-Id", envelope.vault_id);
     tx.addTag("Schema", envelope.schema);
+    tx.addTag("Updated-At", opts?.updatedAt ?? new Date().toISOString());
+    if (opts?.parentTxId) {
+      tx.addTag("Parent-Tx", opts.parentTxId);
+    }
 
     await arweave.transactions.sign(tx, jwk);
     const balance = await arweave.wallets.getBalance(await arweave.wallets.jwkToAddress(jwk));
