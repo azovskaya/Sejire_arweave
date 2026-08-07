@@ -21,6 +21,10 @@ fi
 
 echo "Building SPA for ArNS (base ./ , publish mode self)…"
 cd "$ROOT/apps/web"
+if [[ ! -d node_modules/vite ]]; then
+  echo "Installing apps/web dependencies…"
+  npm install
+fi
 export VITE_PUBLISH_MODE="${VITE_PUBLISH_MODE:-self}"
 npm run build
 cd "$ROOT"
