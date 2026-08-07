@@ -248,7 +248,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
             Сейф {fingerprintVaultId(vaultId)}: найдено несколько сохранений. Можно открыть любое.
           </p>
           <ul className="vault-version-list">
-            {picker.map((item, i) => {
+            {picker.map((item) => {
               if (item.kind === "local") {
                 return (
                   <li key="local">
