@@ -1,5 +1,5 @@
 {
-  "protocol": "sejire/v0.2",
+  "protocol": "sejire/v0.3",
   "processes": {
     "tree": {
       "code": "ao/processes/tree.lua",
@@ -13,7 +13,10 @@
         "GetCommit",
         "History",
         "AddOwner",
-        "RemoveOwner"
+        "RemoveOwner",
+        "GetAncestors",
+        "GetJetiAta",
+        "Relate"
       ]
     },
     "factory": {
@@ -31,10 +34,12 @@
     "NotFound",
     "BadAddress",
     "LastOwner",
-    "BadProcessId"
+    "BadProcessId",
+    "EmptyTree",
+    "BadPersonId"
   ],
   "app_tags": {
     "App-Name": "SEJIRE",
-    "Protocol": "sejire/v0.2"
+    "Protocol": "sejire/v0.3"
   }
 }

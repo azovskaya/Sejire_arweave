@@ -15,7 +15,7 @@
 | [SPONSOR_AND_PERMAWEB.ru.md](./SPONSOR_AND_PERMAWEB.ru.md) | Fiat $3 + Turbo + permaweb hosting |
 | [PERMAWEB_ROLLOUT.ru.md](./PERMAWEB_ROLLOUT.ru.md) | Пошаговый план: языки, деплой, sponsor, безопасность |
 | [LOCKED_DECISIONS.ru.md](./LOCKED_DECISIONS.ru.md) | Зафиксированные решения владельца (не переспрашивать) |
-| [CHECKPOINT.ru.md](./CHECKPOINT.ru.md) | Точка продолжения v0.4: что готово и что делать дальше |
+| [CHECKPOINT.ru.md](./CHECKPOINT.ru.md) | Точка продолжения v0.5: протокол v0.3 + permaweb |
 | [BUY_SEJIRE.ru.md](./BUY_SEJIRE.ru.md) | Как купить имя sejire: ArConnect, Binance, карта / ARIO |
 | [CHECKLIST.md](./CHECKLIST.md) | Синхронизация код ↔ docs |
 | [processes/](./processes/) | Логика каждого AO-процесса и хендлера |

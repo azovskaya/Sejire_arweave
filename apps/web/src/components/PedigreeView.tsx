@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import type { Snapshot } from "../lib/types";
 import {
@@ -73,11 +73,29 @@ export function PedigreeView({
   const empty = items.length === 0;
   const focusPerson = focusId ? snapshot.persons[focusId] : null;
   const showHome = Boolean(homeFocusId && focusId && homeFocusId !== focusId);
+  const focusItem = items.find((i) => i.kind === "person" && i.id === focusId);
+  const focusCardY = focusItem?.y ?? 0;
 
-  useEffect(() => {
-    setPan({ x: 28, y: 28 });
+  function panToFocus(viewportH: number, cardY: number) {
+    return {
+      x: 28,
+      y: Math.round(viewportH / 2 - (cardY + PEDIGREE_CARD.h / 2)),
+    };
+  }
+
+  function resetView() {
+    const vh = viewportRef.current?.clientHeight || 480;
     setScale(1);
-  }, [focusId]);
+    setPan(panToFocus(vh, focusCardY));
+  }
+
+  useLayoutEffect(() => {
+    if (empty) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    setScale(1);
+    setPan(panToFocus(el.clientHeight || 480, focusCardY));
+  }, [focusId, empty, width, height, focusCardY]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -209,15 +227,14 @@ export function PedigreeView({
             </button>
           ) : null}
         </div>
-        {(scale !== 1 || pan.x !== 28 || pan.y !== 28) && (
+        {(scale !== 1 || Math.abs(pan.x - 28) > 2) && (
           <div className="pedigree-toolbar" aria-label="Вид">
             <button
               type="button"
               className="tool-btn wide"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => {
-                setScale(1);
-                setPan({ x: 28, y: 28 });
+                resetView();
               }}
             >
               Сброс вида

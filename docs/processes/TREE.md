@@ -15,10 +15,11 @@
 - указатель `head`
 - индекс `versions[n] → commit_id`
 
-Вычисляет (v1 — косвенно через полный snapshot; v2 — handlers родства):
+Вычисляет:
 
 - историю фиксаций
 - любое прошлое состояние графа
+- queries родства v0.3: `GetAncestors`, `GetJetiAta`, `Relate` (по HEAD или `Commit-Id`)
 
 ---
 
@@ -139,6 +140,29 @@ Commit v2..n  ◄── каждое дополнение / tombstone / прав
 - Нельзя удалить последнего owner → `LastOwner`
 - `owners[Address] = nil`
 
+### 4.10 `GetAncestors`
+
+- Snapshot: HEAD, либо `Tags["Commit-Id"]`
+- `Person-Id` обязателен
+- BFS вверх по `parents[]`, включая self на distance 0 (tombstone не раскрывает родителей)
+- Optional `Max-Depth` (число) отфильтровывает более дальних
+- Ответ: `sejire/ancestors/v1`, список отсортирован по distance, затем id
+
+### 4.11 `GetJetiAta`
+
+- Та же резолюция snapshot, что у GetAncestors
+- Мужская линия: отец как в SPA `splitParents` (`sex=M`, иначе первый оставшийся родитель)
+- generation 0 = focus, максимум 7 человек
+- `complete=true` если линия заполнена до 7
+- tombstone / отсутствие focus → `NotFound`
+
+### 4.12 `Relate`
+
+- Tags `Person-A`, `Person-B` обязательны
+- LCA по сумме шагов `da+db`; `code` — A относительно B
+- `unrelated` если нет общего предка в снимке
+- Не мутирует состояние
+
 ---
 
 ## 5. Коды ошибок
@@ -149,10 +173,12 @@ Commit v2..n  ◄── каждое дополнение / tombstone / прав
 | `Unauthorized` | не owner |
 | `BadPayload` | Data не JSON-object |
 | `BadSnapshot` | нет `snapshot.persons` |
-| `StaleParent` | parent ≠ HEAD |
-| `NotFound` | неизвестный Commit-Id |
+| `StaleParent` | строковый parent ≠ HEAD |
+| `NotFound` | неизвестный Commit-Id / Person-Id |
 | `BadAddress` | пустой Address |
 | `LastOwner` | попытка удалить единственного owner |
+| `EmptyTree` | kinship-запрос до первого Commit |
+| `BadPersonId` | нет Person-Id / Person-A+Person-B |
 
 ---
 
@@ -174,10 +200,13 @@ https://push.forward.computer/<pid>~process@1.0/compute/sejire
 
 ## 7. Соответствие клиенту
 
-Локальный engine `apps/web/src/lib/treeEngine.ts` MUST зеркалить правила:
-- linear parent check
+Локальный engine `apps/web/src/lib/treeEngine.ts` MUST зеркалить правила commit/history.  
+Тестовый двойник процесса: `apps/web/src/lib/ao/treeProcess.ts` (selftest `npm run test:protocol`).
+
+- linear parent check (string parent only)
 - full snapshot commits
 - tombstone soft-delete
 - history enumeration
+- GetAncestors / GetJetiAta / Relate
 
 При расхождении — **норматив = этот документ + Lua**.

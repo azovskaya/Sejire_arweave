@@ -64,6 +64,7 @@ Handlers.add(
   function(msg)
     reply(msg, { Action = "Info-Response" }, json.encode({
       protocol = Factory.protocol,
+      release = "sejire/v0.3",
       process = ao.id,
       tree_count = count_trees()
     }))
@@ -83,7 +84,7 @@ Handlers.add(
     local spawn_result = ao.spawn(ao.env.Module.Id, {
       Tags = {
         { name = "App-Name", value = "SEJIRE" },
-        { name = "Protocol", value = "sejire/v0.2" },
+        { name = "Protocol", value = "sejire/v0.3" },
         { name = "Role", value = "Tree" },
         { name = "Title", value = title },
         { name = "Authority", value = msg.From }

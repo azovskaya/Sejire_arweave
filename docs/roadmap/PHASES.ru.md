@@ -26,12 +26,13 @@
 
 ## Phase 3 — Product hardening
 
-- Live AO Tree/Factory wiring via aoconnect (process commits on-chain)
-- Media upload helper (Turbo/Irys)
-- ArNS family names
-- Multi-owner UX + Shamir recovery
-- Permaweb deploy of UI
-- Kinship query handlers in AO
+- [ ] Live AO Tree/Factory via aos + `VITE_SEJIRE_FACTORY_ID` (aoconnect signer)
+- [x] Local Tree/Factory process double + `SejireAoClient` (`npm run test:protocol`)
+- [x] Kinship query handlers in AO (`GetAncestors`, `GetJetiAta`, `Relate`)
+- [x] Permaweb deploy script for UI (`npm run deploy:permaweb`)
+- [ ] Media upload helper (Turbo/Irys)
+- [ ] ArNS family names
+- [ ] Multi-owner UX + Shamir recovery
 
 ## Phase 3.4 — Product UX hardening ✅ (checkpoint v0.4)
 
@@ -53,9 +54,11 @@
 
 Также: [`SPONSOR_AND_PERMAWEB.ru.md`](../SPONSOR_AND_PERMAWEB.ru.md), [ADR-0006](../adr/0006-sponsored-fiat-publish.md).
 
-- [ ] Купить ArNS `sejire` навсегда + казна (владелец)
-- [ ] Dual-base + permaweb deploy SPA → `sejire.ar.io`
+- [x] Permaweb deploy SPA (скрипт upload; ArNS Target ID — владелец)
 - [x] Кассир API mock + Kaspi-ready + wire PublishSeedModal (`VITE_PUBLISH_MODE=sponsor`)
+- [x] Kinship query handlers in AO (`GetAncestors`, `GetJetiAta`, `Relate`) + local process double
+- [ ] Live aos Factory/Tree process IDs (`VITE_SEJIRE_FACTORY_ID`)
+- [ ] Dual-base + привязка `sejire.ar.io` → TX манифеста
 - [ ] Kaspi мерчант (ИП/ТОО) → live Pay Business вместо mock
 - [ ] `TURBO_JWK` treasury → реальный upload
 - [x] Keep GitHub Pages as mirror

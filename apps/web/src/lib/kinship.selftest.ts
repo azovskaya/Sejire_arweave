@@ -1,7 +1,7 @@
 /**
  * Kinship self-test
  */
-import { relationshipLabel } from "./kinship";
+import { relationship, relationshipLabel } from "./kinship";
 import type { Snapshot } from "./types";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -17,6 +17,9 @@ const snapshot: Snapshot = {
   },
 };
 
+assert(relationship(snapshot, "p1", "c").code === "parent", "parent code");
+assert(relationship(snapshot, "c", "p1").code === "child", "child code");
 assert(relationshipLabel(snapshot, "p1", "c").includes("родител") || relationshipLabel(snapshot, "p1", "c").includes("ребён"), "parent/child");
 assert(relationshipLabel(snapshot, "p1", "p2").includes("брат"), "siblings");
+assert(relationship(snapshot, "p1", "p2").code === "sibling", "sibling code");
 console.log("kinship.selftest: OK");

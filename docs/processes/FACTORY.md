@@ -45,7 +45,7 @@ Factory = {
 
 ### 3.1 `Info`
 
-Возвращает `{ protocol, tree_count, process = ao.id }`.
+Возвращает `{ protocol, release, tree_count, process = ao.id }`.
 
 ### 3.2 `SpawnTree`
 

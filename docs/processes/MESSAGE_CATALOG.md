@@ -22,7 +22,7 @@
 | | |
 |--|--|
 | Tags | `Action=Info` |
-| Response Data | `{ protocol, process, title, head, version_count, owners, created_at }` |
+| Response Data | `{ protocol, release, process, title, head, version_count, owners, created_at, queries }` |
 
 ### `Init`
 
@@ -41,6 +41,8 @@
 | Data | `{ message?, parent_commit_id?, title?, snapshot: { persons } }` |
 | Response Tags | `Commit-Id`, `Version` |
 | Errors | `Unauthorized`, `BadPayload`, `BadSnapshot`, `StaleParent` |
+
+`parent_commit_id`: only a **string** is checked against HEAD. Omit / JSON `null` = use HEAD.
 
 ### `GetHead`
 
@@ -79,6 +81,37 @@
 | Auth | owner |
 | Errors | `Unauthorized`, `BadAddress`, `LastOwner` |
 
+### `GetAncestors`
+
+| | |
+|--|--|
+| Tags | `Action=GetAncestors`, `Person-Id`, `Max-Depth?`, `Commit-Id?` |
+| Auth | public |
+| Response schema | `sejire/ancestors/v1` |
+| Errors | `EmptyTree`, `BadPersonId`, `NotFound` |
+
+### `GetJetiAta`
+
+| | |
+|--|--|
+| Tags | `Action=GetJetiAta`, `Person-Id`, `Commit-Id?` |
+| Auth | public |
+| Response schema | `sejire/jeti-ata/v1` |
+| Errors | `EmptyTree`, `BadPersonId`, `NotFound` |
+
+Paternal line, generation 0 = focus, max 7 people.
+
+### `Relate`
+
+| | |
+|--|--|
+| Tags | `Action=Relate`, `Person-A`, `Person-B`, `Commit-Id?` |
+| Auth | public |
+| Response schema | `sejire/relate/v1` |
+| Errors | `EmptyTree`, `BadPersonId`, `NotFound` |
+
+`code` describes A relative to B. See `packages/schema/kinship-codes.json`.
+
 ---
 
 ## Factory Process
@@ -89,7 +122,7 @@ Response Data: `sejire-factory-ok`
 
 ### `Info`
 
-`{ protocol, process, tree_count }`
+`{ protocol, release, process, tree_count }`
 
 ### `SpawnTree`
 
@@ -121,7 +154,7 @@ Response Data: `sejire-factory-ok`
 | Tag | Value |
 |-----|-------|
 | `App-Name` | `SEJIRE` |
-| `Protocol` | `sejire/v0.2` |
+| `Protocol` | `sejire/v0.3` |
 | `Content-Type` | `application/json` (если Data JSON) |
 
 Это упрощает GraphQL/индексацию на gateway.

@@ -9,7 +9,7 @@
 ## Продолжить разработку отсюда
 
 См. **[`docs/CHECKPOINT.ru.md`](./docs/CHECKPOINT.ru.md)** — что готово, решения, очередь задач.  
-Ветка: `cursor/from-baseline-5d33` · тег: `sejire-v0.4-checkpoint`
+Ветка: `cursor/ao-protocol-v03-82e4` · протокол: `sejire/v0.3`
 
 ## Открыть приложение
 
@@ -20,7 +20,7 @@
 ## Локально
 
 ```bash
-git checkout cursor/from-baseline-5d33   # или sejire-v0.4-checkpoint
+git checkout cursor/ao-protocol-v03-82e4
 cd apps/web && npm install && npm test && npm run dev
 ```
 
@@ -37,7 +37,7 @@ npm run deploy:pages
 | `apps/web` | Клиент (сбор древа + PDF + JSON + публикация) |
 | `apps/sponsor` | Скелет кассира оплаты (Kaspi/Stripe later) |
 | `docs/` | Протокол, чекпоинт, locked decisions, rollout |
-| `ao/processes` | Lua Tree / Factory (позже) |
+| `ao/processes` | Lua Tree / Factory (`sejire/v0.3`) |
 | `packages/schema` | JSON Schema |
 | `presentation/` | Investor deck + PDF |
 | ветка `gh-pages` | Собранный сайт для Pages |

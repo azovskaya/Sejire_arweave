@@ -137,6 +137,9 @@ export function buildPedigree(
       else next.push({ personId: null, add: "mother", childId: cell.personId });
     }
     gens[g + 1] = next;
+    // Stop after the first generation that has no people — otherwise 7 gens
+    // of empty binary slots make a ~9000px canvas and hide "yourself" off-screen.
+    if (!next.some((c) => c.personId)) break;
   }
 
   const items: PedigreeItem[] = [];

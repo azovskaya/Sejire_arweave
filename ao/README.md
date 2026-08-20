@@ -7,7 +7,11 @@
 
 Message catalog: [`docs/processes/MESSAGE_CATALOG.md`](../docs/processes/MESSAGE_CATALOG.md)
 
-## Deploy (Phase 2)
+Protocol release: **`sejire/v0.3`** (kinship queries on Tree Process).
+
+Local double (без aos): `apps/web/src/lib/ao/` — `cd apps/web && npm run test:protocol`.
+
+## Deploy (aos)
 
 ```bash
 npm i -g https://get_ao.arweave.net
@@ -22,8 +26,10 @@ Send({ Target = ao.id, Tags = { Action = "Init", Title = "Sultanov Family" } })
 Send({
   Target = ao.id,
   Tags = { Action = "Commit" },
-  Data = '{"message":"genesis","snapshot":{"persons":{}}}'
+  Data = '{"message":"genesis","snapshot":{"persons":{"c":{"id":"c","name":"Child","sex":"M","parents":[],"media":[]}}}}'
 })
+Send({ Target = ao.id, Tags = { Action = "GetJetiAta", ["Person-Id"] = "c" } })
+Send({ Target = ao.id, Tags = { Action = "Relate", ["Person-A"] = "c", ["Person-B"] = "c" } })
 Send({ Target = ao.id, Tags = { Action = "History" } })
 ```
 
@@ -36,6 +42,8 @@ Send({ Target = ao.id, Tags = { Action = "ListTrees" } })
 ```
 
 После `SpawnTree` клиент загружает `tree.lua` в новый process (или использует prebuilt module) и вызывает `Init` → `Commit`.
+
+Live ids: `VITE_SEJIRE_FACTORY_ID` / tree id в env клиента (`apps/web/.env.ao.example`).
 
 HTTP patch (HyperBEAM):
 

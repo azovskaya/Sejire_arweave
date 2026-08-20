@@ -1,14 +1,14 @@
 # SEJIRE — чекпоинт продолжения работы
 
 > **С этого места продолжать доработку.**  
-> Дата: **2026-07-27**  
-> Ветка: `cursor/from-baseline-5d33`  
-> Коммит: `c9769c3` (`Always show FIO and birth/death dates on PDF cards`)  
-> Тег: `sejire-v0.4-checkpoint`  
-> PR: https://github.com/azovskaya/Sejire_arweave/pull/4  
+> Дата: **2026-08-20**  
+> Ветка: `cursor/ao-protocol-v03-82e4`  
+> Протокол: **`sejire/v0.3`**  
+> Предыдущий продукт-чекпоинт: v0.4 (`sejire-v0.4-checkpoint`, permaweb upload)
 
 Старые решения владельца не переспрашивать: [`LOCKED_DECISIONS.ru.md`](./LOCKED_DECISIONS.ru.md).  
-План Arweave/Kaspi: [`PERMAWEB_ROLLOUT.ru.md`](./PERMAWEB_ROLLOUT.ru.md).
+План Arweave/Kaspi: [`PERMAWEB_ROLLOUT.ru.md`](./PERMAWEB_ROLLOUT.ru.md).  
+Норматив протокола: [`PROTOCOL.md`](./PROTOCOL.md).
 
 ---
 
@@ -18,98 +18,76 @@
 |-----|-----|
 | Приложение (зеркало Pages) | https://azovskaya.github.io/Sejire_arweave/ |
 | Investor deck (HTML) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
-| Investor deck (PPTX) | https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx |
-| Investor deck (PDF) | https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf |
-| Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; сайт ещё не привязан |
+| Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; Target ID после `npm run deploy:permaweb` |
 
-Деплой зеркала: из корня `npm run deploy:pages` (сохраняет `presentation/`).
+Сайт уже открывается на **https://sejire.ar.io/**. На текущем манифесте (до этой ветки) схема из 7 пустых поколений уводила карточку «себя» за край экрана — после «Начать» канвас казался пустым. Исправление: компактная раскладка + центр на фокусе; в сборке всегда есть `404.html` для ArNS fallback. **Нужен повторный `npm run deploy:permaweb` + обновить Target ID в ArNS.**
 
 ---
 
-## 2. Что уже работает в продукте (не ломать без нужды)
+## 2. Что уже работает (не ломать без нужды)
 
-### Редактор древа (`apps/web`)
-- Старт с себя; `+ Папа / + Мама / + Ребёнок`
-- Автосохранение черновика в `localStorage`
-- Схема предков до **7** поколений
-- Двойной клик = смотреть от предка; **«К себе» / «Вернуть ко мне»** возвращает фокус
-- Гибкие даты текстом (`1990` или `15.03.1990`) — не `type=date`
-- Панель профиля: ФИО, пол, даты, места, захоронение, занятие, заметки
-- **Мобильный:** тап по карточке открывает профиль снизу (sheet), не «панель под схемой»
+Всё из v0.4: редактор до 7 поколений, PDF, JSON backup, 12 слов → envelope, Pages-зеркало, кассир mock.
 
-### Экспорт
-- **Древо в PDF** — landscape, слоты без пересечения линий, ФИО + даты рождения/смерти
-- **Жеті ата PDF** — орнаментальный вертикальный шежіре (қосқар мүйіз-мотивы)
-- **Выгрузить / Загрузить JSON** — полный бэкап (`sejire/tree-export/v1`: store + guide)
+### Протокол v0.3 (этот чекпоинт)
 
-### Вечность (базовый путь)
-- 12 слов BIP-39 → шифр на устройстве → публикация envelope в Arweave (сейчас ещё путь «нужен AR на derived-кошельке»)
-- Restore по 12 словам **без** банка/кассира
-
-### Документы / презентация
-- Investor deck в стиле Arweave + PDF
-- ADR-0006, sponsor skeleton `apps/sponsor`, competitive notes
+- Tree Process: `GetAncestors`, `GetJetiAta`, `Relate` (публичное чтение HEAD или `Commit-Id`)
+- Коды родства: `packages/schema/kinship-codes.json` (не локализованные строки в процессе)
+- Тестовый двойник Lua: `apps/web/src/lib/ao/treeProcess.ts` + `SejireAoClient`
+- Selftest: `cd apps/web && npm run test:protocol`
+- Live aos: `.load ao/processes/tree.lua` — те же Action; process id в `VITE_SEJIRE_FACTORY_ID` когда задеплоен
 
 ---
 
-## 3. Ключевые файлы кода
+## 3. Ключевые файлы
 
 | Зона | Путь |
 |------|------|
+| Lua Tree (норматив on-chain) | `ao/processes/tree.lua` |
+| AO client / simulator | `apps/web/src/lib/ao/*` |
+| Kinship codes | `apps/web/src/lib/kinship.ts` |
+| Schemas | `packages/schema/{ancestors,jeti-ata,relate}-v1.schema.json` |
 | UI workspace | `apps/web/src/components/Workspace.tsx` |
-| Схема | `apps/web/src/components/PedigreeView.tsx`, `lib/pedigree.ts` |
-| Даты | `apps/web/src/lib/dates.ts` |
-| JSON backup | `apps/web/src/lib/treeJson.ts` |
-| Classic PDF | `apps/web/src/lib/pdf/classicTreePdf.ts`, `lineage.ts` |
-| Жеті ата PDF | `apps/web/src/lib/pdf/shezhirePdf.ts`, `ornaments.ts` |
-| Крипто / сейф | `apps/web/src/lib/crypto/*`, `arweave/*` |
-| Кассир (скелет) | `apps/sponsor/` |
-| Деплой Pages | `scripts/deploy-pages.sh` |
+| Permaweb upload | `scripts/deploy-permaweb.sh` |
 
 Тесты: `cd apps/web && npm test`
 
 ---
 
-## 4. Что делать дальше (очередь)
+## 4. Что делать дальше
 
-Порядок из [`PERMAWEB_ROLLOUT.ru.md`](./PERMAWEB_ROLLOUT.ru.md) §5 + решения владельца:
+1. **Владелец:** привязать `sejire.ar.io` → TX манифеста (Phantom → arns.ar.io). Ключ в чат не слать.
+2. **aos:** задеплоить Factory + Tree module; прописать `VITE_SEJIRE_FACTORY_ID` + `VITE_AO_MODE=live`.
+3. **UI:** экран «Родство» / жеті ата из `Relate` + `GetJetiAta` (сейчас расчёт локальный в SPA).
+4. **Kaspi live** — после ИП/мерчанта; не блокирует протокол.
+5. Позже: медиа Turbo, GEDCOM, encrypted-commit profile для публичного AO.
 
-1. **Владелец:** ~~купить ArNS `sejire`~~ **сделано** (Phantom + ARIO). Дальше — деплой SPA и Configure Domain.
-2. **Код:** dual-base Vite (`/` для ArNS, `/Sejire_arweave/` для Pages) + CI permaweb-deploy.
-3. **Привязать** `sejire.ar.io` → TX манифеста; Pages оставить зеркалом.
-4. **Kaspi:** после ИП/ТОО + мерчант — тонкий кассир (оплата → Turbo upload ciphertext). До этого не блокировать бесплатный слой.
-5. Переключить «В Arweave» на sponsor-путь (флаг); self-fund оставить fallback.
-6. Позже: AO Lua live, медиа, GEDCOM (Phase 3–4).
-
-**Не начинать** с переписывания редактора на Lua — SPA на TypeScript остаётся; на Arweave кладём собранные файлы.
+**Не начинать** с переписывания редактора на Lua.
 
 ---
 
-## 5. Открытые хвосты у владельца (единственное, что можно спросить)
+## 5. Открытые хвосты у владельца
 
-1. Имя `sejire` уже куплено навсегда? (**да**)
-2. Казна (ArConnect с AR) готова к деплою сайта? (да/нет — **не** присылать ключ в чат)
-3. Есть / будет ИП или ТОО под Kaspi для бизнеса?
+1. Казна (Wander/ArConnect) готова к деплою сайта? (да/нет — **не** присылать ключ)
+2. Есть / будет ИП или ТОО под Kaspi?
+3. Live Factory process id — когда появится после aos.
 
 Всё остальное из LOCKED_DECISIONS — закрыто.
 
 ---
 
-## 6. Как поднять работу агенту / разработчику
+## 6. Как поднять работу
 
 ```bash
 git fetch origin
-git checkout cursor/from-baseline-5d33   # или тег sejire-v0.4-checkpoint
+git checkout cursor/ao-protocol-v03-82e4
 cd apps/web && npm ci && npm test && npm run dev
-# выкладка зеркала:
-cd ../.. && npm run deploy:pages
 ```
 
 Читать сначала:
-1. этот файл (`CHECKPOINT.ru.md`)
-2. `LOCKED_DECISIONS.ru.md`
-3. `PERMAWEB_ROLLOUT.ru.md`
-4. `LIVE.md`
+1. этот файл
+2. `PROTOCOL.md` (v0.3)
+3. `LOCKED_DECISIONS.ru.md`
+4. `PERMAWEB_ROLLOUT.ru.md`
 
 ---
 
@@ -119,3 +97,4 @@ cd ../.. && npm run deploy:pages
 - Кассир видит только ciphertext + факт оплаты
 - Казна ≠ личный seed пользователя
 - Restore по словам не зависит от кассира
+- Kinship queries на AO читают snapshot процесса; приватный род остаётся в encrypted envelope

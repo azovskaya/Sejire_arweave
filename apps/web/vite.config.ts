@@ -1,9 +1,23 @@
-import { defineConfig } from "vite";
+import { copyFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+
+/** ArNS path manifests treat 404.html as SPA fallback (trailing-slash / deep links). */
+function spaFallback404(): Plugin {
+  return {
+    name: "spa-fallback-404",
+    closeBundle() {
+      const index = resolve(__dirname, "dist/index.html");
+      const fallback = resolve(__dirname, "dist/404.html");
+      if (existsSync(index)) copyFileSync(index, fallback);
+    },
+  };
+}
 
 export default defineConfig({
   base: "./",
-  plugins: [react()],
+  plugins: [react(), spaFallback404()],
   resolve: {
     // Prefer browser build; node entry breaks Vite CJS default interop (.init).
     alias: {

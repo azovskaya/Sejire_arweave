@@ -22,9 +22,47 @@ export function ancestorsOf(snapshot: Snapshot, personId: string): Map<string, n
   return dist;
 }
 
-/** Lowest common ancestor distance heuristic for kinship label. */
-export function relationshipLabel(snapshot: Snapshot, aId: string, bId: string): string {
-  if (aId === bId) return "тот же человек";
+/** Language-neutral kinship codes (normative in sejire/relate/v1). */
+export type KinshipCode =
+  | "self"
+  | "child"
+  | "parent"
+  | "grandchild"
+  | "grandparent"
+  | "sibling"
+  | "nibling"
+  | "pibling"
+  | "cousin"
+  | "related"
+  | "unrelated";
+
+export type KinshipRelation = {
+  a: string;
+  b: string;
+  code: KinshipCode;
+  lca?: string;
+  da?: number;
+  db?: number;
+  degree?: number;
+};
+
+export function kinshipCodeFromDistances(da: number, db: number): Exclude<KinshipCode, "self" | "unrelated"> {
+  if (da === 1 && db === 0) return "child";
+  if (da === 0 && db === 1) return "parent";
+  if (da === 2 && db === 0) return "grandchild";
+  if (da === 0 && db === 2) return "grandparent";
+  if (da === 1 && db === 1) return "sibling";
+  if (da === 2 && db === 1) return "nibling";
+  if (da === 1 && db === 2) return "pibling";
+  if (da === 2 && db === 2) return "cousin";
+  return "related";
+}
+
+/** Structured relation of A relative to B. Mirrors Tree Process Action=Relate. */
+export function relationship(snapshot: Snapshot, aId: string, bId: string): KinshipRelation {
+  if (aId === bId) {
+    return { a: aId, b: bId, code: "self", lca: aId, da: 0, db: 0, degree: 0 };
+  }
   const a = ancestorsOf(snapshot, aId);
   const b = ancestorsOf(snapshot, bId);
 
@@ -34,18 +72,41 @@ export function relationshipLabel(snapshot: Snapshot, aId: string, bId: string):
     const db = b.get(id)!;
     if (!best || da + db < best.da + best.db) best = { id, da, db };
   }
-  if (!best) return "нет общей линии в этом снимке";
+  if (!best) return { a: aId, b: bId, code: "unrelated" };
 
-  const { da, db } = best;
-  if (da === 1 && db === 0) return "ребёнок";
-  if (da === 0 && db === 1) return "родитель";
-  if (da === 2 && db === 0) return "внук/внучка";
-  if (da === 0 && db === 2) return "дед/бабушка";
-  if (da === 1 && db === 1) return "брат/сестра (или единокровные)";
-  if (da === 2 && db === 1) return "племянник/племянница";
-  if (da === 1 && db === 2) return "дядя/тётя";
-  if (da === 2 && db === 2) return "двоюродные";
-  return `общие предки (шаги ${da}+${db})`;
+  const { id, da, db } = best;
+  return {
+    a: aId,
+    b: bId,
+    lca: id,
+    da,
+    db,
+    degree: da + db,
+    code: kinshipCodeFromDistances(da, db),
+  };
+}
+
+const RU_LABEL: Record<KinshipCode, string> = {
+  self: "тот же человек",
+  child: "ребёнок",
+  parent: "родитель",
+  grandchild: "внук/внучка",
+  grandparent: "дед/бабушка",
+  sibling: "брат/сестра (или единокровные)",
+  nibling: "племянник/племянница",
+  pibling: "дядя/тётя",
+  cousin: "двоюродные",
+  related: "общие предки",
+  unrelated: "нет общей линии в этом снимке",
+};
+
+/** Lowest common ancestor distance heuristic for kinship label. */
+export function relationshipLabel(snapshot: Snapshot, aId: string, bId: string): string {
+  const rel = relationship(snapshot, aId, bId);
+  if (rel.code === "related" && rel.da != null && rel.db != null) {
+    return `общие предки (шаги ${rel.da}+${rel.db})`;
+  }
+  return RU_LABEL[rel.code];
 }
 
 export type LayoutNode = {
