@@ -46,6 +46,12 @@ export default defineConfig({
           ) {
             return "pdf-vendor";
           }
+          // Keep Arweave/forge off the UI entry and never lazy-import them:
+          // a lazy wallet chunk that imports back from index.html's entry
+          // fails on ArNS with "Failed to fetch dynamically imported module".
+          if (id.includes("node_modules/arweave") || id.includes("node_modules/node-forge")) {
+            return "wallet";
+          }
         },
       },
     },

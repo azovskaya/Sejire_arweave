@@ -17,6 +17,8 @@ import {
 import type { EnvelopeV1 } from "../lib/crypto/encrypt";
 import { loadVaultForPublish } from "../lib/arweave/loadVault";
 import { fetchLatestEnvelope } from "../lib/arweave/fetch";
+import { addressFromJwk, jwkFromSeed } from "../lib/arweave/wallet";
+import { getWalletBalanceAr, publishEnvelope } from "../lib/arweave/publish";
 import { isDemoPublishEnabled, isSponsorPublishEnabled } from "../lib/sponsor/config";
 import {
   sponsorCheckout,
@@ -247,8 +249,6 @@ export function PublishSeedModal({
     try {
       const { keys, envelope, parentTx } = await sealForPhrase(phrase);
       setStatus("Из 12 слов создаём адрес Arweave (без стороннего кошелька, 10–40 сек)…");
-      const { jwkFromSeed, addressFromJwk } = await import("../lib/arweave/wallet");
-      const { publishEnvelope, getWalletBalanceAr } = await import("../lib/arweave/publish");
       const jwk = await jwkFromSeed(keys.seed);
       const address = await addressFromJwk(jwk);
       setWalletAddress(address);
