@@ -224,7 +224,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       nextGuide = { ...guide, selfId: id, step: "mother" };
       setFocusId(id);
       setSelectedId(id);
-      setProfileOpen(true);
+      setProfileOpen(false);
       flash("Добавьте маму или папу карточками «+» на схеме");
     } else if (pending.type === "parent") {
       person.sex = pending.role === "father" ? "M" : "F";

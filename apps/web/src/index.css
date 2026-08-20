@@ -1,7 +1,27 @@
+@import "@fontsource/work-sans/400.css";
+@import "@fontsource/work-sans/700.css";
+
+@font-face {
+  font-family: "Noto Sans";
+  src: url("./assets/fonts/NotoSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans";
+  src: url("./assets/fonts/NotoSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg-0: #ffffff;
   --bg-1: #f7f7f8;
   --bg-2: #efeff1;
+  --paper: #ffffff;
   --ink: #222326;
   --ink-dim: #6b6e76;
   --line: rgba(34, 35, 38, 0.12);
@@ -15,9 +35,9 @@
   --card-border: rgba(34, 35, 38, 0.14);
   --danger: #c0392b;
   --shadow: 0 1px 2px rgba(34, 35, 38, 0.04), 0 8px 24px rgba(34, 35, 38, 0.06);
-  --font-display: "Work Sans", "Helvetica Neue", sans-serif;
-  --font-body: "Work Sans", "Helvetica Neue", sans-serif;
-  --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --font-display: "Work Sans", "Noto Sans", "Helvetica Neue", sans-serif;
+  --font-body: "Noto Sans", "Work Sans", "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "Noto Sans", monospace;
   font-family: var(--font-body);
   color: var(--ink);
   background: var(--bg-0);
@@ -1328,6 +1348,18 @@ a {
   font-size: 0.72rem;
   opacity: 0.55;
   letter-spacing: 0.01em;
+}
+
+.fund-steps {
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+  color: var(--ink-dim);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.fund-steps li + li {
+  margin-top: 0.35rem;
 }
 
 .hero-create {

@@ -707,8 +707,8 @@ export function PublishSeedModal({
         {mode === "fund-wait" && (
           <div>
             <p className="sub">
-              На адресе из ваших 12 слов мало AR. Переведите немного AR, затем отправьте снова. Новые
-              слова создавать не нужно.
+              На адресе из <strong>ваших 12 слов</strong> нет AR, поэтому сеть не принимает сейф.
+              Новые слова создавать не нужно.
             </p>
             {walletAddress && (
               <button
@@ -719,10 +719,22 @@ export function PublishSeedModal({
               >
                 {walletAddress}
                 <span className="publish-address-hint">
-                  {status === "Адрес скопирован" ? "Скопировано" : "Нажмите, чтобы скопировать"}
+                  {status === "Адрес скопирован" ? "Скопировано" : "Нажмите, чтобы скопировать адрес"}
                 </span>
               </button>
             )}
+            <ol className="fund-steps">
+              <li>Скопируйте адрес выше.</li>
+              <li>
+                Binance → Вывод → монета <strong>AR</strong> → сеть только <strong>Arweave</strong>{" "}
+                (не ERC-20, не BNB).
+              </li>
+              <li>Вставьте этот адрес. Хватит <strong>0.05–0.1 AR</strong>.</li>
+              <li>
+                Не импортируйте 12 слов в ArConnect — получится другой адрес, деньги не дойдут сюда.
+              </li>
+              <li>Когда перевод пройдёт (обычно несколько минут), нажмите «Отправить».</li>
+            </ol>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={() => void runSelfFundPublish(mnemonic)}>
                 Отправить

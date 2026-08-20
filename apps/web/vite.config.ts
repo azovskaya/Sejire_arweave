@@ -10,7 +10,11 @@ function spaFallback404(): Plugin {
     closeBundle() {
       const index = resolve(__dirname, "dist/index.html");
       const fallback = resolve(__dirname, "dist/404.html");
+      const faviconSvg = resolve(__dirname, "dist/favicon.svg");
+      const faviconIco = resolve(__dirname, "dist/favicon.ico");
       if (existsSync(index)) copyFileSync(index, fallback);
+      // Browsers still request /favicon.ico; keep a bytes-on-path so ArNS is not "Not found".
+      if (existsSync(faviconSvg) && !existsSync(faviconIco)) copyFileSync(faviconSvg, faviconIco);
     },
   };
 }

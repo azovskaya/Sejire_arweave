@@ -98,6 +98,21 @@ export function PedigreeView({
   }, [focusId, empty, width, height, focusCardY]);
 
   useEffect(() => {
+    if (empty) return;
+    const el = viewportRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      const vh = el.clientHeight || 480;
+      setPan((prev) => {
+        if (Math.abs(prev.x - 28) > 8) return prev;
+        return panToFocus(vh, focusCardY);
+      });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [empty, focusCardY]);
+
+  useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     function distance(a: Touch, b: Touch) {
