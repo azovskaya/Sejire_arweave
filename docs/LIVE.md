@@ -7,9 +7,12 @@
 **https://sejire.ar.io** — сайт на Arweave (имя куплено; Target ID после `npm run deploy:permaweb`).  
 Решения: [`LOCKED_DECISIONS.ru.md`](./LOCKED_DECISIONS.ru.md).
 
-## Зеркало сейчас (GitHub Pages)
+## Зеркало сейчас (GitHub Pages) — сюда тестируем
 
 **https://azovskaya.github.io/Sejire_arweave/**
+
+Сборка с рабочей ветки, режим публикации **self** (12 слов → адрес AR → «Отправить»).  
+**Arweave / `sejire.ar.io` пока не трогаем** — один `npm run deploy:permaweb`, когда зеркало ок.
 
 Презентация (HTML): https://azovskaya.github.io/Sejire_arweave/presentation/  
 PPTX: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx  

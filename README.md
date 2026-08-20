@@ -13,7 +13,7 @@
 
 ## Открыть приложение
 
-**https://azovskaya.github.io/Sejire_arweave/**
+**https://azovskaya.github.io/Sejire_arweave/** — тестовое зеркало (Arweave пока не трогаем).
 
 Репозиторий: https://github.com/azovskaya/Sejire_arweave
 

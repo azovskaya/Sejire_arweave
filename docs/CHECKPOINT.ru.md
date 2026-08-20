@@ -20,7 +20,8 @@
 | Investor deck (HTML) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
 | Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; Target ID после `npm run deploy:permaweb` |
 
-Сайт уже открывается на **https://sejire.ar.io/**, но это **старый манифест**. Правки копятся в этой ветке; **в Arweave не выкладываем, пока не скажем «пачка готова»**.
+Тестовое зеркало: **https://azovskaya.github.io/Sejire_arweave/** (обновляется через `npm run deploy:pages`).  
+**https://sejire.ar.io/** пока **старый манифест** — в Arweave не выкладываем, пока зеркало не ок.
 
 Известные баги живого манифеста (уже закрыты в коде):
 
@@ -62,7 +63,7 @@
 
 ## 4. Что делать дальше
 
-1. **Сейчас:** добить недочёты в этой ветке, тесты зелёные. **Не выкладывать ArNS**, пока в чате не скажем «пачка готова».
+1. **Сейчас:** тестировать и править на GitHub Pages. **Не выкладывать ArNS**, пока зеркало не ок и в чате не скажем «пачка готова».
 2. **Потом одним деплоем:** `npm run deploy:permaweb` → Phantom → Target ID. Ключ в чат не слать.
 3. **aos:** Factory + Tree process IDs — отдельно, не блокер сейфа.
 4. **Kaspi live** — после ИП/мерчанта.
