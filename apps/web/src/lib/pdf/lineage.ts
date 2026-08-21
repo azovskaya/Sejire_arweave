@@ -99,10 +99,9 @@ export function slotCenterFraction(generation: number, slot: number, depth: numb
 /** Gens per pedigree page. Overlap of 1 gen chains charts (person is top, then bottom of the next). */
 export const PEDIGREE_CHART_WINDOW = 5;
 
-/** Leftover 2–3 gen families after a 5-gen chart — pack several per A4 instead of one billboard. */
+/** Leftover 2–3 gen families — used only to keep small charts clustered, not to paginate. */
 export const SHALLOW_CHART_MAX_DEPTH = 3;
 export const SHALLOW_CHART_MAX_PEOPLE = 7;
-export const SHALLOW_CHARTS_PER_PAGE = 4;
 
 export type PedigreeChartRoot = { id: string; startGeneration: number };
 
@@ -125,13 +124,34 @@ export type PedigreeChartLayout = {
   positions: Map<string, PedigreeCardPos>;
 };
 
-export type ClassicBookletPage =
-  | { kind: "full"; root: PedigreeChartRoot }
-  | { kind: "grid"; roots: PedigreeChartRoot[] };
+/** ISO landscape posters. Wider trees step up instead of splitting into mini-charts. */
+export const PEDIGREE_POSTER_SIZES = [
+  { id: "a4" as const, w: 297, h: 210 },
+  { id: "a3" as const, w: 420, h: 297 },
+  { id: "a2" as const, w: 594, h: 420 },
+];
+
+export type PedigreePosterFormat = (typeof PEDIGREE_POSTER_SIZES)[number]["id"];
+
+export type PedigreePosterPlan = {
+  format: PedigreePosterFormat;
+  orientation: "landscape" | "portrait";
+  pageW: number;
+  pageH: number;
+  /** Generations painted from the focus (may be < depth if even A2 is too narrow). */
+  generations: number;
+  truncated: boolean;
+  depth: number;
+};
+
+const POSTER_MARGIN_X = 24;
+/** Smallest card that still matches the readable A4 5-knee overview. A2 may go slightly under. */
+const MIN_READABLE_CARD_W = 8;
 
 /**
  * Roots for chained 5-generation pedigree pages covering `maxGenerations`.
  * Complete 13-knee binary tree → 1 + 16 + 256 = 273 charts.
+ * Kept as a helper; the classic PDF is one poster, not this booklet.
  */
 export function pedigreeChartRoots(
   snapshot: Snapshot,
@@ -144,7 +164,6 @@ export function pedigreeChartRoots(
   const depth = Math.max(...slots.map((s) => s.generation)) + 1;
   const step = Math.max(1, window - 1);
   const out: PedigreeChartRoot[] = [];
-  // Stop before the oldest knee: a 1-person "chart" of roots has no parents to show.
   const lastStart = Math.max(0, depth - 2);
   for (let g = 0; g <= lastStart; g += step) {
     const row = slots.filter((s) => s.generation === g).sort((a, b) => a.slot - b.slot);
@@ -159,59 +178,99 @@ export function isShallowPedigreeChart(slots: AncestorSlot[]): boolean {
   return depth <= SHALLOW_CHART_MAX_DEPTH && slots.length <= SHALLOW_CHART_MAX_PEOPLE;
 }
 
-function treeDepthAndBushy(slots: AncestorSlot[]): { depth: number; bushy: boolean } {
-  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
-  const maxInRow = Math.max(
-    1,
-    ...Array.from({ length: depth }, (_, g) => slots.filter((s) => s.generation === g).length)
-  );
-  return { depth, bushy: maxInRow > 8 };
+function rowWidthMm(pageW: number, leaves: number): number {
+  return (pageW - POSTER_MARGIN_X) / Math.max(leaves, 1) - 0.7;
+}
+
+function oldestRowCount(slots: AncestorSlot[], gens: number): number {
+  const g = Math.max(0, gens - 1);
+  return Math.max(1, slots.filter((s) => s.generation === g).length);
+}
+
+function posterFits(pageW: number, slots: AncestorSlot[], gens: number): boolean {
+  return rowWidthMm(pageW, oldestRowCount(slots, gens)) >= MIN_READABLE_CARD_W;
 }
 
 /**
- * How the classic tree PDF is paginated.
- * Deep 5-gen charts stay one-per-page; leftover 2–3 gen families pack up to 4 per sheet.
+ * One wall poster. Paper grows A4 → A3 → A2 with the widest ancestor row.
+ * Does not emit leftover 2-person family sheets — those were unreadable as a tree.
  */
-export function planClassicTreeBooklet(
+export function choosePedigreePoster(
   snapshot: Snapshot,
   focusId: string,
-  maxGenerations = 13,
-  window = PEDIGREE_CHART_WINDOW
-): { bushy: boolean; depth: number; pages: ClassicBookletPage[] } {
+  maxGenerations = 13
+): PedigreePosterPlan {
   const allSlots = ancestorSlotLayout(snapshot, focusId, maxGenerations);
-  if (!allSlots.length) return { bushy: false, depth: 0, pages: [] };
-  const { depth, bushy } = treeDepthAndBushy(allSlots);
-  if (!bushy) {
-    return { bushy: false, depth, pages: [{ kind: "full", root: { id: focusId, startGeneration: 0 } }] };
+  if (!allSlots.length) {
+    return {
+      format: "a4",
+      orientation: "landscape",
+      pageW: 297,
+      pageH: 210,
+      generations: 0,
+      truncated: false,
+      depth: 0,
+    };
+  }
+  const depth = Math.max(...allSlots.map((s) => s.generation)) + 1;
+  const maxInRow = Math.max(
+    1,
+    ...Array.from({ length: depth }, (_, g) => allSlots.filter((s) => s.generation === g).length)
+  );
+
+  if (maxInRow <= 8 && depth > 8) {
+    return {
+      format: "a4",
+      orientation: "portrait",
+      pageW: 210,
+      pageH: 297,
+      generations: depth,
+      truncated: false,
+      depth,
+    };
   }
 
-  const roots = pedigreeChartRoots(snapshot, focusId, maxGenerations, window);
-  const pages: ClassicBookletPage[] = [];
-  const pending: PedigreeChartRoot[] = [];
-
-  const flushPending = () => {
-    while (pending.length) {
-      if (pending.length === 1) {
-        pages.push({ kind: "full", root: pending.shift()! });
-        continue;
-      }
-      pages.push({ kind: "grid", roots: pending.splice(0, SHALLOW_CHARTS_PER_PAGE) });
+  for (const fmt of PEDIGREE_POSTER_SIZES) {
+    if (posterFits(fmt.w, allSlots, depth)) {
+      return {
+        format: fmt.id,
+        orientation: "landscape",
+        pageW: fmt.w,
+        pageH: fmt.h,
+        generations: depth,
+        truncated: false,
+        depth,
+      };
     }
+  }
+
+  const a2 = PEDIGREE_POSTER_SIZES[PEDIGREE_POSTER_SIZES.length - 1];
+  let gens = depth;
+  while (gens > 2 && !posterFits(a2.w, allSlots, gens)) gens -= 1;
+
+  for (const fmt of PEDIGREE_POSTER_SIZES) {
+    if (posterFits(fmt.w, allSlots, gens)) {
+      return {
+        format: fmt.id,
+        orientation: "landscape",
+        pageW: fmt.w,
+        pageH: fmt.h,
+        generations: gens,
+        truncated: gens < depth,
+        depth,
+      };
+    }
+  }
+
+  return {
+    format: "a2",
+    orientation: "landscape",
+    pageW: a2.w,
+    pageH: a2.h,
+    generations: gens,
+    truncated: gens < depth,
+    depth,
   };
-
-  for (const root of roots) {
-    const remain = depth - root.startGeneration;
-    const win = Math.min(window, remain);
-    const slots = ancestorSlotLayout(snapshot, root.id, win);
-    if (isShallowPedigreeChart(slots)) {
-      pending.push(root);
-      continue;
-    }
-    flushPending();
-    pages.push({ kind: "full", root });
-  }
-  flushPending();
-  return { bushy: true, depth, pages };
 }
 
 /**
@@ -248,7 +307,7 @@ export function computePedigreeLayout(
     cardW = Math.max(18, Math.min(52, cardW));
   } else if (useBinarySlots) {
     const leafSlots = 2 ** Math.max(0, depth - 1);
-    cardW = Math.min(40, Math.max(11, box.w / leafSlots - 0.7));
+    cardW = Math.min(40, Math.max(6, box.w / leafSlots - 0.7));
   } else {
     cardW = Math.min(46, Math.max(16, box.w / maxInRow - 2.4));
   }

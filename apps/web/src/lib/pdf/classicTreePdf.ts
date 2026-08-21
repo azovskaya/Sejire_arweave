@@ -4,14 +4,11 @@ import { pdfT, SHEZHIRE_MAX_GENERATIONS, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
 import {
   ancestorSlotLayout,
+  choosePedigreePoster,
   computePedigreeLayout,
   lifeDatesLine,
-  planClassicTreeBooklet,
-  PEDIGREE_CHART_WINDOW,
   type AncestorSlot,
-  type ClassicBookletPage,
   type PedigreeCardPos,
-  type PedigreeChartRoot,
   type PedigreeLayoutBox,
 } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
@@ -214,11 +211,6 @@ function paintPageChrome(
   return { x: marginX, y: topY, w: pageW - marginX * 2, h: bottomY - topY };
 }
 
-function windowForRoot(depth: number, root: PedigreeChartRoot, bushy: boolean): number {
-  if (!bushy) return SHEZHIRE_MAX_GENERATIONS;
-  return Math.min(PEDIGREE_CHART_WINDOW, Math.max(1, depth - root.startGeneration));
-}
-
 function paintFullPageChart(
   doc: jsPDF,
   snapshot: Snapshot,
@@ -231,102 +223,10 @@ function paintFullPageChart(
   paintCards(doc, snapshot, slots, box);
 }
 
-function gridShape(n: number): { cols: number; rows: number } {
-  if (n <= 1) return { cols: 1, rows: 1 };
-  if (n === 2) return { cols: 2, rows: 1 };
-  return { cols: 2, rows: 2 };
-}
-
-function paintGridPage(
-  doc: jsPDF,
-  snapshot: Snapshot,
-  roots: PedigreeChartRoot[],
-  depth: number,
-  title: string,
-  subtitle: string,
-  footer: string,
-  t: ReturnType<typeof pdfT>
-) {
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  paintPageChrome(doc, title, subtitle, footer);
-
-  const { cols, rows } = gridShape(roots.length);
-  const gridLeft = 12;
-  const gridTop = 26;
-  const gridRight = pageW - 12;
-  const gridBottom = pageH - 12;
-  const gapX = 5;
-  const gapY = 5;
-  const cellW = (gridRight - gridLeft - gapX * (cols - 1)) / cols;
-  const cellH = (gridBottom - gridTop - gapY * (rows - 1)) / rows;
-
-  roots.forEach((root, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = gridLeft + col * (cellW + gapX);
-    const y = gridTop + row * (cellH + gapY);
-    doc.setDrawColor(200, 185, 160);
-    doc.setLineWidth(0.22);
-    doc.setFillColor(252, 249, 243);
-    doc.roundedRect(x, y, cellW, cellH, 1.4, 1.4, "FD");
-
-    const win = windowForRoot(depth, root, true);
-    const slots = ancestorSlotLayout(snapshot, root.id, win);
-    const name = snapshot.persons[root.id]?.name || root.id;
-    setPdfFont(doc, "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(...INK);
-    doc.text(fitText(doc, t.ancestorsOf(name), cellW - 8, 8.5), x + cellW / 2, y + 6.2, {
-      align: "center",
-    });
-    paintCards(doc, snapshot, slots, {
-      x: x + 3.2,
-      y: y + 9.5,
-      w: cellW - 6.4,
-      h: cellH - 13,
-    });
-  });
-}
-
-function pageCopy(
-  t: ReturnType<typeof pdfT>,
-  snapshot: Snapshot,
-  page: ClassicBookletPage,
-  pageIndex: number,
-  total: number,
-  depth: number,
-  personCount: number,
-  firstPage: boolean
-): { title: string; subtitle: string; footer: string } {
-  const footer = t.pageOf(pageIndex + 1, total);
-  if (page.kind === "full") {
-    const rootPerson = snapshot.persons[page.root.id];
-    const win = windowForRoot(depth, page.root, true);
-    const fromKnee = page.root.startGeneration + 1;
-    const toKnee = page.root.startGeneration + win;
-    const title = firstPage ? t.classicTitle : t.ancestorsOf(rootPerson?.name || page.root.id);
-    const subtitle = firstPage
-      ? `${personCount} чел. · ${t.kneeRange(1, depth)} · ${footer}`
-      : `${t.kneeRange(fromKnee, toKnee)} · ${footer}`;
-    return { title, subtitle, footer };
-  }
-  const fromKnee = Math.min(...page.roots.map((r) => r.startGeneration)) + 1;
-  const toKnee = Math.max(
-    ...page.roots.map((r) => Math.min(depth, r.startGeneration + PEDIGREE_CHART_WINDOW))
-  );
-  return {
-    title: t.classicTitle,
-    subtitle: `${t.kneeRange(fromKnee, toKnee)} · ${footer}`,
-    footer,
-  };
-}
-
 /**
- * Wall-ready classic family poster.
- * A narrow line stays on one page; a full 13-knee binary tree is a booklet of
- * 5-generation charts (A4 cannot hold 4096 people on one leaf row).
- * Leftover 2–3 generation families share a page so names stay readable.
+ * Wall poster of the ancestor tree. Paper grows A4 → A3 → A2 so the whole
+ * picture stays on one sheet. A 13-knee full binary tree cannot fit even A2;
+ * then we paint the nearest readable generations (шежіре PDF holds the rest).
  */
 export async function renderClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -338,39 +238,30 @@ export async function renderClassicTreePdf(opts: {
   const allSlots = ancestorSlotLayout(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
   if (!allSlots.length) throw new Error(t.noPeople);
 
-  const plan = planClassicTreeBooklet(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
-  const orientation = !plan.bushy && plan.depth > 8 ? "portrait" : "landscape";
-  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
+  const plan = choosePedigreePoster(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
+  const doc = new jsPDF({
+    orientation: plan.orientation,
+    unit: "mm",
+    format: [plan.pageW, plan.pageH],
+  });
   await ensurePdfFont(doc);
 
-  const total = plan.pages.length;
   const count = Object.keys(opts.snapshot.persons).length;
-
-  for (let i = 0; i < plan.pages.length; i += 1) {
-    if (i > 0) {
-      doc.addPage("a4", orientation);
-      setPdfFont(doc, "normal");
-    }
-    const page = plan.pages[i];
-    const copy = pageCopy(t, opts.snapshot, page, i, total, plan.depth, count, i === 0);
-    if (page.kind === "full") {
-      const win = windowForRoot(plan.depth, page.root, plan.bushy);
-      const slots = ancestorSlotLayout(opts.snapshot, page.root.id, win);
-      paintFullPageChart(doc, opts.snapshot, slots, copy.title, copy.subtitle, copy.footer);
-    } else {
-      paintGridPage(
-        doc,
-        opts.snapshot,
-        page.roots,
-        plan.depth,
-        copy.title,
-        copy.subtitle,
-        copy.footer,
-        t
-      );
-    }
-  }
+  const paper = plan.format.toUpperCase();
+  const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, plan.generations);
+  const knees = plan.truncated
+    ? `${t.kneeRange(1, plan.generations)} из ${plan.depth}`
+    : t.kneeRange(1, plan.depth);
+  const subtitle = `${count} чел. · ${knees} · ${paper}`;
+  paintFullPageChart(doc, opts.snapshot, slots, t.classicTitle, subtitle, undefined);
   return doc;
+}
+
+function paperFromDoc(doc: jsPDF): string {
+  const w = Math.max(doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight());
+  if (w >= 580) return "A2";
+  if (w >= 400) return "A3";
+  return "A4";
 }
 
 export async function downloadClassicTreePdf(opts: {
@@ -378,8 +269,10 @@ export async function downloadClassicTreePdf(opts: {
   focusId: string;
   meta: TreeMeta;
   locale?: PdfLocale;
-}) {
+}): Promise<string> {
   const t = pdfT(opts.locale ?? "ru");
   const doc = await renderClassicTreePdf(opts);
-  doc.save(`sejire-tree-${safeFilename(opts.meta.title || t.classicTitle, "tree")}.pdf`);
+  const paper = paperFromDoc(doc);
+  doc.save(`sejire-tree-${safeFilename(opts.meta.title || t.classicTitle, "tree")}-${paper}.pdf`);
+  return paper;
 }

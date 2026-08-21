@@ -295,13 +295,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     }
     try {
       const { downloadClassicTreePdf } = await import("../lib/pdf/classicTreePdf");
-      await downloadClassicTreePdf({
+      const paper = await downloadClassicTreePdf({
         snapshot: store.draft,
         focusId: id,
         meta: store.meta,
         locale: "ru",
       });
-      flash("PDF древа скачан");
+      flash(`PDF древа скачан · ${paper}`);
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }

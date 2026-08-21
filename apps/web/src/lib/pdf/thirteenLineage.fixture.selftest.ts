@@ -1,5 +1,5 @@
 import { splitParents } from "../pedigree";
-import { ancestorSlotLayout, maleLineUp, pedigreeChartRoots, planClassicTreeBooklet } from "./lineage";
+import { ancestorSlotLayout, choosePedigreePoster, maleLineUp, pedigreeChartRoots } from "./lineage";
 import {
   QA_13_FOCUS_ID,
   QA_13_GENERATIONS,
@@ -48,16 +48,15 @@ const slots = ancestorSlotLayout(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS);
 assert(slots.length === QA_13_PERSON_COUNT, `layout ${slots.length}`);
 
 const charts = pedigreeChartRoots(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS, 5);
-assert(charts.length === 1 + 16 + 256, `booklet pages ${charts.length}`);
-const booklet = planClassicTreeBooklet(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS, 5);
-assert(booklet.pages.length === charts.length, `13-knee stays one chart per page (${booklet.pages.length})`);
-assert(
-  booklet.pages.every((p) => p.kind === "full"),
-  "13-knee has no leftover 2-gen sheets to pack"
-);
+assert(charts.length === 1 + 16 + 256, `chart roots ${charts.length}`);
+const poster = choosePedigreePoster(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS);
+assert(poster.format === "a2", `13-knee full tree uses A2, got ${poster.format}`);
+assert(poster.truncated, "13-knee full binary cannot fit 4096 leaves; poster shows nearest gens");
+assert(poster.generations >= 6 && poster.generations <= 7, `readable gens on A2, got ${poster.generations}`);
 
 console.log("thirteenLineage.fixture.selftest: OK", {
   people: ids.length,
   maleLine: male.length,
   charts: charts.length,
+  poster: `${poster.format.toUpperCase()} ${poster.generations} gens`,
 });

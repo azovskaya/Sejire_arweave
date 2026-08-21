@@ -4,10 +4,9 @@
 import {
   ancestorGenerations,
   ancestorSlotLayout,
+  choosePedigreePoster,
   computePedigreeLayout,
   maleLineUp,
-  pedigreeChartRoots,
-  planClassicTreeBooklet,
   slotCenterFraction,
 } from "./lineage";
 import type { Person, Snapshot } from "../types";
@@ -103,21 +102,26 @@ assert(trioLayout.cardW >= 28 && trioLayout.cardH >= 16, "compact cards stay lar
 
 const sixGen = completeAncestry(6);
 assert(Object.keys(sixGen.persons).length === 63, "6-knee complete tree");
-const sixRoots = pedigreeChartRoots(sixGen, "a1", 6, 5);
-assert(sixRoots.length === 17, `6-knee still has 17 chart roots, got ${sixRoots.length}`);
-const sixPlan = planClassicTreeBooklet(sixGen, "a1", 6, 5);
-assert(sixPlan.pages.length <= 6, `6-knee leftover families must share pages, got ${sixPlan.pages.length}`);
-assert(sixPlan.pages.length === 5, `1 overview + 16 families / 4 = 5 pages, got ${sixPlan.pages.length}`);
-assert(sixPlan.pages[0].kind === "full", "page 1 remains the 5-knee overview");
-assert(
-  sixPlan.pages.slice(1).every((p) => p.kind === "grid" && p.roots.length === 4),
-  "leftover 2-knee families pack 4 per sheet"
-);
+const sixPoster = choosePedigreePoster(sixGen, "a1", 6);
+assert(sixPoster.format === "a3", `6-knee poster is A3, got ${sixPoster.format}`);
+assert(sixPoster.generations === 6 && !sixPoster.truncated, "6-knee fits on one A3 sheet");
+assert(sixPoster.orientation === "landscape", "6-knee A3 is landscape");
+
+const fiveGen = completeAncestry(5);
+const fivePoster = choosePedigreePoster(fiveGen, "a1", 5);
+assert(fivePoster.format === "a4", `5-knee stays A4, got ${fivePoster.format}`);
+assert(!fivePoster.truncated, "5-knee is not truncated");
+
+const sevenGen = completeAncestry(7);
+const sevenPoster = choosePedigreePoster(sevenGen, "a1", 7);
+assert(sevenPoster.format === "a2", `7-knee poster is A2, got ${sevenPoster.format}`);
+assert(sevenPoster.generations === 7 && !sevenPoster.truncated, "7-knee fits on one A2 sheet");
 
 console.log("lineage.selftest: OK", {
   male: male.length,
   gens: gens.length,
   slots: slots.length,
   deep: deepMale.length,
-  sixPages: sixPlan.pages.length,
+  six: sixPoster.format,
+  seven: sevenPoster.format,
 });
