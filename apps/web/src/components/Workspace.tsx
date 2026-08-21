@@ -18,7 +18,7 @@ import {
 } from "../lib/treeEngine";
 import { SHEZHIRE_MAX_GENERATIONS } from "../lib/i18n/pdf";
 import type { ShezhireTemplateId } from "../lib/pdf/shezhireTemplates";
-import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
+import { downloadTreeJson, readTreeJsonFile, coerceTreeStore } from "../lib/treeJson";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
 import { ShezhireTemplateModal } from "./ShezhireTemplateModal";
@@ -72,8 +72,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const vaultSession = getVaultSession();
 
   const shezhireLine = useMemo(
-    () => formatShezhireAffiliation(store.meta.zhuz, store.meta.clanName),
-    [store.meta.zhuz, store.meta.clanName]
+    () => formatShezhireAffiliation(store.meta?.zhuz, store.meta?.clanName),
+    [store.meta?.zhuz, store.meta?.clanName]
   );
 
   function closeMoreMenu() {
@@ -350,7 +350,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   function applyVaultVersion(vault: VaultV1) {
     const treeId = vault.active_tree_id;
-    const next = treeId ? vault.trees[treeId] : Object.values(vault.trees)[0];
+    const next = coerceTreeStore(treeId ? vault.trees[treeId] : Object.values(vault.trees)[0]);
     if (!next) {
       flash("В этой версии нет деревьев");
       return;

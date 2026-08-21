@@ -102,19 +102,66 @@ function normalizeSnapshot(raw: unknown): Snapshot | null {
   return { persons };
 }
 
-function normalizeMeta(raw: unknown): TreeMeta | null {
-  if (!isRecord(raw)) return null;
-  if (typeof raw.id !== "string" || typeof raw.title !== "string") return null;
+function pickString(raw: Record<string, unknown>, key: string): string | null {
+  const v = raw[key];
+  return typeof v === "string" && v.trim() ? v : null;
+}
+
+function metaFrom(raw: unknown, fallbacks: Record<string, unknown> = {}): TreeMeta {
+  const m = isRecord(raw) ? raw : {};
   return {
-    id: raw.id,
-    title: raw.title,
-    head: typeof raw.head === "string" || raw.head === null ? (raw.head as string | null) : null,
-    next_version: typeof raw.next_version === "number" ? raw.next_version : 1,
-    created_at: typeof raw.created_at === "string" ? raw.created_at : new Date().toISOString(),
-    author: typeof raw.author === "string" ? raw.author : "local",
-    zhuz: isZhuzId(raw.zhuz) ? raw.zhuz : null,
-    clanName: (raw.clanName as string | null | undefined) ?? null,
-    tamgaUrl: (raw.tamgaUrl as string | null | undefined) ?? null,
+    id: pickString(m, "id") ?? pickString(fallbacks, "id") ?? `tree_${Date.now().toString(36)}`,
+    title: pickString(m, "title") ?? pickString(fallbacks, "title") ?? "Мой род",
+    head: typeof m.head === "string" || m.head === null ? (m.head as string | null) : null,
+    next_version: typeof m.next_version === "number" ? m.next_version : 1,
+    created_at: typeof m.created_at === "string" ? m.created_at : new Date().toISOString(),
+    author: typeof m.author === "string" ? m.author : "local",
+    zhuz: isZhuzId(m.zhuz) ? m.zhuz : null,
+    clanName: typeof m.clanName === "string" ? m.clanName : null,
+    tamgaUrl: typeof m.tamgaUrl === "string" ? m.tamgaUrl : null,
+  };
+}
+
+/**
+ * Repair whatever localStorage / a vault / a JSON file actually contains.
+ * Missing `meta` used to crash the workspace: `undefined is not an object (evaluating '….meta.zhuz')`.
+ */
+export function coerceTreeStore(raw: unknown): TreeStore | null {
+  if (!isRecord(raw)) return null;
+
+  if (
+    raw.schema === TREE_JSON_SCHEMA ||
+    raw.app === "SEJIRE" ||
+    (isRecord(raw.store) && (raw.guide !== undefined || raw.exported_at !== undefined))
+  ) {
+    return coerceTreeStore(raw.store);
+  }
+
+  if (raw.schema === "sejire/vault/v1" && isRecord(raw.trees)) {
+    const trees = raw.trees;
+    const active = typeof raw.active_tree_id === "string" ? raw.active_tree_id : null;
+    const picked =
+      (active && Object.prototype.hasOwnProperty.call(trees, active) ? trees[active] : null) ??
+      Object.values(trees)[0];
+    return coerceTreeStore(picked);
+  }
+
+  const snapshotSource = isRecord(raw.draft)
+    ? raw.draft
+    : isRecord(raw.persons)
+      ? raw
+      : null;
+  const draft = normalizeSnapshot(snapshotSource);
+  if (!draft) return null;
+
+  const commits = isRecord(raw.commits) ? (raw.commits as TreeStore["commits"]) : {};
+  const versions = isRecord(raw.versions) ? (raw.versions as TreeStore["versions"]) : {};
+  return {
+    meta: metaFrom(raw.meta, raw),
+    commits,
+    versions,
+    draft,
+    dirty: Boolean(raw.dirty),
   };
 }
 
@@ -159,54 +206,12 @@ export function parseTreeJson(text: string): ParseTreeJsonResult {
   if (data.schema === TREE_JSON_SCHEMA || data.app === "SEJIRE") {
     storeRaw = data.store;
     guideRaw = data.guide;
-  } else if (isRecord(data.meta) && isRecord(data.draft)) {
-    storeRaw = data;
-  } else if (isRecord(data.persons)) {
-    // bare snapshot
-    const draft = normalizeSnapshot(data);
-    if (!draft) return { ok: false, error: "Нет людей в снимке" };
-    const id = `tree_${Date.now().toString(36)}`;
-    return {
-      ok: true,
-      store: {
-        meta: {
-          id,
-          title: "Импорт SEJIRE",
-          head: null,
-          next_version: 1,
-          created_at: new Date().toISOString(),
-          author: "local",
-          clanName: null,
-          zhuz: null,
-          tamgaUrl: null,
-        },
-        commits: {},
-        versions: {},
-        draft,
-        dirty: true,
-      },
-      guide: { ...defaultGuide(), step: "done" },
-    };
   }
 
-  if (!isRecord(storeRaw)) return { ok: false, error: "В файле нет данных древа (store)" };
-  const draft = normalizeSnapshot(storeRaw.draft);
-  if (!draft) return { ok: false, error: "В файле нет черновика (draft.persons)" };
-  const meta = normalizeMeta(storeRaw.meta);
-  if (!meta) return { ok: false, error: "В файле нет корректного meta" };
+  const store = coerceTreeStore(storeRaw);
+  if (!store) return { ok: false, error: "В файле нет данных древа" };
 
-  const commits = isRecord(storeRaw.commits) ? storeRaw.commits : {};
-  const versions = isRecord(storeRaw.versions) ? storeRaw.versions : {};
-
-  const store: TreeStore = {
-    meta,
-    commits: commits as TreeStore["commits"],
-    versions: versions as TreeStore["versions"],
-    draft,
-    dirty: true,
-  };
-
-  return { ok: true, store, guide: normalizeGuide(guideRaw) };
+  return { ok: true, store: { ...store, dirty: true }, guide: normalizeGuide(guideRaw) };
 }
 
 export async function readTreeJsonFile(file: File): Promise<ParseTreeJsonResult> {

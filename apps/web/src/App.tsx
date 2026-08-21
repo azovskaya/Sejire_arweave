@@ -4,6 +4,7 @@ import { Workspace } from "./components/Workspace";
 import { RestoreSeed } from "./components/RestoreSeed";
 import type { TreeStore } from "./lib/types";
 import { clearDraftTree, loadDraftTree, saveDraftTree } from "./lib/draftStorage";
+import { coerceTreeStore } from "./lib/treeJson";
 import {
   clearGuide,
   defaultGuide,
@@ -34,8 +35,9 @@ export default function App() {
   }
 
   function continueDraft(opened?: TreeStore | null) {
-    const draft = opened ?? loadDraftTree();
+    const draft = coerceTreeStore(opened) ?? loadDraftTree();
     if (!draft) return;
+    saveDraftTree(draft);
     setStore(draft);
     setGuide(loadGuide() ?? { ...defaultGuide(), step: "done" });
     setScreen("work");
@@ -65,7 +67,8 @@ export default function App() {
           onStoreChange={(next) => {
             setStore((prev) => {
               if (!prev) return prev;
-              return typeof next === "function" ? next(prev) : next;
+              const candidate = typeof next === "function" ? next(prev) : next;
+              return coerceTreeStore(candidate) ?? prev;
             });
           }}
           onGuideChange={setGuide}

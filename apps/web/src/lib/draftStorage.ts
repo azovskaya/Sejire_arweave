@@ -1,4 +1,5 @@
 import type { TreeStore } from "./types";
+import { coerceTreeStore } from "./treeJson";
 import { setLocalJson } from "./storageQuota";
 
 const DRAFT_KEY = "sejire.draft.tree.v1";
@@ -12,7 +13,7 @@ export function loadDraftTree(): TreeStore | null {
   const raw = localStorage.getItem(DRAFT_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as TreeStore;
+    return coerceTreeStore(JSON.parse(raw));
   } catch {
     return null;
   }

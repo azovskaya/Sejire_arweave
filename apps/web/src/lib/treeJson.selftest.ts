@@ -1,4 +1,4 @@
-import { buildTreeExport, parseTreeJson, TREE_JSON_SCHEMA } from "./treeJson";
+import { buildTreeExport, coerceTreeStore, parseTreeJson, TREE_JSON_SCHEMA } from "./treeJson";
 import { createTree, setDraftPerson } from "./treeEngine";
 import { defaultGuide } from "./guide";
 
@@ -60,6 +60,38 @@ if (round.ok) {
 
 const bareSnap = parseTreeJson(JSON.stringify({ persons: { a: { id: "a", name: "A", parents: [] } } }));
 assert(bareSnap.ok, "bare snapshot");
+
+const noMeta = coerceTreeStore({
+  draft: { persons: { me: { id: "me", name: "Пётр", parents: [], media: [] } } },
+  dirty: true,
+});
+assert(noMeta?.draft.persons.me.name === "Пётр", "people survive missing meta");
+assert(noMeta?.meta && noMeta.meta.zhuz === null, "missing meta gets zhuz: null");
+
+let threw = false;
+try {
+  const broken = { draft: { persons: {} } } as { meta?: { zhuz?: string } };
+  void broken.meta!.zhuz;
+} catch {
+  threw = true;
+}
+assert(threw, "reading .meta.zhuz on a draft without meta throws (Safari crash)");
+
+const wrapped = coerceTreeStore({
+  schema: TREE_JSON_SCHEMA,
+  app: "SEJIRE",
+  store: exported.store,
+  guide,
+});
+assert(wrapped?.meta.title === "Тест", "unwrap export");
+assert(wrapped?.draft.persons.me.name === "Иван", "unwrap people");
+
+const oldMeta = coerceTreeStore({
+  ...store,
+  meta: { id: store.meta.id, title: store.meta.title, head: null, next_version: 1, created_at: store.meta.created_at, author: "local" },
+});
+assert(oldMeta?.meta.zhuz === null, "pre-zhuz meta is filled");
+assert(oldMeta?.meta.title === "Тест", "pre-zhuz title kept");
 
 const polluted = parseTreeJson(
   JSON.stringify({

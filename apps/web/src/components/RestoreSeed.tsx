@@ -13,6 +13,7 @@ import {
   type VaultVersionMeta,
 } from "../lib/arweave/fetch";
 import { saveDraftTree, loadDraftTree } from "../lib/draftStorage";
+import { coerceTreeStore } from "../lib/treeJson";
 import type { TreeStore } from "../lib/types";
 import { defaultGuide, saveGuide } from "../lib/guide";
 import { pickHomeFocus } from "../lib/pedigree";
@@ -62,7 +63,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
     opts: { vaultId: string; headTxId: string | null; mnemonic: string; source: "network" | "local" | "file" }
   ) {
     const treeId = vault.active_tree_id;
-    const store = treeId ? vault.trees[treeId] : Object.values(vault.trees)[0];
+    const store = coerceTreeStore(treeId ? vault.trees[treeId] : Object.values(vault.trees)[0]);
     if (!store) throw new Error("В сейфе нет деревьев");
     const existing = loadDraftTree();
     if (existing && activePersons(existing.draft).length > 0) {
