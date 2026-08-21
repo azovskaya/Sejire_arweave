@@ -61,4 +61,20 @@ if (round.ok) {
 const bareSnap = parseTreeJson(JSON.stringify({ persons: { a: { id: "a", name: "A", parents: [] } } }));
 assert(bareSnap.ok, "bare snapshot");
 
+const polluted = parseTreeJson(
+  JSON.stringify({
+    persons: {
+      me: { id: "me", name: "Safe", parents: ["__proto__"], media: [{ tx: "x", kind: "nope" }] },
+      __proto__: { id: "__proto__", name: "pollute", parents: [] },
+    },
+  })
+);
+assert(polluted.ok, "pollution parse ok");
+if (polluted.ok) {
+  assert(!Object.hasOwn(polluted.store.draft.persons, "__proto__"), "skip proto person id");
+  assert(polluted.store.draft.persons.me.parents.length === 0, "drop proto parent id");
+  assert(polluted.store.draft.persons.me.media.length === 0, "drop bad media kind");
+  assert(!Object.hasOwn(Object.prototype, "name"), "Object.prototype not polluted");
+}
+
 console.log("treeJson.selftest: OK");

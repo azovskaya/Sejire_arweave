@@ -1,8 +1,8 @@
 import { jsPDF } from "jspdf";
 import type { Person, Snapshot, TreeMeta } from "../types";
-import { pdfT, type PdfLocale } from "../i18n/pdf";
+import { pdfT, SHEZHIRE_MAX_GENERATIONS, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
-import { ancestorSlotLayout, lifeDatesLine, slotCenterFraction } from "./lineage";
+import { ancestorSlotLayout, lifeDatesLine } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
   drawBrandMark,
@@ -32,25 +32,28 @@ function drawPersonCard(
   doc.setFillColor(...accent);
   doc.rect(x, y, Math.max(0.8, 1.5 * scale), h, "F");
 
-  const padX = Math.max(1.1, 2.8 * scale);
-  const padY = Math.max(2.2, 3.4 * scale);
+  const tight = h < 17 || w < 26;
+  const padX = Math.max(1.0, (tight ? 2.0 : 2.8) * scale);
+  const padY = Math.max(tight ? 1.15 : 2.2, (tight ? 1.7 : 3.4) * scale);
   const textW = Math.max(6, w - padX * 2 - 1);
-  const compact = w < 28;
+  const compact = tight || w < 28;
   const life = lifeDatesLine(p, compact);
   const place = (p.birthPlace || "").trim();
 
-  // Reserve bottom band for dates first — never drop birth/death if known
-  const metaSize = Math.max(3.8, Math.min(6.4, 6.4 * scale));
-  const lifeBand = life ? metaSize * 0.85 + 1.4 : 0;
-  const placeBand = place && h - padY * 2 - lifeBand > 8 ? metaSize * 0.75 + 0.8 : 0;
+  // On short 13-knee cards, keep dates but never let them eat the name.
+  const metaSize = tight
+    ? Math.max(3.3, Math.min(5.0, 5.0 * scale))
+    : Math.max(3.8, Math.min(6.4, 6.4 * scale));
+  const lifeBand = life ? metaSize * (tight ? 0.62 : 0.85) + (tight ? 0.55 : 1.4) : 0;
+  const placeBand =
+    !tight && place && h - padY * 2 - lifeBand > 8 ? metaSize * 0.75 + 0.8 : 0;
   const nameBottom = y + h - padY - lifeBand - placeBand;
   const nameTop = y + padY;
-  const nameBoxH = Math.max(4, nameBottom - nameTop);
+  const nameBoxH = Math.max(3.2, nameBottom - nameTop);
 
-  const maxName = Math.max(4.0, Math.min(8.0, 8.0 * scale));
-  const minName = Math.max(3.2, Math.min(5.0, 5.0 * scale));
-  // Prefer full FIO: allow more name lines when no dates, else keep room for dates
-  const nameMaxLines = life ? (compact ? 2 : 3) : compact ? 3 : 4;
+  const maxName = Math.max(tight ? 3.8 : 4.0, Math.min(tight ? 6.4 : 8.0, (tight ? 6.4 : 8.0) * scale));
+  const minName = Math.max(tight ? 3.0 : 3.2, Math.min(tight ? 4.4 : 5.0, (tight ? 4.4 : 5.0) * scale));
+  const nameMaxLines = tight ? (life ? 1 : 2) : life ? (compact ? 2 : 3) : compact ? 3 : 4;
 
   setPdfFont(doc, "bold");
   doc.setTextColor(34, 35, 38);
@@ -62,14 +65,16 @@ function drawPersonCard(
     maxName,
     minName
   );
-  const lineH = fontSize * 0.42;
-  const nameBlockH = nameLines.length * (lineH + Math.max(0.2, 0.4 * scale));
+  const lineH = fontSize * (tight ? 0.38 : 0.42);
+  const nameBlockH = nameLines.length * (lineH + Math.max(0.15, 0.35 * scale));
   let ty = nameTop + Math.max(0, (nameBoxH - nameBlockH) / 2) + lineH * 0.85;
+  // First line of the name must render even on 10–12mm cards.
+  if (ty > nameBottom) ty = Math.max(nameTop + lineH * 0.8, nameBottom - 0.15);
   doc.setFontSize(fontSize);
   for (const line of nameLines) {
-    if (ty > nameBottom + 0.5) break;
+    if (ty > nameBottom + 0.8 && line !== nameLines[0]) break;
     doc.text(line, x + padX + 0.5, ty);
-    ty += lineH + Math.max(0.2, 0.4 * scale);
+    ty += lineH + Math.max(0.15, 0.35 * scale);
   }
 
   setPdfFont(doc, "normal");
@@ -88,20 +93,23 @@ function drawPersonCard(
 }
 
 /**
- * Wall-ready classic family poster: roots-down, binary pedigree slots
- * so father/mother sit above their child and connector lines do not cross.
+ * Wall-ready classic family poster: oldest at the top.
+ * Uses occupied people per generation (not a full 2^(n-1) pedigree grid) so a
+ * 13-knee male line stays readable instead of collapsing to 10mm cards.
  */
-export async function downloadClassicTreePdf(opts: {
+export async function renderClassicTreePdf(opts: {
   snapshot: Snapshot;
   focusId: string;
   meta: TreeMeta;
   locale?: PdfLocale;
-}) {
+}): Promise<jsPDF> {
   const t = pdfT(opts.locale ?? "ru");
-  const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, 5);
+  const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
   if (!slots.length) throw new Error(t.noPeople);
 
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  const orientation = depth > 8 ? "portrait" : "landscape";
+  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
   await ensurePdfFont(doc);
 
   const pageW = doc.internal.pageSize.getWidth();
@@ -116,7 +124,7 @@ export async function downloadClassicTreePdf(opts: {
   const title = t.classicTitle;
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(14);
+  doc.setFontSize(depth > 10 ? 12 : 14);
   doc.text(title, pageW / 2, 16.2, { align: "center" });
   drawTitleRule(doc, pageW, 20.2, [175, 140, 90]);
 
@@ -126,31 +134,40 @@ export async function downloadClassicTreePdf(opts: {
   const usableW = pageW - marginX * 2;
   const boxH = bottomY - topY;
 
-  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
-  const leafSlots = 2 ** Math.max(0, depth - 1);
-  const cellW = usableW / leafSlots;
-  let cardW = Math.min(42, Math.max(10, cellW - 0.9));
-  // Keep enough height for FIO + birth/death line
-  let cardH = Math.min(cardW * 0.68, boxH / depth - 1.0);
-  cardH = Math.max(12, Math.min(24, cardH));
+  const byGen = new Map<number, typeof slots>();
+  for (const s of slots) {
+    const row = byGen.get(s.generation) ?? [];
+    row.push(s);
+    byGen.set(s.generation, row);
+  }
+  for (const row of byGen.values()) row.sort((a, b) => a.slot - b.slot);
+  const maxInRow = Math.max(1, ...[...byGen.values()].map((row) => row.length));
+
+  let cardW = Math.min(46, Math.max(16, usableW / maxInRow - 2.4));
+  let cardH = Math.min(cardW * 0.62, boxH / depth - 1.0);
+  const minH = depth > 10 ? 11.8 : 12;
+  const maxH = depth > 10 ? 17.2 : 24;
+  cardH = Math.max(minH, Math.min(maxH, cardH));
   const rowPitch = depth > 1 ? (boxH - cardH) / (depth - 1) : 0;
 
   type Pos = { id: string; x: number; y: number; cx: number; generation: number; slot: number };
   const positions = new Map<string, Pos>();
 
-  for (const s of slots) {
-    const visualRow = depth - 1 - s.generation; // oldest on top
+  for (const [g, row] of byGen) {
+    const visualRow = depth - 1 - g; // oldest on top
     const y = topY + visualRow * rowPitch;
-    const frac = slotCenterFraction(s.generation, s.slot, depth);
-    const cx = marginX + frac * usableW;
-    const x = Math.min(pageW - marginX - cardW, Math.max(marginX, cx - cardW / 2));
-    positions.set(s.person.id, {
-      id: s.person.id,
-      x,
-      y,
-      cx: x + cardW / 2,
-      generation: s.generation,
-      slot: s.slot,
+    const n = row.length;
+    row.forEach((s, i) => {
+      const cx = marginX + ((i + 0.5) / n) * usableW;
+      const x = Math.min(pageW - marginX - cardW, Math.max(marginX, cx - cardW / 2));
+      positions.set(s.person.id, {
+        id: s.person.id,
+        x,
+        y,
+        cx: x + cardW / 2,
+        generation: s.generation,
+        slot: s.slot,
+      });
     });
   }
 
@@ -197,6 +214,16 @@ export async function downloadClassicTreePdf(opts: {
 
   setPdfFont(doc, "bold");
   drawBrandMark(doc, pageW, pageH, t.exportedWith, [155, 135, 105]);
+  return doc;
+}
 
-  doc.save(`sejire-tree-${safeFilename(opts.meta.title || title, "tree")}.pdf`);
+export async function downloadClassicTreePdf(opts: {
+  snapshot: Snapshot;
+  focusId: string;
+  meta: TreeMeta;
+  locale?: PdfLocale;
+}) {
+  const t = pdfT(opts.locale ?? "ru");
+  const doc = await renderClassicTreePdf(opts);
+  doc.save(`sejire-tree-${safeFilename(opts.meta.title || t.classicTitle, "tree")}.pdf`);
 }

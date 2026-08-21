@@ -33,6 +33,12 @@ async function loadFontBase64() {
   cachedBold = bold;
 }
 
+/** Prime caches from Node (QA export) so the browser bundle never imports `fs`. */
+export function primePdfFonts(regularBase64: string, boldBase64: string) {
+  cachedRegular = regularBase64;
+  cachedBold = boldBase64;
+}
+
 /** Embed Cyrillic/Kazakh-capable Noto Sans into this jsPDF document. */
 export async function ensurePdfFont(doc: jsPDF): Promise<void> {
   await loadFontBase64();

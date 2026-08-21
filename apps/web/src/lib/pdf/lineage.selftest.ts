@@ -46,4 +46,22 @@ assert(
   "child centered between parents"
 );
 
-console.log("lineage.selftest: OK", { male: male.length, gens: gens.length, slots: slots.length });
+const deep: Snapshot = { persons: {} };
+let prevId: string | null = null;
+for (let i = 12; i >= 0; i -= 1) {
+  const id = `g${String(i).padStart(2, "0")}`;
+  deep.persons[id] = {
+    id,
+    name: `Gen ${i}`,
+    sex: "M",
+    parents: prevId ? [prevId] : [],
+    media: [],
+  };
+  prevId = id;
+}
+const deepMale = maleLineUp(deep, "g00");
+assert(deepMale.length === 13, `13-knee male line ${deepMale.length}`);
+assert(ancestorSlotLayout(deep, "g00", 5).length === 5, "classic PDF used to silently drop gens 6–13");
+assert(ancestorSlotLayout(deep, "g00", 13).length === 13, "13-knee layout keeps the full line");
+
+console.log("lineage.selftest: OK", { male: male.length, gens: gens.length, slots: slots.length, deep: deepMale.length });

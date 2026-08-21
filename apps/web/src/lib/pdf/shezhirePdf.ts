@@ -518,14 +518,14 @@ function renderCascade(ctx: RenderCtx) {
  * Wall / print «Жеті ата» PDF with selectable layout template.
  * Supports 1–13 generations on the male line.
  */
-export async function downloadShezhirePdf(opts: {
+export async function renderShezhirePdf(opts: {
   snapshot: Snapshot;
   startId: string;
   meta: TreeMeta;
   locale?: PdfLocale;
   maxGenerations?: number;
   template?: ShezhireTemplateId;
-}) {
+}): Promise<jsPDF> {
   const locale = opts.locale ?? "ru";
   const t = pdfT(locale);
   const template = opts.template ?? "manuscript";
@@ -550,7 +550,18 @@ export async function downloadShezhirePdf(opts: {
   if (template === "registry") renderRegistry(ctx);
   else if (template === "cascade") renderCascade(ctx);
   else renderManuscript(ctx);
+  return doc;
+}
 
+export async function downloadShezhirePdf(opts: {
+  snapshot: Snapshot;
+  startId: string;
+  meta: TreeMeta;
+  locale?: PdfLocale;
+  maxGenerations?: number;
+  template?: ShezhireTemplateId;
+}) {
+  const doc = await renderShezhirePdf(opts);
   const safe = safeFilename(opts.meta.title || "jeti-ata", "jeti-ata");
-  doc.save(`sejire-jeti-ata-${template}-${safe}.pdf`);
+  doc.save(`sejire-jeti-ata-${opts.template ?? "manuscript"}-${safe}.pdf`);
 }

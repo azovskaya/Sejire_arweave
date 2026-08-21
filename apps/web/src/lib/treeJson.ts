@@ -44,15 +44,35 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return Boolean(v) && typeof v === "object" && !Array.isArray(v);
 }
 
+/** Reject keys that would pollute Object.prototype if assigned onto a plain object. */
+function isSafeRecordKey(id: string): boolean {
+  return id !== "__proto__" && id !== "constructor" && id !== "prototype";
+}
+
 function normalizePerson(raw: unknown, id: string): Person | null {
   if (!isRecord(raw)) return null;
+  const pid = typeof raw.id === "string" ? raw.id : id;
+  if (!isSafeRecordKey(pid) || !isSafeRecordKey(id)) return null;
   const name = typeof raw.name === "string" ? raw.name : "";
   const parents = Array.isArray(raw.parents)
-    ? raw.parents.filter((p): p is string => typeof p === "string")
+    ? raw.parents.filter((p): p is string => typeof p === "string" && isSafeRecordKey(p))
     : [];
-  const media = Array.isArray(raw.media) ? (raw.media as Person["media"]) : [];
+  const media: Person["media"] = [];
+  if (Array.isArray(raw.media)) {
+    for (const item of raw.media) {
+      if (!isRecord(item) || typeof item.tx !== "string") continue;
+      if (item.kind !== "image" && item.kind !== "document" && item.kind !== "audio" && item.kind !== "other") {
+        continue;
+      }
+      media.push({
+        tx: item.tx,
+        kind: item.kind,
+        caption: typeof item.caption === "string" ? item.caption : undefined,
+      });
+    }
+  }
   return {
-    id: typeof raw.id === "string" ? raw.id : id,
+    id: pid,
     name,
     sex: raw.sex === "M" || raw.sex === "F" || raw.sex === "U" ? raw.sex : "U",
     born: (raw.born as string | null | undefined) ?? null,
@@ -75,8 +95,9 @@ function normalizeSnapshot(raw: unknown): Snapshot | null {
   if (!isRecord(raw) || !isRecord(raw.persons)) return null;
   const persons: Record<string, Person> = {};
   for (const [id, value] of Object.entries(raw.persons)) {
+    if (!isSafeRecordKey(id)) continue;
     const person = normalizePerson(value, id);
-    if (person) persons[id] = person;
+    if (person) persons[person.id] = person;
   }
   return { persons };
 }
