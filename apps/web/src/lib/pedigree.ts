@@ -46,20 +46,6 @@ export const PEDIGREE_MAX_GENERATIONS = 13;
 /** @deprecated use PEDIGREE_MAX_GENERATIONS — kept so older tests/imports keep working */
 export const SCREEN_PEDIGREE_GENERATIONS = PEDIGREE_MAX_GENERATIONS;
 
-export type PedigreeCardMetrics = { w: number; h: number; gapX: number; gapY: number };
-
-function cardMetrics(maxRows: number): PedigreeCardMetrics {
-  const naturalPitch = CARD_H + GAP_Y;
-  const cap = 1600;
-  const scale = maxRows * naturalPitch > cap ? cap / (maxRows * naturalPitch) : 1;
-  return {
-    w: Math.max(72, Math.round(CARD_W * scale)),
-    h: Math.max(28, Math.round(CARD_H * scale)),
-    gapX: Math.max(12, Math.round(GAP_X * scale)),
-    gapY: Math.max(3, Math.round(GAP_Y * scale)),
-  };
-}
-
 function yearOf(iso?: string | null) {
   return yearFromDate(iso);
 }
@@ -124,7 +110,7 @@ export function splitParents(snapshot: Snapshot, personId: string) {
 /**
  * Classic landscape pedigree: focus on the left, ancestors to the right.
  * The whole ancestor line from the focus (up to 13 knees) stays on one canvas.
- * Cards shrink when a generation is wide so the sheet remains pannable.
+ * Cards stay full size so names remain readable; pan/zoom to see the rest.
  */
 export function buildPedigree(
   snapshot: Snapshot,
@@ -136,12 +122,10 @@ export function buildPedigree(
   width: number;
   height: number;
   focusId: string | null;
-  card: PedigreeCardMetrics;
 } {
   const people = activePersons(snapshot);
-  const emptyCard = { ...PEDIGREE_CARD };
   if (!people.length || !focusId || !snapshot.persons[focusId] || snapshot.persons[focusId].tombstone) {
-    return { items: [], edges: [], width: 800, height: 480, focusId: null, card: emptyCard };
+    return { items: [], edges: [], width: 800, height: 480, focusId: null };
   }
 
   type Cell = {
@@ -182,19 +166,12 @@ export function buildPedigree(
     if (!hasPeople) break;
   }
 
+  const card = PEDIGREE_CARD;
   const maxRows = Math.max(1, ...gens.map((col) => col.length));
-  const maxSlot = Math.max(0, ...gens.flatMap((col) => col.map((c) => c.slot)));
-  const card = cardMetrics(maxRows);
-  const bushy = maxRows > 4;
-  const leafSlots = maxSlot + 1;
-  const contentH = (bushy ? Math.max(leafSlots, maxRows) : Math.max(maxRows, 2)) * (card.h + card.gapY);
+  const contentH = Math.max(maxRows, 2) * (card.h + card.gapY);
   const colX = (g: number) => 40 + g * (card.w + card.gapX);
 
-  const yFor = (g: number, cell: Cell, index: number) => {
-    if (bushy) {
-      const denom = 2 ** g;
-      return 40 + ((cell.slot + 0.5) / denom) * contentH - card.h / 2;
-    }
+  const yFor = (g: number, index: number) => {
     const rows = gens[g].length;
     const block = contentH / rows;
     return 40 + index * block + (block - card.h) / 2;
@@ -204,7 +181,7 @@ export function buildPedigree(
   gens.forEach((cells, g) => {
     cells.forEach((cell, index) => {
       const x = colX(g);
-      const y = yFor(g, cell, index);
+      const y = yFor(g, index);
       if (cell.personId) {
         const person = snapshot.persons[cell.personId];
         if (!person || person.tombstone) return;
@@ -271,7 +248,7 @@ export function buildPedigree(
 
   const width = colX(gens.length - 1) + card.w + 80;
   const height = contentH + 80;
-  return { items, edges, width, height, focusId, card };
+  return { items, edges, width, height, focusId };
 }
 
 export function pickDefaultFocus(snapshot: Snapshot, preferredId?: string | null) {

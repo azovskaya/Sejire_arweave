@@ -5,12 +5,35 @@ import {
   buildPedigree,
   generationFromFocus,
   splitParents,
+  PEDIGREE_CARD,
   PEDIGREE_MAX_GENERATIONS,
 } from "./pedigree";
 import type { Person, Snapshot } from "./types";
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
+}
+
+function assertNoOverlap(
+  ped: { items: { kind: string; id?: string; key?: string; x: number; y: number }[] },
+  label: string
+) {
+  const w = PEDIGREE_CARD.w;
+  const h = PEDIGREE_CARD.h;
+  const boxes = ped.items.map((it) => ({
+    id: it.kind === "person" ? it.id : it.key,
+    x: it.x,
+    y: it.y,
+  }));
+  for (let i = 0; i < boxes.length; i += 1) {
+    for (let j = i + 1; j < boxes.length; j += 1) {
+      const a = boxes[i];
+      const b = boxes[j];
+      const overlapX = a.x < b.x + w - 1 && a.x + w > b.x + 1;
+      const overlapY = a.y < b.y + h - 1 && a.y + h > b.y + 1;
+      assert(!overlapX || !overlapY, `${label}: ${a.id} overlaps ${b.id}`);
+    }
+  }
 }
 
 const snapshot: Snapshot = {
@@ -40,6 +63,8 @@ const soloMe = soloPed.items.find((i) => i.kind === "person" && i.id === "me");
 assert(soloMe && soloMe.kind === "person" && soloMe.y < 250, "solo focus not buried in empty 7-gen canvas");
 assert(soloPed.height < 600, "solo tree compact height");
 assert(soloPed.items.filter((i) => i.kind === "add").length === 2, "only next-gen + papa/mama");
+assertNoOverlap(soloPed, "solo");
+assertNoOverlap(ped, "nuclear");
 
 function completeAncestry(gens: number): Snapshot {
   const count = 2 ** gens - 1;
@@ -74,6 +99,7 @@ assert(
   sixPed.items.filter((i) => i.kind === "person").length === 63,
   "all 63 people of a 6-knee tree stay on one sheet"
 );
+assertNoOverlap(sixPed, "6-knee");
 
 const withSeventh: Snapshot = {
   persons: {
@@ -95,6 +121,7 @@ assert(
   fromSelf.items.some((i) => i.kind === "person" && i.id === "a64"),
   "7th knee is visible from self — no window shift"
 );
+assertNoOverlap(fromSelf, "7th from self");
 
 function maleLine(knees: number): Snapshot {
   const persons: Record<string, Person> = {};
@@ -122,6 +149,7 @@ assert(
   "13th knee visible from self"
 );
 assert(linePed.height < 600, `13-knee male line stays compact (${linePed.height}px)`);
+assertNoOverlap(linePed, "male line");
 
 console.log("pedigree.selftest: OK", {
   items: ped.items.length,

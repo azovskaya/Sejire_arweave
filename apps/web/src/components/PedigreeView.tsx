@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import type { Snapshot } from "../lib/types";
 import {
+  PEDIGREE_CARD,
   PEDIGREE_MAX_GENERATIONS,
   buildPedigree,
   cardFactLines,
   type AddMeSlot,
-  type PedigreeCardMetrics,
 } from "../lib/pedigree";
 
 type Props = {
@@ -19,34 +19,6 @@ type Props = {
   onAddRelative: (slot: AddMeSlot) => void;
   onEmptyStart?: () => void;
 };
-
-const MIN_SCALE = 0.06;
-const MAX_SCALE = 2.2;
-
-function clampScale(s: number) {
-  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
-}
-
-function fitTransform(vw: number, vh: number, worldW: number, worldH: number) {
-  const padX = 28;
-  const padY = 64;
-  const sx = (vw - padX * 2) / Math.max(1, worldW);
-  const sy = (vh - padY - 20) / Math.max(1, worldH);
-  const scale = clampScale(Math.min(sx, sy, 1));
-  return {
-    scale,
-    pan: {
-      x: Math.round((vw - worldW * scale) / 2),
-      y: Math.round(Math.max(16, (vh - worldH * scale) / 2)),
-    },
-  };
-}
-
-function cardSizeClass(card: PedigreeCardMetrics) {
-  if (card.h < 46) return "is-tiny";
-  if (card.h < 80) return "is-compact";
-  return "";
-}
 
 function cardTooltip(person: {
   name: string;
@@ -95,60 +67,51 @@ export function PedigreeView({
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const pinch = useRef<{ dist: number; scale: number } | null>(null);
   const scaleRef = useRef(scale);
-  const userZoomed = useRef(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   scaleRef.current = scale;
 
-  const { items, edges, width, height, card } = buildPedigree(snapshot, focusId, PEDIGREE_MAX_GENERATIONS);
+  const { items, edges, width, height } = buildPedigree(snapshot, focusId, PEDIGREE_MAX_GENERATIONS);
   const empty = items.length === 0;
   const focusPerson = focusId ? snapshot.persons[focusId] : null;
   const showHome = Boolean(homeFocusId && focusId && homeFocusId !== focusId);
-  const sizeClass = cardSizeClass(card);
-  const tiny = card.h < 46;
+  const focusItem = items.find((i) => i.kind === "person" && i.id === focusId);
+  const focusCardY = focusItem?.y ?? 0;
 
-  const applyFit = useCallback(() => {
-    const el = viewportRef.current;
-    const vw = el?.clientWidth || 800;
-    const vh = el?.clientHeight || 480;
-    const next = fitTransform(vw, vh, width, height);
-    setScale(next.scale);
-    setPan(next.pan);
-    return next;
-  }, [width, height]);
+  function panToFocus(viewportH: number, cardY: number) {
+    return {
+      x: 28,
+      y: Math.round(viewportH / 2 - (cardY + PEDIGREE_CARD.h / 2)),
+    };
+  }
 
   function resetView() {
-    userZoomed.current = false;
-    applyFit();
+    const vh = viewportRef.current?.clientHeight || 480;
+    setScale(1);
+    setPan(panToFocus(vh, focusCardY));
   }
-
-  function currentFit() {
-    const el = viewportRef.current;
-    return fitTransform(el?.clientWidth || 800, el?.clientHeight || 480, width, height);
-  }
-
-  const fitted = currentFit();
-  const viewMoved =
-    Math.abs(scale - fitted.scale) > 0.02 ||
-    Math.abs(pan.x - fitted.pan.x) > 10 ||
-    Math.abs(pan.y - fitted.pan.y) > 10;
 
   useLayoutEffect(() => {
     if (empty) return;
-    userZoomed.current = false;
-    applyFit();
-  }, [focusId, empty, applyFit]);
+    const el = viewportRef.current;
+    if (!el) return;
+    setScale(1);
+    setPan(panToFocus(el.clientHeight || 480, focusCardY));
+  }, [focusId, empty, width, height, focusCardY]);
 
   useEffect(() => {
     if (empty) return;
     const el = viewportRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => {
-      if (userZoomed.current) return;
-      applyFit();
+      const vh = el.clientHeight || 480;
+      setPan((prev) => {
+        if (Math.abs(prev.x - 28) > 8) return prev;
+        return panToFocus(vh, focusCardY);
+      });
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [empty, applyFit]);
+  }, [empty, focusCardY]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -170,9 +133,9 @@ export function PedigreeView({
     function onTouchMove(e: TouchEvent) {
       if (e.touches.length === 2 && pinch.current) {
         e.preventDefault();
-        userZoomed.current = true;
         const d = distance(e.touches[0], e.touches[1]);
-        setScale(clampScale(pinch.current.scale * (d / pinch.current.dist)));
+        const next = Math.min(1.45, Math.max(0.55, pinch.current.scale * (d / pinch.current.dist)));
+        setScale(next);
       }
     }
     function onTouchEnd() {
@@ -192,8 +155,7 @@ export function PedigreeView({
 
   function onWheel(e: ReactWheelEvent) {
     e.preventDefault();
-    userZoomed.current = true;
-    setScale((s) => clampScale(s - e.deltaY * 0.001));
+    setScale((s) => Math.min(1.45, Math.max(0.55, s - e.deltaY * 0.001)));
   }
 
   function onPointerDown(e: ReactPointerEvent) {
@@ -208,7 +170,6 @@ export function PedigreeView({
 
   function onPointerMove(e: ReactPointerEvent) {
     if (!drag.current) return;
-    userZoomed.current = true;
     setPan({
       x: drag.current.px + (e.clientX - drag.current.x),
       y: drag.current.py + (e.clientY - drag.current.y),
@@ -282,7 +243,10 @@ export function PedigreeView({
             </button>
           ) : null}
         </div>
-        {viewMoved ? (
+        {(scale !== 1 ||
+          Math.abs(pan.x - 28) > 2 ||
+          Math.abs(pan.y - panToFocus(viewportRef.current?.clientHeight || 480, focusCardY).y) >
+            2) && (
           <div className="pedigree-toolbar" aria-label="Вид">
             <button
               type="button"
@@ -292,15 +256,11 @@ export function PedigreeView({
                 resetView();
               }}
             >
-              Вся схема
+              Сброс вида
             </button>
           </div>
-        ) : null}
+        )}
       </div>
-
-      {fitted.scale < 0.92 ? (
-        <p className="pedigree-hint">Вся линия предков на одной схеме. Увеличьте жестом или колёсиком.</p>
-      ) : null}
 
       <div
         className="pedigree-world"
@@ -319,7 +279,7 @@ export function PedigreeView({
                 d={`M ${e.x1} ${e.y1} C ${mx} ${e.y1}, ${mx} ${e.y2}, ${e.x2} ${e.y2}`}
                 fill="none"
                 stroke="rgba(34, 35, 38, 0.22)"
-                strokeWidth={Math.max(0.8, card.h / 70)}
+                strokeWidth="1.75"
               />
             );
           })}
@@ -332,17 +292,15 @@ export function PedigreeView({
                 key={item.key}
                 type="button"
                 data-card
-                className={`person-card add-me role-${item.role} ${sizeClass}`}
-                style={{ left: item.x, top: item.y, width: card.w, height: card.h }}
+                className={`person-card add-me role-${item.role}`}
+                style={{ left: item.x, top: item.y, width: PEDIGREE_CARD.w, height: PEDIGREE_CARD.h }}
                 onClick={() => onAddRelative(item)}
               >
                 <span className="card-inner">
                   <span className="add-plus">+</span>
-                  {tiny ? null : (
-                    <span className="card-title">
-                      {item.role === "father" ? "Добавить папу" : "Добавить маму"}
-                    </span>
-                  )}
+                  <span className="card-title">
+                    {item.role === "father" ? "Добавить папу" : "Добавить маму"}
+                  </span>
                 </span>
               </button>
             );
@@ -350,7 +308,7 @@ export function PedigreeView({
 
           const selected = selectedId === item.id;
           const sex = item.person.sex ?? "U";
-          const facts = tiny ? [] : cardFactLines(item.person);
+          const facts = cardFactLines(item.person);
           return (
             <button
               key={item.id}
@@ -359,15 +317,15 @@ export function PedigreeView({
               title={cardTooltip(item.person)}
               className={`person-card sex-${sex} ${selected ? "is-selected" : ""} ${
                 item.id === focusId ? "is-focus" : ""
-              } ${sizeClass}`}
-              style={{ left: item.x, top: item.y, width: card.w, height: card.h }}
+              }`}
+              style={{ left: item.x, top: item.y, width: PEDIGREE_CARD.w, height: PEDIGREE_CARD.h }}
               onClick={() => onCardActivate(item.id)}
               onDoubleClick={() => onCardFocusAncestors(item.id)}
             >
               <span className="card-inner">
                 <span className="card-title">{item.person.name}</span>
                 {facts.length === 0 ? (
-                  tiny ? null : <span className="card-meta muted">нет сведений</span>
+                  <span className="card-meta muted">нет сведений</span>
                 ) : (
                   facts.map((f) => (
                     <span className="card-row" key={`${item.id}-${f.label}-${f.value}`}>
