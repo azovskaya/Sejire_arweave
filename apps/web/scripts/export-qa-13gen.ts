@@ -14,6 +14,7 @@ import { renderShezhirePdf } from "../src/lib/pdf/shezhirePdf";
 import { maleLineUp, ancestorSlotLayout } from "../src/lib/pdf/lineage";
 import {
   QA_13_FOCUS_ID,
+  QA_13_PERSON_COUNT,
   qaThirteenGenerationMeta,
   qaThirteenGenerationSnapshot,
 } from "../src/lib/pdf/thirteenLineage.fixture";
@@ -40,7 +41,10 @@ const slots13 = ancestorSlotLayout(snapshot, QA_13_FOCUS_ID, 13);
 const slots5 = ancestorSlotLayout(snapshot, QA_13_FOCUS_ID, 5);
 
 if (male.length !== 13) throw new Error(`expected 13 male-line people, got ${male.length}`);
-if (slots5.length < 5) throw new Error("5-gen classic layout too short");
+if (Object.keys(snapshot.persons).length !== QA_13_PERSON_COUNT) {
+  throw new Error(`expected ${QA_13_PERSON_COUNT} people`);
+}
+if (slots13.length !== QA_13_PERSON_COUNT) throw new Error(`layout missing people: ${slots13.length}`);
 
 mkdirSync(outDir, { recursive: true });
 
@@ -51,7 +55,7 @@ const store = {
   dirty: true,
 };
 const guide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-writeFileSync(resolve(outDir, "bek-line-13.json"), JSON.stringify(buildTreeExport(store, guide), null, 2));
+writeFileSync(resolve(outDir, "bek-full-13.json"), JSON.stringify(buildTreeExport(store, guide), null, 2));
 
 const treeDoc = await renderClassicTreePdf({ snapshot, focusId: QA_13_FOCUS_ID, meta, locale: "ru" });
 const shezhireMs = await renderShezhirePdf({
@@ -69,7 +73,7 @@ const shezhireReg = await renderShezhirePdf({
   template: "registry",
 });
 
-const treeBytes = writePdf("sejire-tree-bek-13.pdf", treeDoc);
+const treeBytes = writePdf("sejire-tree-bek-13-full.pdf", treeDoc);
 const msBytes = writePdf("sejire-shezhire-manuscript-bek-13.pdf", shezhireMs);
 const regBytes = writePdf("sejire-shezhire-registry-bek-13.pdf", shezhireReg);
 
@@ -77,10 +81,11 @@ console.log(
   JSON.stringify(
     {
       outDir,
-      maleLine: male.map((p) => p.name),
       people: Object.keys(snapshot.persons).length,
+      maleLine: male.length,
       slotsIfClassicCappedAt5: slots5.length,
       slotsAt13: slots13.length,
+      treePages: treeDoc.getNumberOfPages(),
       files: {
         tree: treeBytes,
         manuscript: msBytes,

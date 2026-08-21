@@ -25,6 +25,9 @@ type PdfMessages = {
   noPeople: string;
   noMaleLine: string;
   exportedWith: string;
+  ancestorsOf: (name: string) => string;
+  pageOf: (page: number, total: number) => string;
+  kneeRange: (from: number, to: number) => string;
 };
 
 /**
@@ -59,6 +62,9 @@ const ru: PdfMessages = {
   noPeople: "В древе нет людей для экспорта",
   noMaleLine: "Нет мужской линии для шежіре (нужен отец или выбран мужчина)",
   exportedWith: "SEJIRE",
+  ancestorsOf: (name) => `Предки: ${name}`,
+  pageOf: (page, total) => `лист ${page} / ${total}`,
+  kneeRange: (from, to) => (from === to ? `колено ${from}` : `колена ${from}–${to}`),
 };
 
 const catalogs: Record<PdfLocale, PdfMessages> = { ru };

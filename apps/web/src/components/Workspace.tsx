@@ -11,6 +11,7 @@ import { VaultVersionsModal, vaultPersonCount } from "./VaultVersionsModal";
 import {
   activePersons,
   commitDraft,
+  createTree,
   removeDraftPerson,
   restoreDraftPerson,
   setDraftPerson,
@@ -19,6 +20,12 @@ import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
 import { downloadShezhirePdf, type ShezhireTemplateId } from "../lib/pdf/shezhirePdf";
 import { SHEZHIRE_MAX_GENERATIONS } from "../lib/i18n/pdf";
 import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
+import {
+  QA_13_FOCUS_ID,
+  QA_13_PERSON_COUNT,
+  qaThirteenGenerationMeta,
+  qaThirteenGenerationSnapshot,
+} from "../lib/pdf/thirteenLineage.fixture";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
 import { ShezhireTemplateModal } from "./ShezhireTemplateModal";
@@ -389,6 +396,22 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash(`Загружено: ${Object.keys(result.store.draft.persons).length} чел.`);
   }
 
+  function loadDemoThirteen() {
+    if (!confirmReplaceDraft("пример полного древа на 13 колен")) return;
+    const snapshot = qaThirteenGenerationSnapshot();
+    const meta = qaThirteenGenerationMeta();
+    const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
+    const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
+    saveDraftTree(next);
+    saveGuide(nextGuide);
+    onStoreChange(next);
+    onGuideChange(nextGuide);
+    setFocusId(QA_13_FOCUS_ID);
+    setSelectedId(QA_13_FOCUS_ID);
+    setProfileOpen(false);
+    flash(`Пример: ${QA_13_PERSON_COUNT} чел., у каждого отец и мать до 13-го колена`);
+  }
+
   const modalTitle =
     pending?.type === "self"
       ? "Добавить себя"
@@ -484,6 +507,17 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 title="Загрузить древо из JSON-файла"
               >
                 Загрузить JSON
+              </button>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  closeMoreMenu();
+                  loadDemoThirteen();
+                }}
+                title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
+              >
+                Пример: 13 колен
               </button>
               {vaultSession?.vaultId ? (
                 <button

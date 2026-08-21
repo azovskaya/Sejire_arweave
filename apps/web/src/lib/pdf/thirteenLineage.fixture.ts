@@ -1,78 +1,144 @@
 import type { Person, Snapshot, TreeMeta } from "../types";
+import { SHEZHIRE_MAX_GENERATIONS } from "../i18n/pdf";
 
 /**
- * QA fixture: 13 paternal knees (өзі → 13-ші ата) plus wives on the first four.
- * Names are fictional — for PDF / import tests only.
+ * Complete ancestry fixture: every person has father + mother through 13 knees.
+ * Ahnentafel ids: a1 = self, a2 = father, a3 = mother, a4 = father's father, …
+ * 2^13 − 1 = 8191 people. Oldest knee has no parents.
  */
-const MALE_LINE: { id: string; name: string; born: string; died: string | null; place: string }[] = [
-  { id: "g00", name: "Ерлан Бекжанулы Беков", born: "1998", died: null, place: "Астана" },
-  { id: "g01", name: "Бекжан Ерланулы Беков", born: "1972", died: null, place: "Астана" },
-  { id: "g02", name: "Ерлан Бекжанулы Беков", born: "1948", died: "2020", place: "Целиноград" },
-  { id: "g03", name: "Бекжан Смагулулы Беков", born: "1924", died: "1999", place: "Акмолинск" },
-  { id: "g04", name: "Смагул Алтынбекулы", born: "1901", died: "1978", place: "Акмолинский уезд" },
-  { id: "g05", name: "Алтынбек Нурланулы", born: "1876", died: "1952", place: "Сарыарқа" },
-  { id: "g06", name: "Нурлан Касымулы", born: "1852", died: "1931", place: "Сарыарқа" },
-  { id: "g07", name: "Касым Толегенулы", born: "1828", died: "1905", place: "Сарыарқа" },
-  { id: "g08", name: "Толеген Баймуратулы", born: "1804", died: "1882", place: "Сарыарқа" },
-  { id: "g09", name: "Баймурат Кожакулулы", born: "1779", died: "1856", place: "Сарыарқа" },
-  { id: "g10", name: "Кожакул Сарыбаюлы", born: "1755", died: "1833", place: "Сарыарқа" },
-  { id: "g11", name: "Сарыбай Есенкулулы", born: "1731", died: "1808", place: "Сарыарқа" },
-  { id: "g12", name: "Есенкул", born: "1705", died: "1780", place: "Сарыарқа" },
-];
+export const QA_13_GENERATIONS = SHEZHIRE_MAX_GENERATIONS;
+export const QA_13_FOCUS_ID = "a1";
+export const QA_13_PERSON_COUNT = 2 ** QA_13_GENERATIONS - 1;
 
-const WIVES: { childId: string; id: string; name: string; born: string; died: string | null }[] = [
-  { childId: "g00", id: "w00", name: "Айгуль Сериковна Бекова", born: "1974", died: null },
-  { childId: "g01", id: "w01", name: "Гульнара Касымовна Бекова", born: "1950", died: null },
-  { childId: "g02", id: "w02", name: "Баян Смагуловна", born: "1926", died: "2004" },
-  { childId: "g03", id: "w03", name: "Зейнеп Алтынбековна", born: "1904", died: "1981" },
-];
+const MEN = [
+  "Абай",
+  "Алтай",
+  "Алтынбек",
+  "Асан",
+  "Баймурат",
+  "Бек",
+  "Бекжан",
+  "Болат",
+  "Ерден",
+  "Ерлан",
+  "Касым",
+  "Кожакул",
+  "Мухтар",
+  "Нурлан",
+  "Сарыбай",
+  "Серик",
+  "Смагул",
+  "Темир",
+  "Толеген",
+  "Есенкул",
+] as const;
 
-function person(partial: Omit<Person, "media" | "parents" | "notes" | "tombstone"> & Partial<Person>): Person {
+const WOMEN = [
+  "Айгуль",
+  "Айжан",
+  "Баян",
+  "Гульнара",
+  "Динара",
+  "Жанар",
+  "Зейнеп",
+  "Камшат",
+  "Ляззат",
+  "Майра",
+  "Назерке",
+  "Сауле",
+  "Алия",
+  "Ботагоз",
+  "Карлыгаш",
+  "Меруерт",
+  "Роза",
+  "Салтанат",
+  "Фарида",
+  "Шолпан",
+] as const;
+
+/** Close family keeps stable display names for screenshots / PDF page 1. */
+const NAMED_GIVEN: Record<number, string> = {
+  1: "Ерлан",
+  2: "Бекжан",
+  3: "Айгуль",
+  4: "Ерлан",
+  5: "Гульнара",
+  6: "Серик",
+  7: "Сауле",
+};
+
+function ahnentafelSex(n: number): "M" | "F" {
+  if (n === 1) return "M";
+  return n % 2 === 0 ? "M" : "F";
+}
+
+function generationOf(n: number): number {
+  return Math.floor(Math.log2(n));
+}
+
+function givenName(n: number, sex: "M" | "F"): string {
+  const named = NAMED_GIVEN[n];
+  if (named) return named;
+  const pool = sex === "M" ? MEN : WOMEN;
+  return pool[(n * 17) % pool.length];
+}
+
+function personOf(
+  n: number,
+  given: string,
+  fatherGiven: string | null,
+  sex: "M" | "F"
+): Person {
+  const gen = generationOf(n);
+  const bornYear = 1998 - gen * 27 + (sex === "F" ? 2 : 0);
+  const living = gen <= 1;
+  const diedYear = living ? null : bornYear + 68;
+  const patronymic = fatherGiven
+    ? sex === "M"
+      ? `${fatherGiven}улы`
+      : `${fatherGiven}кызы`
+    : "";
+  const surname = sex === "F" ? "Бекова" : "Беков";
+  const name = [given, patronymic, gen <= 4 ? surname : ""]
+    .filter(Boolean)
+    .join(" ");
+  const fatherId = 2 * n <= QA_13_PERSON_COUNT ? `a${2 * n}` : null;
+  const motherId = 2 * n + 1 <= QA_13_PERSON_COUNT ? `a${2 * n + 1}` : null;
   return {
+    id: `a${n}`,
+    name,
+    sex,
+    born: String(bornYear),
+    died: diedYear ? String(diedYear) : null,
+    birthPlace: gen <= 2 ? "Астана" : "Сарыарқа",
+    parents: [fatherId, motherId].filter((id): id is string => Boolean(id)),
     media: [],
     notes: "",
     tombstone: false,
-    parents: [],
-    ...partial,
   };
 }
 
-export const QA_13_FOCUS_ID = "g00";
-
 export function qaThirteenGenerationSnapshot(): Snapshot {
-  const persons: Record<string, Person> = {};
-  for (let i = 0; i < MALE_LINE.length; i += 1) {
-    const row = MALE_LINE[i];
-    const fatherId = MALE_LINE[i + 1]?.id;
-    const wife = WIVES.find((w) => w.childId === row.id);
-    persons[row.id] = person({
-      id: row.id,
-      name: row.name,
-      sex: "M",
-      born: row.born,
-      died: row.died,
-      birthPlace: row.place,
-      parents: [fatherId, wife?.id].filter((id): id is string => Boolean(id)),
-    });
+  const givens: string[] = new Array(QA_13_PERSON_COUNT + 1);
+  const sexes: Array<"M" | "F"> = new Array(QA_13_PERSON_COUNT + 1);
+  for (let n = 1; n <= QA_13_PERSON_COUNT; n += 1) {
+    sexes[n] = ahnentafelSex(n);
+    givens[n] = givenName(n, sexes[n]);
   }
-  for (const wife of WIVES) {
-    persons[wife.id] = person({
-      id: wife.id,
-      name: wife.name,
-      sex: "F",
-      born: wife.born,
-      died: wife.died,
-      birthPlace: "Сарыарқа",
-      parents: [],
-    });
+  const persons: Record<string, Person> = {};
+  for (let n = 1; n <= QA_13_PERSON_COUNT; n += 1) {
+    const fatherN = 2 * n;
+    const fatherGiven = fatherN <= QA_13_PERSON_COUNT ? givens[fatherN] : null;
+    const p = personOf(n, givens[n], fatherGiven, sexes[n]);
+    persons[p.id] = p;
   }
   return { persons };
 }
 
 export function qaThirteenGenerationMeta(): TreeMeta {
   return {
-    id: "tree_qa_13",
-    title: "Беков — 13 колен",
+    id: "tree_qa_13_full",
+    title: "Беков — 13 колен, полное древо",
     head: null,
     next_version: 1,
     created_at: "2026-08-21T00:00:00.000Z",

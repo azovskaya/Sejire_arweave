@@ -2,7 +2,14 @@ import { jsPDF } from "jspdf";
 import type { Person, Snapshot, TreeMeta } from "../types";
 import { pdfT, SHEZHIRE_MAX_GENERATIONS, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
-import { ancestorSlotLayout, lifeDatesLine } from "./lineage";
+import {
+  ancestorSlotLayout,
+  lifeDatesLine,
+  pedigreeChartRoots,
+  slotCenterFraction,
+  PEDIGREE_CHART_WINDOW,
+  type AncestorSlot,
+} from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
   drawBrandMark,
@@ -92,26 +99,16 @@ function drawPersonCard(
   }
 }
 
-/**
- * Wall-ready classic family poster: oldest at the top.
- * Uses occupied people per generation (not a full 2^(n-1) pedigree grid) so a
- * 13-knee male line stays readable instead of collapsing to 10mm cards.
- */
-export async function renderClassicTreePdf(opts: {
-  snapshot: Snapshot;
-  focusId: string;
-  meta: TreeMeta;
-  locale?: PdfLocale;
-}): Promise<jsPDF> {
-  const t = pdfT(opts.locale ?? "ru");
-  const slots = ancestorSlotLayout(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
-  if (!slots.length) throw new Error(t.noPeople);
+type CardPos = { id: string; x: number; y: number; cx: number; generation: number; slot: number };
 
-  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
-  const orientation = depth > 8 ? "portrait" : "landscape";
-  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
-  await ensurePdfFont(doc);
-
+function paintPedigreeChart(
+  doc: jsPDF,
+  snapshot: Snapshot,
+  slots: AncestorSlot[],
+  title: string,
+  subtitle: string | undefined,
+  footer: string | undefined
+) {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const ink: [number, number, number] = [95, 70, 40];
@@ -121,20 +118,26 @@ export async function renderClassicTreePdf(opts: {
   drawPosterFrame(doc, pageW, pageH, ink);
   drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
 
-  const title = t.classicTitle;
   setPdfFont(doc, "bold");
   doc.setTextColor(...ink);
-  doc.setFontSize(depth > 10 ? 12 : 14);
-  doc.text(title, pageW / 2, 16.2, { align: "center" });
-  drawTitleRule(doc, pageW, 20.2, [175, 140, 90]);
+  doc.setFontSize(subtitle ? 12.5 : 14);
+  doc.text(title, pageW / 2, subtitle ? 14.2 : 16.2, { align: "center" });
+  if (subtitle) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 100, 80);
+    doc.text(subtitle, pageW / 2, 19.2, { align: "center" });
+  }
+  drawTitleRule(doc, pageW, subtitle ? 22.2 : 20.2, [175, 140, 90]);
 
   const marginX = 12;
-  const topY = 26;
+  const topY = subtitle ? 28 : 26;
   const bottomY = pageH - 14;
   const usableW = pageW - marginX * 2;
   const boxH = bottomY - topY;
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
 
-  const byGen = new Map<number, typeof slots>();
+  const byGen = new Map<number, AncestorSlot[]>();
   for (const s of slots) {
     const row = byGen.get(s.generation) ?? [];
     row.push(s);
@@ -142,23 +145,31 @@ export async function renderClassicTreePdf(opts: {
   }
   for (const row of byGen.values()) row.sort((a, b) => a.slot - b.slot);
   const maxInRow = Math.max(1, ...[...byGen.values()].map((row) => row.length));
+  const useBinarySlots = maxInRow >= 4;
 
-  let cardW = Math.min(46, Math.max(16, usableW / maxInRow - 2.4));
+  let cardW: number;
+  if (useBinarySlots) {
+    const leafSlots = 2 ** Math.max(0, depth - 1);
+    cardW = Math.min(40, Math.max(11, usableW / leafSlots - 0.7));
+  } else {
+    cardW = Math.min(46, Math.max(16, usableW / maxInRow - 2.4));
+  }
   let cardH = Math.min(cardW * 0.62, boxH / depth - 1.0);
-  const minH = depth > 10 ? 11.8 : 12;
-  const maxH = depth > 10 ? 17.2 : 24;
+  const minH = depth > 8 ? 11.8 : 12;
+  const maxH = depth > 8 ? 17.2 : 22;
   cardH = Math.max(minH, Math.min(maxH, cardH));
   const rowPitch = depth > 1 ? (boxH - cardH) / (depth - 1) : 0;
 
-  type Pos = { id: string; x: number; y: number; cx: number; generation: number; slot: number };
-  const positions = new Map<string, Pos>();
-
+  const positions = new Map<string, CardPos>();
   for (const [g, row] of byGen) {
-    const visualRow = depth - 1 - g; // oldest on top
+    const visualRow = depth - 1 - g;
     const y = topY + visualRow * rowPitch;
     const n = row.length;
     row.forEach((s, i) => {
-      const cx = marginX + ((i + 0.5) / n) * usableW;
+      const frac = useBinarySlots
+        ? slotCenterFraction(s.generation, s.slot, depth)
+        : (i + 0.5) / n;
+      const cx = marginX + frac * usableW;
       const x = Math.min(pageW - marginX - cardW, Math.max(marginX, cx - cardW / 2));
       positions.set(s.person.id, {
         id: s.person.id,
@@ -171,26 +182,22 @@ export async function renderClassicTreePdf(opts: {
     });
   }
 
-  // Family bars: one horizontal per child, parents drop onto it — no crossed diagonals
   doc.setDrawColor(150, 130, 100);
   doc.setLineWidth(0.28);
   for (const s of slots) {
     if (s.generation + 1 >= depth) continue;
     const childPos = positions.get(s.person.id);
     if (!childPos) continue;
-
-    const { fatherId, motherId } = splitParents(opts.snapshot, s.person.id);
+    const { fatherId, motherId } = splitParents(snapshot, s.person.id);
     const parentCenters = [fatherId, motherId]
       .filter((id): id is string => Boolean(id))
       .map((id) => positions.get(id))
-      .filter((p): p is Pos => Boolean(p));
+      .filter((p): p is CardPos => Boolean(p));
     if (!parentCenters.length) continue;
-
     const parentBottom = Math.max(...parentCenters.map((p) => p.y + cardH));
     const midY = (parentBottom + childPos.y) / 2;
     const barLeft = Math.min(childPos.cx, ...parentCenters.map((p) => p.cx));
     const barRight = Math.max(childPos.cx, ...parentCenters.map((p) => p.cx));
-
     doc.line(childPos.cx, childPos.y, childPos.cx, midY);
     if (Math.abs(barRight - barLeft) > 0.4) {
       doc.line(barLeft, midY, barRight, midY);
@@ -212,8 +219,72 @@ export async function renderClassicTreePdf(opts: {
     drawPersonCard(doc, s.person, pos.x, pos.y, cardW, cardH, accent);
   }
 
+  if (footer) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(130, 115, 95);
+    doc.text(footer, pageW / 2, pageH - 5.2, { align: "center" });
+  }
   setPdfFont(doc, "bold");
-  drawBrandMark(doc, pageW, pageH, t.exportedWith, [155, 135, 105]);
+  drawBrandMark(doc, pageW, pageH, pdfT().exportedWith, [155, 135, 105]);
+}
+
+/**
+ * Wall-ready classic family poster.
+ * A narrow line stays on one page; a full 13-knee binary tree is a booklet of
+ * 5-generation charts (A4 cannot hold 4096 people on one leaf row).
+ */
+export async function renderClassicTreePdf(opts: {
+  snapshot: Snapshot;
+  focusId: string;
+  meta: TreeMeta;
+  locale?: PdfLocale;
+}): Promise<jsPDF> {
+  const t = pdfT(opts.locale ?? "ru");
+  const allSlots = ancestorSlotLayout(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
+  if (!allSlots.length) throw new Error(t.noPeople);
+
+  const depth = Math.max(...allSlots.map((s) => s.generation)) + 1;
+  const maxInRow = Math.max(
+    1,
+    ...Array.from({ length: depth }, (_, g) => allSlots.filter((s) => s.generation === g).length)
+  );
+  const bushy = maxInRow > 8;
+
+  if (!bushy) {
+    const orientation = depth > 8 ? "portrait" : "landscape";
+    const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
+    await ensurePdfFont(doc);
+    paintPedigreeChart(doc, opts.snapshot, allSlots, t.classicTitle, undefined, undefined);
+    return doc;
+  }
+
+  const roots = pedigreeChartRoots(
+    opts.snapshot,
+    opts.focusId,
+    SHEZHIRE_MAX_GENERATIONS,
+    PEDIGREE_CHART_WINDOW
+  );
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  await ensurePdfFont(doc);
+  const total = roots.length;
+  const count = Object.keys(opts.snapshot.persons).length;
+  for (let i = 0; i < roots.length; i += 1) {
+    if (i > 0) doc.addPage("a4", "landscape");
+    const root = roots[i];
+    const remain = depth - root.startGeneration;
+    const win = Math.min(PEDIGREE_CHART_WINDOW, remain);
+    const slots = ancestorSlotLayout(opts.snapshot, root.id, win);
+    const rootPerson = opts.snapshot.persons[root.id];
+    const fromKnee = root.startGeneration + 1;
+    const toKnee = root.startGeneration + win;
+    const title = i === 0 ? t.classicTitle : t.ancestorsOf(rootPerson?.name || root.id);
+    const subtitle =
+      i === 0
+        ? `${count} чел. · ${t.kneeRange(1, depth)} · ${t.pageOf(1, total)}`
+        : `${t.kneeRange(fromKnee, toKnee)} · ${t.pageOf(i + 1, total)}`;
+    paintPedigreeChart(doc, opts.snapshot, slots, title, subtitle, t.pageOf(i + 1, total));
+  }
   return doc;
 }
 

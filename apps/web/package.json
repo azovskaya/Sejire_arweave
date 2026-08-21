@@ -13,6 +13,7 @@
     "test:kinship": "tsx src/lib/kinship.selftest.ts",
     "test:pedigree": "tsx src/lib/pedigree.selftest.ts",
     "test:lineage": "tsx src/lib/pdf/lineage.selftest.ts",
+    "test:thirteen": "tsx src/lib/pdf/thirteenLineage.fixture.selftest.ts",
     "test:dates": "tsx src/lib/dates.selftest.ts",
     "test:json": "tsx src/lib/treeJson.selftest.ts",
     "test:zhuz": "tsx src/lib/zhuzRu.selftest.ts",
@@ -20,7 +21,7 @@
     "test:fetch": "tsx src/lib/arweave/fetch.selftest.ts",
     "test:archive": "tsx src/lib/vaultSession/localArchive.selftest.ts",
     "test:protocol": "tsx src/lib/ao/protocol.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor && npm run test:fetch && npm run test:archive && npm run test:protocol"
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:thirteen && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor && npm run test:fetch && npm run test:archive && npm run test:protocol"
   },
   "dependencies": {
     "@fontsource/work-sans": "^5.3.0",

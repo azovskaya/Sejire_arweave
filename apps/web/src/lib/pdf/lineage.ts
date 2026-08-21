@@ -96,6 +96,33 @@ export function slotCenterFraction(generation: number, slot: number, depth: numb
   return (leftLeaf + leafSpan / 2) / leafSlots;
 }
 
+/** Gens per pedigree page. Overlap of 1 gen chains charts (person is top, then bottom of the next). */
+export const PEDIGREE_CHART_WINDOW = 5;
+
+/**
+ * Roots for chained 5-generation pedigree pages covering `maxGenerations`.
+ * Complete 13-knee binary tree → 1 + 16 + 256 = 273 charts.
+ */
+export function pedigreeChartRoots(
+  snapshot: Snapshot,
+  focusId: string,
+  maxGenerations = 13,
+  window = PEDIGREE_CHART_WINDOW
+): { id: string; startGeneration: number }[] {
+  const slots = ancestorSlotLayout(snapshot, focusId, maxGenerations);
+  if (!slots.length) return [];
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  const step = Math.max(1, window - 1);
+  const out: { id: string; startGeneration: number }[] = [];
+  // Stop before the oldest knee: a 1-person "chart" of roots has no parents to show.
+  const lastStart = Math.max(0, depth - 2);
+  for (let g = 0; g <= lastStart; g += step) {
+    const row = slots.filter((s) => s.generation === g).sort((a, b) => a.slot - b.slot);
+    for (const s of row) out.push({ id: s.person.id, startGeneration: g });
+  }
+  return out;
+}
+
 export function yearSpan(p: Person): string {
   const by = yearFromDate(p.born) ?? "";
   const dy = yearFromDate(p.died) ?? "";
