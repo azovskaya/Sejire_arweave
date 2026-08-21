@@ -4,11 +4,15 @@ import { pdfT, SHEZHIRE_MAX_GENERATIONS, type PdfLocale } from "../i18n/pdf";
 import { splitParents } from "../pedigree";
 import {
   ancestorSlotLayout,
+  computePedigreeLayout,
   lifeDatesLine,
-  pedigreeChartRoots,
-  slotCenterFraction,
+  planClassicTreeBooklet,
   PEDIGREE_CHART_WINDOW,
   type AncestorSlot,
+  type ClassicBookletPage,
+  type PedigreeCardPos,
+  type PedigreeChartRoot,
+  type PedigreeLayoutBox,
 } from "./lineage";
 import { ensurePdfFont, setPdfFont } from "./font";
 import {
@@ -21,6 +25,8 @@ import {
   wrapName,
 } from "./poster";
 
+const INK: [number, number, number] = [95, 70, 40];
+
 function drawPersonCard(
   doc: jsPDF,
   p: Person,
@@ -28,7 +34,8 @@ function drawPersonCard(
   y: number,
   w: number,
   h: number,
-  accent: [number, number, number]
+  accent: [number, number, number],
+  roomy: boolean
 ) {
   const scale = Math.min(1, w / 40);
   const radius = Math.max(0.4, 1.2 * scale);
@@ -39,18 +46,17 @@ function drawPersonCard(
   doc.setFillColor(...accent);
   doc.rect(x, y, Math.max(0.8, 1.5 * scale), h, "F");
 
-  const tight = h < 17 || w < 26;
+  const tight = !roomy && (h < 17 || w < 26);
   const padX = Math.max(1.0, (tight ? 2.0 : 2.8) * scale);
   const padY = Math.max(tight ? 1.15 : 2.2, (tight ? 1.7 : 3.4) * scale);
   const textW = Math.max(6, w - padX * 2 - 1);
-  const compact = tight || w < 28;
+  const compact = !roomy && (tight || w < 28);
   const life = lifeDatesLine(p, compact);
   const place = (p.birthPlace || "").trim();
 
-  // On short 13-knee cards, keep dates but never let them eat the name.
   const metaSize = tight
     ? Math.max(3.3, Math.min(5.0, 5.0 * scale))
-    : Math.max(3.8, Math.min(6.4, 6.4 * scale));
+    : Math.max(3.8, Math.min(roomy ? 7.2 : 6.4, (roomy ? 7.2 : 6.4) * scale));
   const lifeBand = life ? metaSize * (tight ? 0.62 : 0.85) + (tight ? 0.55 : 1.4) : 0;
   const placeBand =
     !tight && place && h - padY * 2 - lifeBand > 8 ? metaSize * 0.75 + 0.8 : 0;
@@ -58,8 +64,12 @@ function drawPersonCard(
   const nameTop = y + padY;
   const nameBoxH = Math.max(3.2, nameBottom - nameTop);
 
-  const maxName = Math.max(tight ? 3.8 : 4.0, Math.min(tight ? 6.4 : 8.0, (tight ? 6.4 : 8.0) * scale));
-  const minName = Math.max(tight ? 3.0 : 3.2, Math.min(tight ? 4.4 : 5.0, (tight ? 4.4 : 5.0) * scale));
+  const maxName = roomy
+    ? Math.max(9, Math.min(13, w * 0.26))
+    : Math.max(tight ? 3.8 : 4.0, Math.min(tight ? 6.4 : 8.0, (tight ? 6.4 : 8.0) * scale));
+  const minName = roomy
+    ? 8
+    : Math.max(tight ? 3.0 : 3.2, Math.min(tight ? 4.4 : 5.0, (tight ? 4.4 : 5.0) * scale));
   const nameMaxLines = tight ? (life ? 1 : 2) : life ? (compact ? 2 : 3) : compact ? 3 : 4;
 
   setPdfFont(doc, "bold");
@@ -75,7 +85,6 @@ function drawPersonCard(
   const lineH = fontSize * (tight ? 0.38 : 0.42);
   const nameBlockH = nameLines.length * (lineH + Math.max(0.15, 0.35 * scale));
   let ty = nameTop + Math.max(0, (nameBoxH - nameBlockH) / 2) + lineH * 0.85;
-  // First line of the name must render even on 10–12mm cards.
   if (ty > nameBottom) ty = Math.max(nameTop + lineH * 0.8, nameBottom - 0.15);
   doc.setFontSize(fontSize);
   for (const line of nameLines) {
@@ -99,89 +108,14 @@ function drawPersonCard(
   }
 }
 
-type CardPos = { id: string; x: number; y: number; cx: number; generation: number; slot: number };
-
-function paintPedigreeChart(
+function paintConnectors(
   doc: jsPDF,
   snapshot: Snapshot,
   slots: AncestorSlot[],
-  title: string,
-  subtitle: string | undefined,
-  footer: string | undefined
+  positions: Map<string, PedigreeCardPos>,
+  cardH: number,
+  depth: number
 ) {
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const ink: [number, number, number] = [95, 70, 40];
-
-  doc.setFillColor(250, 246, 238);
-  doc.rect(0, 0, pageW, pageH, "F");
-  drawPosterFrame(doc, pageW, pageH, ink);
-  drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
-
-  setPdfFont(doc, "bold");
-  doc.setTextColor(...ink);
-  doc.setFontSize(subtitle ? 12.5 : 14);
-  doc.text(title, pageW / 2, subtitle ? 14.2 : 16.2, { align: "center" });
-  if (subtitle) {
-    setPdfFont(doc, "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(120, 100, 80);
-    doc.text(subtitle, pageW / 2, 19.2, { align: "center" });
-  }
-  drawTitleRule(doc, pageW, subtitle ? 22.2 : 20.2, [175, 140, 90]);
-
-  const marginX = 12;
-  const topY = subtitle ? 28 : 26;
-  const bottomY = pageH - 14;
-  const usableW = pageW - marginX * 2;
-  const boxH = bottomY - topY;
-  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
-
-  const byGen = new Map<number, AncestorSlot[]>();
-  for (const s of slots) {
-    const row = byGen.get(s.generation) ?? [];
-    row.push(s);
-    byGen.set(s.generation, row);
-  }
-  for (const row of byGen.values()) row.sort((a, b) => a.slot - b.slot);
-  const maxInRow = Math.max(1, ...[...byGen.values()].map((row) => row.length));
-  const useBinarySlots = maxInRow >= 4;
-
-  let cardW: number;
-  if (useBinarySlots) {
-    const leafSlots = 2 ** Math.max(0, depth - 1);
-    cardW = Math.min(40, Math.max(11, usableW / leafSlots - 0.7));
-  } else {
-    cardW = Math.min(46, Math.max(16, usableW / maxInRow - 2.4));
-  }
-  let cardH = Math.min(cardW * 0.62, boxH / depth - 1.0);
-  const minH = depth > 8 ? 11.8 : 12;
-  const maxH = depth > 8 ? 17.2 : 22;
-  cardH = Math.max(minH, Math.min(maxH, cardH));
-  const rowPitch = depth > 1 ? (boxH - cardH) / (depth - 1) : 0;
-
-  const positions = new Map<string, CardPos>();
-  for (const [g, row] of byGen) {
-    const visualRow = depth - 1 - g;
-    const y = topY + visualRow * rowPitch;
-    const n = row.length;
-    row.forEach((s, i) => {
-      const frac = useBinarySlots
-        ? slotCenterFraction(s.generation, s.slot, depth)
-        : (i + 0.5) / n;
-      const cx = marginX + frac * usableW;
-      const x = Math.min(pageW - marginX - cardW, Math.max(marginX, cx - cardW / 2));
-      positions.set(s.person.id, {
-        id: s.person.id,
-        x,
-        y,
-        cx: x + cardW / 2,
-        generation: s.generation,
-        slot: s.slot,
-      });
-    });
-  }
-
   doc.setDrawColor(150, 130, 100);
   doc.setLineWidth(0.28);
   for (const s of slots) {
@@ -192,7 +126,7 @@ function paintPedigreeChart(
     const parentCenters = [fatherId, motherId]
       .filter((id): id is string => Boolean(id))
       .map((id) => positions.get(id))
-      .filter((p): p is CardPos => Boolean(p));
+      .filter((p): p is PedigreeCardPos => Boolean(p));
     if (!parentCenters.length) continue;
     const parentBottom = Math.max(...parentCenters.map((p) => p.y + cardH));
     const midY = (parentBottom + childPos.y) / 2;
@@ -206,9 +140,19 @@ function paintPedigreeChart(
       doc.line(p.cx, midY, p.cx, p.y + cardH);
     }
   }
+}
 
+function paintCards(
+  doc: jsPDF,
+  snapshot: Snapshot,
+  slots: AncestorSlot[],
+  box: PedigreeLayoutBox
+) {
+  const layout = computePedigreeLayout(slots, box);
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  paintConnectors(doc, snapshot, slots, layout.positions, layout.cardH, depth);
   for (const s of slots) {
-    const pos = positions.get(s.person.id);
+    const pos = layout.positions.get(s.person.id);
     if (!pos) continue;
     const accent: [number, number, number] =
       s.person.sex === "F"
@@ -216,8 +160,44 @@ function paintPedigreeChart(
         : s.person.sex === "M"
           ? [85, 115, 140]
           : [150, 145, 135];
-    drawPersonCard(doc, s.person, pos.x, pos.y, cardW, cardH, accent);
+    drawPersonCard(
+      doc,
+      s.person,
+      pos.x,
+      pos.y,
+      layout.cardW,
+      layout.cardH,
+      accent,
+      layout.roomy
+    );
   }
+}
+
+function paintPageChrome(
+  doc: jsPDF,
+  title: string,
+  subtitle: string | undefined,
+  footer: string | undefined
+): PedigreeLayoutBox {
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+
+  setPdfFont(doc, "bold");
+  doc.setFillColor(250, 246, 238);
+  doc.rect(0, 0, pageW, pageH, "F");
+  drawPosterFrame(doc, pageW, pageH, INK);
+  drawCornerOrnaments(doc, pageW, pageH, [170, 120, 60]);
+
+  doc.setTextColor(...INK);
+  doc.setFontSize(subtitle ? 12.5 : 14);
+  doc.text(title, pageW / 2, subtitle ? 14.2 : 16.2, { align: "center" });
+  if (subtitle) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 100, 80);
+    doc.text(subtitle, pageW / 2, 19.2, { align: "center" });
+  }
+  drawTitleRule(doc, pageW, subtitle ? 22.2 : 20.2, [175, 140, 90]);
 
   if (footer) {
     setPdfFont(doc, "normal");
@@ -227,12 +207,126 @@ function paintPedigreeChart(
   }
   setPdfFont(doc, "bold");
   drawBrandMark(doc, pageW, pageH, pdfT().exportedWith, [155, 135, 105]);
+
+  const marginX = 12;
+  const topY = subtitle ? 28 : 26;
+  const bottomY = pageH - 14;
+  return { x: marginX, y: topY, w: pageW - marginX * 2, h: bottomY - topY };
+}
+
+function windowForRoot(depth: number, root: PedigreeChartRoot, bushy: boolean): number {
+  if (!bushy) return SHEZHIRE_MAX_GENERATIONS;
+  return Math.min(PEDIGREE_CHART_WINDOW, Math.max(1, depth - root.startGeneration));
+}
+
+function paintFullPageChart(
+  doc: jsPDF,
+  snapshot: Snapshot,
+  slots: AncestorSlot[],
+  title: string,
+  subtitle: string | undefined,
+  footer: string | undefined
+) {
+  const box = paintPageChrome(doc, title, subtitle, footer);
+  paintCards(doc, snapshot, slots, box);
+}
+
+function gridShape(n: number): { cols: number; rows: number } {
+  if (n <= 1) return { cols: 1, rows: 1 };
+  if (n === 2) return { cols: 2, rows: 1 };
+  return { cols: 2, rows: 2 };
+}
+
+function paintGridPage(
+  doc: jsPDF,
+  snapshot: Snapshot,
+  roots: PedigreeChartRoot[],
+  depth: number,
+  title: string,
+  subtitle: string,
+  footer: string,
+  t: ReturnType<typeof pdfT>
+) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  paintPageChrome(doc, title, subtitle, footer);
+
+  const { cols, rows } = gridShape(roots.length);
+  const gridLeft = 12;
+  const gridTop = 26;
+  const gridRight = pageW - 12;
+  const gridBottom = pageH - 12;
+  const gapX = 5;
+  const gapY = 5;
+  const cellW = (gridRight - gridLeft - gapX * (cols - 1)) / cols;
+  const cellH = (gridBottom - gridTop - gapY * (rows - 1)) / rows;
+
+  roots.forEach((root, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = gridLeft + col * (cellW + gapX);
+    const y = gridTop + row * (cellH + gapY);
+    doc.setDrawColor(200, 185, 160);
+    doc.setLineWidth(0.22);
+    doc.setFillColor(252, 249, 243);
+    doc.roundedRect(x, y, cellW, cellH, 1.4, 1.4, "FD");
+
+    const win = windowForRoot(depth, root, true);
+    const slots = ancestorSlotLayout(snapshot, root.id, win);
+    const name = snapshot.persons[root.id]?.name || root.id;
+    setPdfFont(doc, "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...INK);
+    doc.text(fitText(doc, t.ancestorsOf(name), cellW - 8, 8.5), x + cellW / 2, y + 6.2, {
+      align: "center",
+    });
+    paintCards(doc, snapshot, slots, {
+      x: x + 3.2,
+      y: y + 9.5,
+      w: cellW - 6.4,
+      h: cellH - 13,
+    });
+  });
+}
+
+function pageCopy(
+  t: ReturnType<typeof pdfT>,
+  snapshot: Snapshot,
+  page: ClassicBookletPage,
+  pageIndex: number,
+  total: number,
+  depth: number,
+  personCount: number,
+  firstPage: boolean
+): { title: string; subtitle: string; footer: string } {
+  const footer = t.pageOf(pageIndex + 1, total);
+  if (page.kind === "full") {
+    const rootPerson = snapshot.persons[page.root.id];
+    const win = windowForRoot(depth, page.root, true);
+    const fromKnee = page.root.startGeneration + 1;
+    const toKnee = page.root.startGeneration + win;
+    const title = firstPage ? t.classicTitle : t.ancestorsOf(rootPerson?.name || page.root.id);
+    const subtitle = firstPage
+      ? `${personCount} чел. · ${t.kneeRange(1, depth)} · ${footer}`
+      : `${t.kneeRange(fromKnee, toKnee)} · ${footer}`;
+    return { title, subtitle, footer };
+  }
+  const fromKnee = Math.min(...page.roots.map((r) => r.startGeneration)) + 1;
+  const toKnee = Math.max(
+    ...page.roots.map((r) => Math.min(depth, r.startGeneration + PEDIGREE_CHART_WINDOW))
+  );
+  return {
+    title: t.classicTitle,
+    subtitle: `${t.kneeRange(fromKnee, toKnee)} · ${footer}`,
+    footer,
+  };
 }
 
 /**
  * Wall-ready classic family poster.
  * A narrow line stays on one page; a full 13-knee binary tree is a booklet of
  * 5-generation charts (A4 cannot hold 4096 people on one leaf row).
+ * Leftover 2–3 generation families share a page so names stay readable.
  */
 export async function renderClassicTreePdf(opts: {
   snapshot: Snapshot;
@@ -244,46 +338,37 @@ export async function renderClassicTreePdf(opts: {
   const allSlots = ancestorSlotLayout(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
   if (!allSlots.length) throw new Error(t.noPeople);
 
-  const depth = Math.max(...allSlots.map((s) => s.generation)) + 1;
-  const maxInRow = Math.max(
-    1,
-    ...Array.from({ length: depth }, (_, g) => allSlots.filter((s) => s.generation === g).length)
-  );
-  const bushy = maxInRow > 8;
-
-  if (!bushy) {
-    const orientation = depth > 8 ? "portrait" : "landscape";
-    const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
-    await ensurePdfFont(doc);
-    paintPedigreeChart(doc, opts.snapshot, allSlots, t.classicTitle, undefined, undefined);
-    return doc;
-  }
-
-  const roots = pedigreeChartRoots(
-    opts.snapshot,
-    opts.focusId,
-    SHEZHIRE_MAX_GENERATIONS,
-    PEDIGREE_CHART_WINDOW
-  );
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const plan = planClassicTreeBooklet(opts.snapshot, opts.focusId, SHEZHIRE_MAX_GENERATIONS);
+  const orientation = !plan.bushy && plan.depth > 8 ? "portrait" : "landscape";
+  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
   await ensurePdfFont(doc);
-  const total = roots.length;
+
+  const total = plan.pages.length;
   const count = Object.keys(opts.snapshot.persons).length;
-  for (let i = 0; i < roots.length; i += 1) {
-    if (i > 0) doc.addPage("a4", "landscape");
-    const root = roots[i];
-    const remain = depth - root.startGeneration;
-    const win = Math.min(PEDIGREE_CHART_WINDOW, remain);
-    const slots = ancestorSlotLayout(opts.snapshot, root.id, win);
-    const rootPerson = opts.snapshot.persons[root.id];
-    const fromKnee = root.startGeneration + 1;
-    const toKnee = root.startGeneration + win;
-    const title = i === 0 ? t.classicTitle : t.ancestorsOf(rootPerson?.name || root.id);
-    const subtitle =
-      i === 0
-        ? `${count} чел. · ${t.kneeRange(1, depth)} · ${t.pageOf(1, total)}`
-        : `${t.kneeRange(fromKnee, toKnee)} · ${t.pageOf(i + 1, total)}`;
-    paintPedigreeChart(doc, opts.snapshot, slots, title, subtitle, t.pageOf(i + 1, total));
+
+  for (let i = 0; i < plan.pages.length; i += 1) {
+    if (i > 0) {
+      doc.addPage("a4", orientation);
+      setPdfFont(doc, "normal");
+    }
+    const page = plan.pages[i];
+    const copy = pageCopy(t, opts.snapshot, page, i, total, plan.depth, count, i === 0);
+    if (page.kind === "full") {
+      const win = windowForRoot(plan.depth, page.root, plan.bushy);
+      const slots = ancestorSlotLayout(opts.snapshot, page.root.id, win);
+      paintFullPageChart(doc, opts.snapshot, slots, copy.title, copy.subtitle, copy.footer);
+    } else {
+      paintGridPage(
+        doc,
+        opts.snapshot,
+        page.roots,
+        plan.depth,
+        copy.title,
+        copy.subtitle,
+        copy.footer,
+        t
+      );
+    }
   }
   return doc;
 }

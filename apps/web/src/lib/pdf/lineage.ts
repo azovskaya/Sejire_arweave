@@ -99,6 +99,36 @@ export function slotCenterFraction(generation: number, slot: number, depth: numb
 /** Gens per pedigree page. Overlap of 1 gen chains charts (person is top, then bottom of the next). */
 export const PEDIGREE_CHART_WINDOW = 5;
 
+/** Leftover 2–3 gen families after a 5-gen chart — pack several per A4 instead of one billboard. */
+export const SHALLOW_CHART_MAX_DEPTH = 3;
+export const SHALLOW_CHART_MAX_PEOPLE = 7;
+export const SHALLOW_CHARTS_PER_PAGE = 4;
+
+export type PedigreeChartRoot = { id: string; startGeneration: number };
+
+export type PedigreeCardPos = {
+  id: string;
+  x: number;
+  y: number;
+  cx: number;
+  generation: number;
+  slot: number;
+};
+
+export type PedigreeLayoutBox = { x: number; y: number; w: number; h: number };
+
+export type PedigreeChartLayout = {
+  cardW: number;
+  cardH: number;
+  rowPitch: number;
+  roomy: boolean;
+  positions: Map<string, PedigreeCardPos>;
+};
+
+export type ClassicBookletPage =
+  | { kind: "full"; root: PedigreeChartRoot }
+  | { kind: "grid"; roots: PedigreeChartRoot[] };
+
 /**
  * Roots for chained 5-generation pedigree pages covering `maxGenerations`.
  * Complete 13-knee binary tree → 1 + 16 + 256 = 273 charts.
@@ -108,12 +138,12 @@ export function pedigreeChartRoots(
   focusId: string,
   maxGenerations = 13,
   window = PEDIGREE_CHART_WINDOW
-): { id: string; startGeneration: number }[] {
+): PedigreeChartRoot[] {
   const slots = ancestorSlotLayout(snapshot, focusId, maxGenerations);
   if (!slots.length) return [];
   const depth = Math.max(...slots.map((s) => s.generation)) + 1;
   const step = Math.max(1, window - 1);
-  const out: { id: string; startGeneration: number }[] = [];
+  const out: PedigreeChartRoot[] = [];
   // Stop before the oldest knee: a 1-person "chart" of roots has no parents to show.
   const lastStart = Math.max(0, depth - 2);
   for (let g = 0; g <= lastStart; g += step) {
@@ -121,6 +151,155 @@ export function pedigreeChartRoots(
     for (const s of row) out.push({ id: s.person.id, startGeneration: g });
   }
   return out;
+}
+
+export function isShallowPedigreeChart(slots: AncestorSlot[]): boolean {
+  if (!slots.length) return true;
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  return depth <= SHALLOW_CHART_MAX_DEPTH && slots.length <= SHALLOW_CHART_MAX_PEOPLE;
+}
+
+function treeDepthAndBushy(slots: AncestorSlot[]): { depth: number; bushy: boolean } {
+  const depth = Math.max(...slots.map((s) => s.generation)) + 1;
+  const maxInRow = Math.max(
+    1,
+    ...Array.from({ length: depth }, (_, g) => slots.filter((s) => s.generation === g).length)
+  );
+  return { depth, bushy: maxInRow > 8 };
+}
+
+/**
+ * How the classic tree PDF is paginated.
+ * Deep 5-gen charts stay one-per-page; leftover 2–3 gen families pack up to 4 per sheet.
+ */
+export function planClassicTreeBooklet(
+  snapshot: Snapshot,
+  focusId: string,
+  maxGenerations = 13,
+  window = PEDIGREE_CHART_WINDOW
+): { bushy: boolean; depth: number; pages: ClassicBookletPage[] } {
+  const allSlots = ancestorSlotLayout(snapshot, focusId, maxGenerations);
+  if (!allSlots.length) return { bushy: false, depth: 0, pages: [] };
+  const { depth, bushy } = treeDepthAndBushy(allSlots);
+  if (!bushy) {
+    return { bushy: false, depth, pages: [{ kind: "full", root: { id: focusId, startGeneration: 0 } }] };
+  }
+
+  const roots = pedigreeChartRoots(snapshot, focusId, maxGenerations, window);
+  const pages: ClassicBookletPage[] = [];
+  const pending: PedigreeChartRoot[] = [];
+
+  const flushPending = () => {
+    while (pending.length) {
+      if (pending.length === 1) {
+        pages.push({ kind: "full", root: pending.shift()! });
+        continue;
+      }
+      pages.push({ kind: "grid", roots: pending.splice(0, SHALLOW_CHARTS_PER_PAGE) });
+    }
+  };
+
+  for (const root of roots) {
+    const remain = depth - root.startGeneration;
+    const win = Math.min(window, remain);
+    const slots = ancestorSlotLayout(snapshot, root.id, win);
+    if (isShallowPedigreeChart(slots)) {
+      pending.push(root);
+      continue;
+    }
+    flushPending();
+    pages.push({ kind: "full", root });
+  }
+  flushPending();
+  return { bushy: true, depth, pages };
+}
+
+/**
+ * Card geometry for one pedigree chart inside `box`.
+ * Shallow families stay clustered with a capped row pitch so names are not 8pt in a corner of A4.
+ */
+export function computePedigreeLayout(
+  slots: AncestorSlot[],
+  box: PedigreeLayoutBox
+): PedigreeChartLayout {
+  const byGen = new Map<number, AncestorSlot[]>();
+  for (const s of slots) {
+    const row = byGen.get(s.generation) ?? [];
+    row.push(s);
+    byGen.set(s.generation, row);
+  }
+  for (const row of byGen.values()) row.sort((a, b) => a.slot - b.slot);
+
+  const depth = Math.max(1, ...slots.map((s) => s.generation + 1));
+  const maxInRow = Math.max(1, ...[...byGen.values()].map((row) => row.length));
+  const roomy = isShallowPedigreeChart(slots);
+  const useBinarySlots = !roomy && maxInRow >= 4;
+
+  let gap = 0;
+  let cardW: number;
+  if (roomy) {
+    gap = Math.min(16, Math.max(6, box.w * 0.05));
+    cardW = (box.w - (maxInRow - 1) * gap) / maxInRow;
+    if (cardW > 52) cardW = 52;
+    else if (cardW < 24 && maxInRow > 1) {
+      gap = 4;
+      cardW = (box.w - (maxInRow - 1) * gap) / maxInRow;
+    }
+    cardW = Math.max(18, Math.min(52, cardW));
+  } else if (useBinarySlots) {
+    const leafSlots = 2 ** Math.max(0, depth - 1);
+    cardW = Math.min(40, Math.max(11, box.w / leafSlots - 0.7));
+  } else {
+    cardW = Math.min(46, Math.max(16, box.w / maxInRow - 2.4));
+  }
+
+  let cardH: number;
+  if (roomy) {
+    cardH = Math.min(22, Math.max(16, Math.min(cardW * 0.48, box.h / depth - 8)));
+  } else {
+    cardH = Math.min(cardW * 0.62, box.h / depth - 1.0);
+    const minH = depth > 8 ? 11.8 : 12;
+    const maxH = depth > 8 ? 17.2 : 22;
+    cardH = Math.max(minH, Math.min(maxH, cardH));
+  }
+
+  const maxPitch = roomy ? 36 : 48;
+  const minPitch = cardH + (roomy ? 10 : 4);
+  const rowPitch =
+    depth > 1 ? Math.max(minPitch, Math.min(maxPitch, (box.h - cardH) / (depth - 1))) : 0;
+  const totalH = (depth - 1) * rowPitch + cardH;
+  const originY = box.y + Math.max(0, (box.h - totalH) / 2);
+
+  const positions = new Map<string, PedigreeCardPos>();
+  for (const [g, row] of byGen) {
+    const visualRow = depth - 1 - g;
+    const y = originY + visualRow * rowPitch;
+    const n = row.length;
+    const rowW = roomy ? n * cardW + (n - 1) * gap : box.w;
+    const rowLeft = roomy ? box.x + (box.w - rowW) / 2 : box.x;
+    row.forEach((s, i) => {
+      let x: number;
+      if (roomy) {
+        x = rowLeft + i * (cardW + gap);
+      } else {
+        const frac = useBinarySlots
+          ? slotCenterFraction(s.generation, s.slot, depth)
+          : (i + 0.5) / n;
+        const cx = box.x + frac * box.w;
+        x = Math.min(box.x + box.w - cardW, Math.max(box.x, cx - cardW / 2));
+      }
+      positions.set(s.person.id, {
+        id: s.person.id,
+        x,
+        y,
+        cx: x + cardW / 2,
+        generation: s.generation,
+        slot: s.slot,
+      });
+    });
+  }
+
+  return { cardW, cardH, rowPitch, roomy, positions };
 }
 
 export function yearSpan(p: Person): string {

@@ -1,8 +1,16 @@
 /**
  * Lineage helpers self-test
  */
-import { ancestorGenerations, ancestorSlotLayout, maleLineUp, slotCenterFraction } from "./lineage";
-import type { Snapshot } from "../types";
+import {
+  ancestorGenerations,
+  ancestorSlotLayout,
+  computePedigreeLayout,
+  maleLineUp,
+  pedigreeChartRoots,
+  planClassicTreeBooklet,
+  slotCenterFraction,
+} from "./lineage";
+import type { Person, Snapshot } from "../types";
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
@@ -64,4 +72,52 @@ assert(deepMale.length === 13, `13-knee male line ${deepMale.length}`);
 assert(ancestorSlotLayout(deep, "g00", 5).length === 5, "classic PDF used to silently drop gens 6–13");
 assert(ancestorSlotLayout(deep, "g00", 13).length === 13, "13-knee layout keeps the full line");
 
-console.log("lineage.selftest: OK", { male: male.length, gens: gens.length, slots: slots.length, deep: deepMale.length });
+function completeAncestry(gens: number): Snapshot {
+  const count = 2 ** gens - 1;
+  const persons: Record<string, Person> = {};
+  for (let n = 1; n <= count; n += 1) {
+    const father = 2 * n <= count ? `a${2 * n}` : null;
+    const mother = 2 * n + 1 <= count ? `a${2 * n + 1}` : null;
+    persons[`a${n}`] = {
+      id: `a${n}`,
+      name: `P${n}`,
+      sex: n === 1 || n % 2 === 0 ? "M" : "F",
+      parents: [father, mother].filter((id): id is string => Boolean(id)),
+      media: [],
+    };
+  }
+  return { persons };
+}
+
+const trioLayout = computePedigreeLayout(slots, { x: 12, y: 28, w: 273, h: 168 });
+assert(trioLayout.roomy, "3-person chart stays compact");
+assert(trioLayout.rowPitch <= 40, `3-person row pitch ${trioLayout.rowPitch} must not fill A4`);
+const faPos = trioLayout.positions.get("fa");
+const moPos = trioLayout.positions.get("mo");
+assert(faPos && moPos, "parents have cards");
+assert(
+  Math.abs(faPos.cx - moPos.cx) < 100,
+  `parents should sit together, gap ${Math.abs(faPos.cx - moPos.cx)}`
+);
+assert(trioLayout.cardW >= 28 && trioLayout.cardH >= 16, "compact cards stay large enough for names");
+
+const sixGen = completeAncestry(6);
+assert(Object.keys(sixGen.persons).length === 63, "6-knee complete tree");
+const sixRoots = pedigreeChartRoots(sixGen, "a1", 6, 5);
+assert(sixRoots.length === 17, `6-knee still has 17 chart roots, got ${sixRoots.length}`);
+const sixPlan = planClassicTreeBooklet(sixGen, "a1", 6, 5);
+assert(sixPlan.pages.length <= 6, `6-knee leftover families must share pages, got ${sixPlan.pages.length}`);
+assert(sixPlan.pages.length === 5, `1 overview + 16 families / 4 = 5 pages, got ${sixPlan.pages.length}`);
+assert(sixPlan.pages[0].kind === "full", "page 1 remains the 5-knee overview");
+assert(
+  sixPlan.pages.slice(1).every((p) => p.kind === "grid" && p.roots.length === 4),
+  "leftover 2-knee families pack 4 per sheet"
+);
+
+console.log("lineage.selftest: OK", {
+  male: male.length,
+  gens: gens.length,
+  slots: slots.length,
+  deep: deepMale.length,
+  sixPages: sixPlan.pages.length,
+});

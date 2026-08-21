@@ -1,5 +1,5 @@
 import { splitParents } from "../pedigree";
-import { ancestorSlotLayout, maleLineUp, pedigreeChartRoots } from "./lineage";
+import { ancestorSlotLayout, maleLineUp, pedigreeChartRoots, planClassicTreeBooklet } from "./lineage";
 import {
   QA_13_FOCUS_ID,
   QA_13_GENERATIONS,
@@ -49,6 +49,12 @@ assert(slots.length === QA_13_PERSON_COUNT, `layout ${slots.length}`);
 
 const charts = pedigreeChartRoots(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS, 5);
 assert(charts.length === 1 + 16 + 256, `booklet pages ${charts.length}`);
+const booklet = planClassicTreeBooklet(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS, 5);
+assert(booklet.pages.length === charts.length, `13-knee stays one chart per page (${booklet.pages.length})`);
+assert(
+  booklet.pages.every((p) => p.kind === "full"),
+  "13-knee has no leftover 2-gen sheets to pack"
+);
 
 console.log("thirteenLineage.fixture.selftest: OK", {
   people: ids.length,
