@@ -4,6 +4,7 @@ import {
   QA_13_FOCUS_ID,
   QA_13_GENERATIONS,
   QA_13_PERSON_COUNT,
+  qaCompleteAncestrySnapshot,
   qaThirteenGenerationSnapshot,
 } from "./thirteenLineage.fixture";
 
@@ -53,6 +54,12 @@ const poster = choosePedigreePoster(snapshot, QA_13_FOCUS_ID, QA_13_GENERATIONS)
 assert(poster.format === "a2", `13-knee full tree uses A2, got ${poster.format}`);
 assert(poster.truncated, "13-knee full binary cannot fit 4096 leaves; poster shows nearest gens");
 assert(poster.generations >= 6 && poster.generations <= 7, `readable gens on A2, got ${poster.generations}`);
+
+const seven = qaCompleteAncestrySnapshot(7);
+assert(Object.keys(seven.persons).length === 127, "7-knee complete tree is 127 people");
+const sevenPoster = choosePedigreePoster(seven, QA_13_FOCUS_ID, 13);
+assert(sevenPoster.format === "a2", `7-knee poster is A2, got ${sevenPoster.format}`);
+assert(sevenPoster.generations === 7 && !sevenPoster.truncated, "7-knee fits on one A2 sheet");
 
 console.log("thirteenLineage.fixture.selftest: OK", {
   people: ids.length,

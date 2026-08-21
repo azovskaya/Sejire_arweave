@@ -21,10 +21,15 @@ git -C "$ROOT" fetch origin gh-pages 2>/dev/null || true
 if git -C "$ROOT" rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
   git -C "$ROOT" archive origin/gh-pages presentation 2>/dev/null | tar -x -C "$STAGE" || true
   git -C "$ROOT" archive origin/gh-pages qa-13gen 2>/dev/null | tar -x -C "$STAGE" || true
+  git -C "$ROOT" archive origin/gh-pages qa-7gen 2>/dev/null | tar -x -C "$STAGE" || true
 fi
 if [[ -d "$ROOT/presentation" ]]; then
   mkdir -p "$STAGE/presentation"
   cp -a "$ROOT/presentation/." "$STAGE/presentation/"
+fi
+if [[ -d "$ROOT/artifacts/qa-7gen" ]]; then
+  mkdir -p "$STAGE/qa-7gen"
+  cp -a "$ROOT/artifacts/qa-7gen/." "$STAGE/qa-7gen/"
 fi
 if [[ -d "$ROOT/artifacts/qa-13gen" ]]; then
   mkdir -p "$STAGE/qa-13gen"

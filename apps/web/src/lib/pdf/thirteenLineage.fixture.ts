@@ -87,7 +87,8 @@ function personOf(
   n: number,
   given: string,
   fatherGiven: string | null,
-  sex: "M" | "F"
+  sex: "M" | "F",
+  count: number
 ): Person {
   const gen = generationOf(n);
   const bornYear = 1998 - gen * 27 + (sex === "F" ? 2 : 0);
@@ -102,8 +103,8 @@ function personOf(
   const name = [given, patronymic, gen <= 4 ? surname : ""]
     .filter(Boolean)
     .join(" ");
-  const fatherId = 2 * n <= QA_13_PERSON_COUNT ? `a${2 * n}` : null;
-  const motherId = 2 * n + 1 <= QA_13_PERSON_COUNT ? `a${2 * n + 1}` : null;
+  const fatherId = 2 * n <= count ? `a${2 * n}` : null;
+  const motherId = 2 * n + 1 <= count ? `a${2 * n + 1}` : null;
   return {
     id: `a${n}`,
     name,
@@ -118,27 +119,30 @@ function personOf(
   };
 }
 
-export function qaThirteenGenerationSnapshot(): Snapshot {
-  const givens: string[] = new Array(QA_13_PERSON_COUNT + 1);
-  const sexes: Array<"M" | "F"> = new Array(QA_13_PERSON_COUNT + 1);
-  for (let n = 1; n <= QA_13_PERSON_COUNT; n += 1) {
+/** Complete binary ancestry: every person has father + mother through `generations` knees. */
+export function qaCompleteAncestrySnapshot(generations: number): Snapshot {
+  const count = 2 ** generations - 1;
+  const givens: string[] = new Array(count + 1);
+  const sexes: Array<"M" | "F"> = new Array(count + 1);
+  for (let n = 1; n <= count; n += 1) {
     sexes[n] = ahnentafelSex(n);
     givens[n] = givenName(n, sexes[n]);
   }
   const persons: Record<string, Person> = {};
-  for (let n = 1; n <= QA_13_PERSON_COUNT; n += 1) {
+  for (let n = 1; n <= count; n += 1) {
     const fatherN = 2 * n;
-    const fatherGiven = fatherN <= QA_13_PERSON_COUNT ? givens[fatherN] : null;
-    const p = personOf(n, givens[n], fatherGiven, sexes[n]);
+    const fatherGiven = fatherN <= count ? givens[fatherN] : null;
+    const p = personOf(n, givens[n], fatherGiven, sexes[n], count);
     persons[p.id] = p;
   }
   return { persons };
 }
 
-export function qaThirteenGenerationMeta(): TreeMeta {
+export function qaCompleteAncestryMeta(generations: number): TreeMeta {
+  const full = generations >= 13;
   return {
-    id: "tree_qa_13_full",
-    title: "Беков — 13 колен, полное древо",
+    id: `tree_qa_${generations}_full`,
+    title: full ? "Беков — 13 колен, полное древо" : `Беков — ${generations} колен`,
     head: null,
     next_version: 1,
     created_at: "2026-08-21T00:00:00.000Z",
@@ -147,4 +151,12 @@ export function qaThirteenGenerationMeta(): TreeMeta {
     clanName: "Арғын · Беков",
     tamgaUrl: null,
   };
+}
+
+export function qaThirteenGenerationSnapshot(): Snapshot {
+  return qaCompleteAncestrySnapshot(QA_13_GENERATIONS);
+}
+
+export function qaThirteenGenerationMeta(): TreeMeta {
+  return qaCompleteAncestryMeta(QA_13_GENERATIONS);
 }

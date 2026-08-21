@@ -405,6 +405,25 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash(`Пример: ${QA_13_PERSON_COUNT} чел., у каждого отец и мать до 13-го колена`);
   }
 
+  async function loadDemoSeven() {
+    if (!confirmReplaceDraft("пример полного древа на 7 колен")) return;
+    const { QA_13_FOCUS_ID, qaCompleteAncestryMeta, qaCompleteAncestrySnapshot } = await import(
+      "../lib/pdf/thirteenLineage.fixture"
+    );
+    const snapshot = qaCompleteAncestrySnapshot(7);
+    const meta = qaCompleteAncestryMeta(7);
+    const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
+    const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
+    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
+    saveGuide(nextGuide);
+    onStoreChange(next);
+    onGuideChange(nextGuide);
+    setFocusId(QA_13_FOCUS_ID);
+    setSelectedId(QA_13_FOCUS_ID);
+    setProfileOpen(false);
+    flash("Пример: 127 чел., полное древо на 7 колен");
+  }
+
   const modalTitle =
     pending?.type === "self"
       ? "Добавить себя"
@@ -500,17 +519,30 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 Загрузить JSON
               </button>
               {import.meta.env.VITE_QA_TOOLS === "1" ? (
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => {
-                    closeMoreMenu();
-                    void loadDemoThirteen();
-                  }}
-                  title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
-                >
-                  Пример: 13 колен
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      closeMoreMenu();
+                      void loadDemoSeven();
+                    }}
+                    title="Полное двоичное древо: отец и мать у каждого до 7-го колена"
+                  >
+                    Пример: 7 колен
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      closeMoreMenu();
+                      void loadDemoThirteen();
+                    }}
+                    title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
+                  >
+                    Пример: 13 колен
+                  </button>
+                </>
               ) : null}
               {vaultSession?.vaultId ? (
                 <button
