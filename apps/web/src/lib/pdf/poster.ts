@@ -2,6 +2,9 @@
  * Shared poster framing for wall-ready PDF exports.
  */
 import type { jsPDF } from "jspdf";
+import { safeFilename } from "./filename";
+
+export { safeFilename };
 
 export function drawPosterFrame(
   doc: jsPDF,
@@ -128,10 +131,6 @@ export function wrapName(
   // Last resort: force wrap at min size (may exceed maxLines visually only if impossible)
   const forced = tryWrapText(doc, text, maxWidth, minSize, Math.max(maxLines, 6));
   return { lines: forced ?? [text.trim() || "—"], fontSize: minSize };
-}
-
-export function safeFilename(title: string, fallback: string) {
-  return title.replace(/[^\w\-а-яА-ЯёЁәіңғүұқөһӘІҢҒҮҰҚӨҺ ]+/g, "").trim() || fallback;
 }
 
 /**

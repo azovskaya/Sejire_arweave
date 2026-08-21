@@ -1,4 +1,4 @@
-import { SHEZHIRE_TEMPLATES, type ShezhireTemplateId } from "../lib/pdf/shezhirePdf";
+import { SHEZHIRE_TEMPLATES, type ShezhireTemplateId } from "../lib/pdf/shezhireTemplates";
 
 type Props = {
   onPick: (template: ShezhireTemplateId) => void;

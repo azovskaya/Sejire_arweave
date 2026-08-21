@@ -1,7 +1,7 @@
 import type { GuideState } from "./guide";
 import { defaultGuide } from "./guide";
 import type { Person, Snapshot, TreeMeta, TreeStore } from "./types";
-import { safeFilename } from "./pdf/poster";
+import { safeFilename } from "./pdf/filename";
 import { isZhuzId } from "./zhuzRu";
 
 export const TREE_JSON_SCHEMA = "sejire/tree-export/v1" as const;
