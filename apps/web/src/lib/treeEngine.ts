@@ -3,6 +3,7 @@
  * Spec: docs/processes/TREE.md, docs/PROTOCOL.md
  */
 import type { Commit, HistoryItem, Person, Snapshot, TreeStore } from "./types";
+import { setLocalJson } from "./storageQuota";
 
 const AUTHOR = "local:draft-author";
 
@@ -195,7 +196,7 @@ export function diffPersonIds(a: Snapshot, b: Snapshot) {
 const STORAGE_KEY = "sejire.tree.v1";
 
 export function saveStore(store: TreeStore) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  setLocalJson(STORAGE_KEY, store);
 }
 
 export function loadStore(): TreeStore | null {

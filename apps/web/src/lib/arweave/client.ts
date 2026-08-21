@@ -1,5 +1,6 @@
 import ArweaveImport from "arweave";
 import type Arweave from "arweave";
+import { ARWEAVE_HOSTS } from "./gateways";
 
 type ArweaveStatic = {
   init: (config: {
@@ -26,10 +27,25 @@ function resolveArweaveStatic(): ArweaveStatic {
 const ArweaveApi = resolveArweaveStatic();
 
 /** Shared gateway client for publish / address helpers. */
-export function createArweaveClient(): Arweave {
+export function createArweaveClient(host: string = ARWEAVE_HOSTS[0]): Arweave {
   return ArweaveApi.init({
-    host: "arweave.net",
+    host,
     port: 443,
     protocol: "https",
   });
+}
+
+/** Run `fn` on each public host until one succeeds. */
+export async function withArweaveHost<T>(
+  fn: (client: Arweave, host: string) => Promise<T>
+): Promise<T> {
+  let lastErr: unknown;
+  for (const host of ARWEAVE_HOSTS) {
+    try {
+      return await fn(createArweaveClient(host), host);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr ?? "Arweave недоступен"));
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   fetchVaultEnvelope,
   formatVersionWhen,
+  isGatewayUnavailable,
   listVaultVersions,
   type VaultVersionMeta,
 } from "../lib/arweave/fetch";
@@ -88,17 +89,29 @@ export function VaultVersionsModal({ onClose, onOpenVersion }: Props) {
       try {
         setStatus(`Сейф ${fingerprintVaultId(session.vaultId)}…`);
         let network: VaultVersionMeta[] = [];
+        let networkError: string | null = null;
         try {
           network = await listVaultVersions(session.vaultId);
-        } catch {
+        } catch (e) {
           network = [];
+          networkError = isGatewayUnavailable(e)
+            ? e instanceof Error
+              ? e.message
+              : "Сеть Arweave недоступна."
+            : "Не удалось связаться с Arweave. Показаны копии из этого браузера, если они есть.";
         }
         const archive = listLocalVaultVersions(session.vaultId);
         const merged = mergeVersionLists(network, archive);
         if (!cancelled) {
           setVersions(merged);
           if (merged.length === 0) {
-            setError("Пока нет сохранённых версий этого сейфа (ни в сети, ни в браузере).");
+            setError(
+              networkError
+                ? `${networkError} Локальных копий тоже нет.`
+                : "Пока нет сохранённых версий этого сейфа (ни в сети, ни в браузере)."
+            );
+          } else if (networkError) {
+            setError(`${networkError} Показаны копии из этого браузера.`);
           }
         }
       } catch (e) {

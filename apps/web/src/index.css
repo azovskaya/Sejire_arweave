@@ -1547,3 +1547,40 @@ a {
     opacity: 1;
   }
 }
+
+.crash-screen {
+  min-height: 100%;
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.crash-brand {
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0;
+}
+
+.crash-screen h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+}
+
+.crash-detail {
+  width: 100%;
+  text-align: left;
+  overflow: auto;
+  font-size: 0.78rem;
+  background: var(--bg-1);
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}

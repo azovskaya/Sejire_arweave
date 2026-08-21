@@ -33,8 +33,8 @@ export default function App() {
     setScreen("work");
   }
 
-  function continueDraft() {
-    const draft = loadDraftTree();
+  function continueDraft(opened?: TreeStore | null) {
+    const draft = opened ?? loadDraftTree();
     if (!draft) return;
     setStore(draft);
     setGuide(loadGuide() ?? { ...defaultGuide(), step: "done" });
@@ -52,7 +52,10 @@ export default function App() {
       )}
 
       {screen === "restore" && (
-        <RestoreSeed onBack={() => setScreen("welcome")} onRestored={continueDraft} />
+        <RestoreSeed
+          onBack={() => setScreen("welcome")}
+          onRestored={(opened) => continueDraft(opened)}
+        />
       )}
 
       {screen === "work" && store && (

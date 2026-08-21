@@ -1,9 +1,11 @@
 import type { TreeStore } from "./types";
+import { setLocalJson } from "./storageQuota";
 
 const DRAFT_KEY = "sejire.draft.tree.v1";
 
-export function saveDraftTree(store: TreeStore) {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(store));
+/** Persist the editor draft. Returns false when the browser is out of space. */
+export function saveDraftTree(store: TreeStore): boolean {
+  return setLocalJson(DRAFT_KEY, store);
 }
 
 export function loadDraftTree(): TreeStore | null {

@@ -37,15 +37,22 @@ jobs:
         working-directory: apps/web
         env:
           VITE_PUBLISH_MODE: self
+          VITE_QA_TOOLS: "1"
         run: |
           npm ci
           npm run build
       - name: Keep presentation from previous gh-pages
         run: |
-          mkdir -p apps/web/dist/presentation
+          mkdir -p apps/web/dist/presentation apps/web/dist/qa-13gen
           git fetch origin gh-pages || true
           git archive origin/gh-pages presentation 2>/dev/null | tar -x -C apps/web/dist || true
+          git archive origin/gh-pages qa-13gen 2>/dev/null | tar -x -C apps/web/dist || true
           if [ -d presentation ]; then cp -a presentation/. apps/web/dist/presentation/; fi
+          if [ -d artifacts/qa-13gen ]; then
+            mkdir -p apps/web/dist/qa-13gen
+            cp -a artifacts/qa-13gen/. apps/web/dist/qa-13gen/
+            rm -rf apps/web/dist/qa-13gen/live-arns 2>/dev/null || true
+          fi
           touch apps/web/dist/.nojekyll
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4

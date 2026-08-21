@@ -8,7 +8,9 @@ cd "$ROOT/apps/web"
 # GitHub test mirror: same 12-words → derived AR path as the future ArNS build.
 # Override with VITE_PUBLISH_MODE=demo to save only in the browser.
 export VITE_PUBLISH_MODE="${VITE_PUBLISH_MODE:-self}"
-echo "Building Pages with VITE_PUBLISH_MODE=${VITE_PUBLISH_MODE}"
+# Pages is the test mirror: keep the 13-knee demo. Unset for ArNS.
+export VITE_QA_TOOLS="${VITE_QA_TOOLS:-1}"
+echo "Building Pages with VITE_PUBLISH_MODE=${VITE_PUBLISH_MODE} VITE_QA_TOOLS=${VITE_QA_TOOLS}"
 npm run build
 STAGE=$(mktemp -d)
 cp -R dist/. "$STAGE/"

@@ -2,6 +2,7 @@ import type { TreeStore } from "../types";
 import type { EnvelopeV1 } from "./encrypt";
 import { decryptJson, encryptJson } from "./encrypt";
 import type { SejireKeys } from "./keys";
+import { setLocalJson } from "../storageQuota";
 
 export type VaultV1 = {
   schema: "sejire/vault/v1";
@@ -34,7 +35,7 @@ export function putTree(vault: VaultV1, store: TreeStore): VaultV1 {
 
 export async function sealVault(keys: SejireKeys, vault: VaultV1): Promise<EnvelopeV1> {
   const envelope = await encryptJson(keys.encKey, keys.vaultId, vault);
-  localStorage.setItem(LOCAL_PREFIX + keys.vaultId, JSON.stringify(envelope));
+  setLocalJson(LOCAL_PREFIX + keys.vaultId, envelope);
   return envelope;
 }
 

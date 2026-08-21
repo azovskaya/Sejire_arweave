@@ -1,6 +1,7 @@
 import type { JWKInterface } from "arweave/web/lib/wallet";
 import type { EnvelopeV1 } from "../crypto/encrypt";
-import { createArweaveClient } from "./client";
+import { createArweaveClient, withArweaveHost } from "./client";
+import { ARWEAVE_HOSTS } from "./gateways";
 
 const arweave = createArweaveClient();
 
@@ -15,6 +16,26 @@ export type PublishEnvelopeOptions = {
   updatedAt?: string;
 };
 
+type SignedTx = Awaited<ReturnType<ReturnType<typeof createArweaveClient>["createTransaction"]>>;
+
+async function winstonBalance(address: string): Promise<string> {
+  return withArweaveHost((client) => client.wallets.getBalance(address));
+}
+
+async function postSignedTx(tx: SignedTx): Promise<{ status: number; statusText: string }> {
+  let last = { status: 0, statusText: "no gateway" };
+  for (const host of ARWEAVE_HOSTS) {
+    try {
+      const res = await createArweaveClient(host).transactions.post(tx);
+      if (res.status === 200 || res.status === 208) return res;
+      last = { status: res.status, statusText: res.statusText };
+    } catch {
+      /* next host */
+    }
+  }
+  return last;
+}
+
 /**
  * Publish encrypted vault envelope to Arweave.
  * Requires wallet with AR for the one-time endowment fee.
@@ -27,34 +48,47 @@ export async function publishEnvelope(
 ): Promise<PublishResult> {
   try {
     const data = JSON.stringify(envelope);
-    const tx = await arweave.createTransaction({ data }, jwk);
-    tx.addTag("Content-Type", "application/json");
-    tx.addTag("App-Name", "SEJIRE");
-    tx.addTag("Protocol", "sejire/v0.3");
-    tx.addTag("Type", "vault-envelope");
-    tx.addTag("Vault-Id", envelope.vault_id);
-    tx.addTag("Schema", envelope.schema);
-    tx.addTag("Updated-At", opts?.updatedAt ?? new Date().toISOString());
-    if (opts?.parentTxId) {
-      tx.addTag("Parent-Tx", opts.parentTxId);
-    }
+    let lastErr: unknown;
+    for (const host of ARWEAVE_HOSTS) {
+      try {
+        const client = createArweaveClient(host);
+        const tx = await client.createTransaction({ data }, jwk);
+        tx.addTag("Content-Type", "application/json");
+        tx.addTag("App-Name", "SEJIRE");
+        tx.addTag("Protocol", "sejire/v0.3");
+        tx.addTag("Type", "vault-envelope");
+        tx.addTag("Vault-Id", envelope.vault_id);
+        tx.addTag("Schema", envelope.schema);
+        tx.addTag("Updated-At", opts?.updatedAt ?? new Date().toISOString());
+        if (opts?.parentTxId) {
+          tx.addTag("Parent-Tx", opts.parentTxId);
+        }
 
-    await arweave.transactions.sign(tx, jwk);
-    const balance = await arweave.wallets.getBalance(await arweave.wallets.jwkToAddress(jwk));
-    const price = tx.reward;
-    if (BigInt(balance) < BigInt(price)) {
-      return {
-        ok: false,
-        needsFunds: true,
-        error: `Недостаточно AR. Нужно ≈ ${arweave.ar.winstonToAr(price)} AR на адресе кошелька.`,
-      };
-    }
+        await client.transactions.sign(tx, jwk);
+        const address = await client.wallets.jwkToAddress(jwk);
+        const balance = await winstonBalance(address);
+        const price = tx.reward;
+        if (BigInt(balance) < BigInt(price)) {
+          return {
+            ok: false,
+            needsFunds: true,
+            error: `Недостаточно AR. Нужно ≈ ${client.ar.winstonToAr(price)} AR на адресе кошелька.`,
+          };
+        }
 
-    const res = await arweave.transactions.post(tx);
-    if (res.status !== 200 && res.status !== 208) {
-      return { ok: false, error: `Arweave post failed: ${res.status} ${res.statusText}` };
+        const res = await postSignedTx(tx);
+        if (res.status === 200 || res.status === 208) {
+          return { ok: true, txId: tx.id };
+        }
+        lastErr = new Error(`Arweave post failed: ${res.status} ${res.statusText}`);
+      } catch (e) {
+        lastErr = e;
+      }
     }
-    return { ok: true, txId: tx.id };
+    return {
+      ok: false,
+      error: lastErr instanceof Error ? lastErr.message : String(lastErr ?? "Arweave недоступен"),
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -62,7 +96,7 @@ export async function publishEnvelope(
 
 export async function getWalletBalanceAr(jwk: JWKInterface): Promise<string> {
   const address = await arweave.wallets.jwkToAddress(jwk);
-  const winston = await arweave.wallets.getBalance(address);
+  const winston = await winstonBalance(address);
   return arweave.ar.winstonToAr(winston);
 }
 

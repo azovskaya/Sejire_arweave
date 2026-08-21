@@ -26,6 +26,8 @@ if [[ ! -d node_modules/vite ]]; then
   npm install
 fi
 export VITE_PUBLISH_MODE="${VITE_PUBLISH_MODE:-self}"
+# Eternal bundle: no lab menu («Пример: 13 колен»).
+unset VITE_QA_TOOLS || true
 npm run build
 cd "$ROOT"
 

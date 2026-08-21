@@ -1,5 +1,6 @@
 import type { Person, TreeStore } from "./types";
 import { createTree, upsertPersonFields, setDraftPerson } from "./treeEngine";
+import { setLocalJson } from "./storageQuota";
 
 export type GuideStepId =
   | "self"
@@ -90,7 +91,7 @@ export function defaultGuide(): GuideState {
 }
 
 export function saveGuide(guide: GuideState) {
-  localStorage.setItem(GUIDE_KEY, JSON.stringify(guide));
+  setLocalJson(GUIDE_KEY, guide);
 }
 
 export function loadGuide(): GuideState | null {

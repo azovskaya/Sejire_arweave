@@ -20,12 +20,6 @@ import { downloadClassicTreePdf } from "../lib/pdf/classicTreePdf";
 import { downloadShezhirePdf, type ShezhireTemplateId } from "../lib/pdf/shezhirePdf";
 import { SHEZHIRE_MAX_GENERATIONS } from "../lib/i18n/pdf";
 import { downloadTreeJson, readTreeJsonFile } from "../lib/treeJson";
-import {
-  QA_13_FOCUS_ID,
-  QA_13_PERSON_COUNT,
-  qaThirteenGenerationMeta,
-  qaThirteenGenerationSnapshot,
-} from "../lib/pdf/thirteenLineage.fixture";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
 import { ShezhireMetaModal } from "./ShezhireMetaModal";
 import { ShezhireTemplateModal } from "./ShezhireTemplateModal";
@@ -35,6 +29,7 @@ import {
   getVaultSession,
 } from "../lib/vaultSession/session";
 import type { VaultV1 } from "../lib/crypto/vault";
+import { STORAGE_QUOTA_HINT } from "../lib/storageQuota";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -95,7 +90,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   }
 
   useEffect(() => {
-    saveDraftTree(store);
+    if (!saveDraftTree(store)) {
+      setToast({ message: STORAGE_QUOTA_HINT });
+    }
   }, [store]);
 
   useEffect(() => {
@@ -360,7 +357,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     if (!confirmReplaceDraft("открытие другой версии сейфа")) return;
     const selfId = pickHomeFocus(next.draft, null);
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId };
-    saveDraftTree(next);
+    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
     saveGuide(nextGuide);
     onStoreChange(next);
     onGuideChange(nextGuide);
@@ -386,7 +383,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       flash(result.error);
       return;
     }
-    saveDraftTree(result.store);
+    if (!saveDraftTree(result.store)) flash(STORAGE_QUOTA_HINT);
     saveGuide(result.guide);
     onStoreChange(result.store);
     onGuideChange(result.guide);
@@ -396,13 +393,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash(`Загружено: ${Object.keys(result.store.draft.persons).length} чел.`);
   }
 
-  function loadDemoThirteen() {
+  async function loadDemoThirteen() {
     if (!confirmReplaceDraft("пример полного древа на 13 колен")) return;
+    const {
+      QA_13_FOCUS_ID,
+      QA_13_PERSON_COUNT,
+      qaThirteenGenerationMeta,
+      qaThirteenGenerationSnapshot,
+    } = await import("../lib/pdf/thirteenLineage.fixture");
     const snapshot = qaThirteenGenerationSnapshot();
     const meta = qaThirteenGenerationMeta();
     const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-    saveDraftTree(next);
+    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
     saveGuide(nextGuide);
     onStoreChange(next);
     onGuideChange(nextGuide);
@@ -508,17 +511,19 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               >
                 Загрузить JSON
               </button>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => {
-                  closeMoreMenu();
-                  loadDemoThirteen();
-                }}
-                title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
-              >
-                Пример: 13 колен
-              </button>
+              {import.meta.env.VITE_QA_TOOLS === "1" ? (
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => {
+                    closeMoreMenu();
+                    void loadDemoThirteen();
+                  }}
+                  title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
+                >
+                  Пример: 13 колен
+                </button>
+              ) : null}
               {vaultSession?.vaultId ? (
                 <button
                   type="button"

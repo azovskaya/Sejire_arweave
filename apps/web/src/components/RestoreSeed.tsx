@@ -8,10 +8,12 @@ import { openEnvelope, openLocalVault, type VaultV1 } from "../lib/crypto/vault"
 import {
   fetchVaultEnvelope,
   formatVersionWhen,
+  isGatewayUnavailable,
   listVaultVersions,
   type VaultVersionMeta,
 } from "../lib/arweave/fetch";
 import { saveDraftTree, loadDraftTree } from "../lib/draftStorage";
+import type { TreeStore } from "../lib/types";
 import { defaultGuide, saveGuide } from "../lib/guide";
 import { pickHomeFocus } from "../lib/pedigree";
 import { activePersons } from "../lib/treeEngine";
@@ -23,7 +25,7 @@ import {
 } from "../lib/vaultSession/localArchive";
 
 type Props = {
-  onRestored: () => void;
+  onRestored: (store?: TreeStore) => void;
   onBack: () => void;
 };
 
@@ -76,7 +78,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       { vaultId: opts.vaultId, headTxId: opts.headTxId, source: opts.source },
       opts.mnemonic
     );
-    onRestored();
+    onRestored(store);
   }
 
   async function onSubmit(e: FormEvent) {
@@ -95,10 +97,15 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       setStatus(`Ищем версии (${fingerprintVaultId(keys.vaultId)})…`);
 
       let versions: VaultVersionMeta[] = [];
+      let networkError: string | null = null;
       try {
         versions = await listVaultVersions(keys.vaultId);
-      } catch {
-        versions = [];
+      } catch (e) {
+        networkError = isGatewayUnavailable(e)
+          ? e instanceof Error
+            ? e.message
+            : "Сеть Arweave недоступна."
+          : "Не удалось связаться с Arweave. Проверьте сеть и попробуйте снова.";
       }
       const archive = listLocalVaultVersions(keys.vaultId);
       const networkIds = new Set(versions.map((v) => v.txId));
@@ -111,10 +118,18 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       ];
 
       if (items.length === 0) {
-        throw new Error("Сейф не найден ни в сети, ни в этом браузере.");
+        throw new Error(
+          networkError
+            ? `${networkError} Локальных копий этого сейфа в браузере тоже нет.`
+            : "Сейф не найден ни в сети, ни в этом браузере."
+        );
       }
 
-      if (items.length === 1) {
+      if (networkError) {
+        setError(`${networkError} Показаны копии из этого браузера.`);
+      }
+
+      if (items.length === 1 && !networkError) {
         await openPickerItem(items[0], normalized, keys.vaultId);
         return;
       }

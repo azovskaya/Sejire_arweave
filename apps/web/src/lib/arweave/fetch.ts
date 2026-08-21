@@ -1,7 +1,7 @@
 import type { EnvelopeV1 } from "../crypto/encrypt";
+import { fetchTxJson, graphqlQuery } from "./gateways";
 
-const GQL = "https://arweave.net/graphql";
-const GATEWAY = "https://arweave.net";
+export { GatewayUnavailableError, isGatewayUnavailable } from "./gateways";
 
 export type VaultVersionMeta = {
   txId: string;
@@ -40,10 +40,8 @@ export function mapVaultVersionEdges(edges: GqlEdge[]): VaultVersionMeta[] {
 }
 
 export async function fetchEnvelopeByTx(txId: string): Promise<EnvelopeV1 | null> {
-  const dataRes = await fetch(`${GATEWAY}/${txId}`);
-  if (!dataRes.ok) return null;
   try {
-    const envelope = (await dataRes.json()) as EnvelopeV1;
+    const envelope = (await fetchTxJson(txId)) as EnvelopeV1 | null;
     if (envelope?.schema === "sejire/envelope/v1") return envelope;
   } catch {
     return null;
@@ -82,18 +80,11 @@ export async function listVaultVersions(
     }
   `;
 
-  const res = await fetch(GQL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables: { vaultId, limit } }),
+  const data = await graphqlQuery<{ transactions?: { edges: GqlEdge[] } }>(query, {
+    vaultId,
+    limit,
   });
-  if (!res.ok) throw new Error(`GraphQL ${res.status}`);
-  const body = (await res.json()) as {
-    data?: { transactions?: { edges: GqlEdge[] } };
-    errors?: unknown;
-  };
-  if (body.errors) throw new Error("GraphQL errors listing vault versions");
-  return mapVaultVersionEdges(body.data?.transactions?.edges ?? []);
+  return mapVaultVersionEdges(data.transactions?.edges ?? []);
 }
 
 /**

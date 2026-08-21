@@ -242,7 +242,10 @@ export function PedigreeView({
             </button>
           ) : null}
         </div>
-        {(scale !== 1 || Math.abs(pan.x - 28) > 2) && (
+        {(scale !== 1 ||
+          Math.abs(pan.x - 28) > 2 ||
+          Math.abs(pan.y - panToFocus(viewportRef.current?.clientHeight || 480, focusCardY).y) >
+            2) && (
           <div className="pedigree-toolbar" aria-label="Вид">
             <button
               type="button"
