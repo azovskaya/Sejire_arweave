@@ -22,6 +22,8 @@ type Props = {
   onDelete: () => void;
   onFocusAncestors?: () => void;
   showFocusAncestors?: boolean;
+  /** Profile is an older knee — adding papa/mama will reframe the canvas. */
+  nextKneeShiftsView?: boolean;
 };
 
 function emptyPerson(): Person {
@@ -95,6 +97,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
   onDelete,
   onFocusAncestors,
   showFocusAncestors = false,
+  nextKneeShiftsView = false,
 }: Props,
   ref
 ) {
@@ -343,6 +346,11 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
             + Ребёнок
           </button>
         </div>
+        {nextKneeShiftsView && (!hasFather || !hasMother) ? (
+          <p className="sub" style={{ marginTop: "0.55rem" }}>
+            Следующее колено откроется от этого человека — так оно видно на схеме.
+          </p>
+        ) : null}
         {relatives.length > 0 && (
           <ul className="rel-list">
             {relatives.map((r) => (

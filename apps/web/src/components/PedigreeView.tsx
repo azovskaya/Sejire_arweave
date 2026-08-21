@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent }
 import type { Snapshot } from "../lib/types";
 import {
   PEDIGREE_CARD,
+  SCREEN_PEDIGREE_GENERATIONS,
   buildPedigree,
   cardFactLines,
   type AddMeSlot,
@@ -69,7 +70,7 @@ export function PedigreeView({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   scaleRef.current = scale;
 
-  const { items, edges, width, height } = buildPedigree(snapshot, focusId, 7);
+  const { items, edges, width, height } = buildPedigree(snapshot, focusId, SCREEN_PEDIGREE_GENERATIONS);
   const empty = items.length === 0;
   const focusPerson = focusId ? snapshot.persons[focusId] : null;
   const showHome = Boolean(homeFocusId && focusId && homeFocusId !== focusId);

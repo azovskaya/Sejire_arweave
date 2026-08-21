@@ -41,6 +41,9 @@ const GAP_Y = 20;
 
 export const PEDIGREE_CARD = { w: CARD_W, h: CARD_H, gapX: GAP_X, gapY: GAP_Y };
 
+/** Visible ancestor columns on the canvas (focus + this many − 1). Deeper knees: look from an older person. */
+export const SCREEN_PEDIGREE_GENERATIONS = 7;
+
 function yearOf(iso?: string | null) {
   return yearFromDate(iso);
 }
@@ -106,11 +109,13 @@ export function splitParents(snapshot: Snapshot, personId: string) {
  * Classic landscape pedigree (FamilySearch-style):
  * focus on the left, ancestors in columns to the right.
  * Default 7 columns = self + 6 ancestor gens (жети ата depth on screen).
+ * Beyond that, shift the window ("Смотреть предков отсюда") — a full 7th
+ * empty binary column would be 64 giant "+" cards and a 9000px canvas.
  */
 export function buildPedigree(
   snapshot: Snapshot,
   focusId: string | null,
-  maxGenerations = 7
+  maxGenerations = SCREEN_PEDIGREE_GENERATIONS
 ): { items: PedigreeItem[]; edges: PedigreeEdge[]; width: number; height: number; focusId: string | null } {
   const people = activePersons(snapshot);
   if (!people.length || !focusId || !snapshot.persons[focusId] || snapshot.persons[focusId].tombstone) {
@@ -136,10 +141,11 @@ export function buildPedigree(
       if (motherId) next.push({ personId: motherId });
       else next.push({ personId: null, add: "mother", childId: cell.personId });
     }
+    const hasPeople = next.some((c) => c.personId);
+    // A wall of only "+" cards (32 people × 2) is unusable and buries the focus.
+    if (!hasPeople && next.length > 8) break;
     gens[g + 1] = next;
-    // Stop after the first generation that has no people — otherwise 7 gens
-    // of empty binary slots make a ~9000px canvas and hide "yourself" off-screen.
-    if (!next.some((c) => c.personId)) break;
+    if (!hasPeople) break;
   }
 
   const items: PedigreeItem[] = [];
@@ -244,6 +250,39 @@ export function pickDefaultFocus(snapshot: Snapshot, preferredId?: string | null
     p.parents.some((id) => snapshot.persons[id] && !snapshot.persons[id].tombstone)
   );
   return withParents?.id ?? people[0].id;
+}
+
+/** Distance from the pedigree focus to an ancestor (0 = focus). Null if not on that ancestor path. */
+export function generationFromFocus(
+  snapshot: Snapshot,
+  focusId: string | null,
+  personId: string,
+  maxGenerations = 13
+): number | null {
+  if (!focusId || !snapshot.persons[personId] || snapshot.persons[personId].tombstone) return null;
+  if (focusId === personId) return 0;
+  const seen = new Set<string>();
+  let frontier = [focusId];
+  for (let gen = 0; gen < maxGenerations; gen += 1) {
+    if (frontier.includes(personId)) return gen;
+    const next: string[] = [];
+    for (const id of frontier) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const { fatherId, motherId } = splitParents(snapshot, id);
+      if (fatherId) next.push(fatherId);
+      if (motherId) next.push(motherId);
+    }
+    if (!next.length) break;
+    frontier = next;
+  }
+  return null;
+}
+
+/** Adding a parent to someone this far right would land off-screen or in a clipped column. */
+export function parentAddNeedsFocusShift(childGeneration: number | null): boolean {
+  if (childGeneration == null) return false;
+  return childGeneration >= SCREEN_PEDIGREE_GENERATIONS - 2;
 }
 
 /** Prefer guided "self", else youngest person in the graph. */
