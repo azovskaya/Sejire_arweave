@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import type { Snapshot } from "../lib/types";
 import {
@@ -106,7 +106,7 @@ export function PedigreeView({
   const sizeClass = cardSizeClass(card);
   const tiny = card.h < 46;
 
-  function applyFit() {
+  const applyFit = useCallback(() => {
     const el = viewportRef.current;
     const vw = el?.clientWidth || 800;
     const vh = el?.clientHeight || 480;
@@ -114,7 +114,7 @@ export function PedigreeView({
     setScale(next.scale);
     setPan(next.pan);
     return next;
-  }
+  }, [width, height]);
 
   function resetView() {
     userZoomed.current = false;
@@ -136,7 +136,7 @@ export function PedigreeView({
     if (empty) return;
     userZoomed.current = false;
     applyFit();
-  }, [focusId, empty, width, height]);
+  }, [focusId, empty, applyFit]);
 
   useEffect(() => {
     if (empty) return;
@@ -148,7 +148,7 @@ export function PedigreeView({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [empty, width, height]);
+  }, [empty, applyFit]);
 
   useEffect(() => {
     const el = viewportRef.current;
