@@ -19,7 +19,7 @@ export type AddPersonPayload = {
 type Props = {
   title: string;
   defaultSex?: Person["sex"];
-  /** When true, ask for sex (e.g. adding yourself). Parents/children get sex from role. */
+  /** When true, ask for sex (e.g. adding yourself). Parents get sex from the role. */
   askSex?: boolean;
   onCancel: () => void;
   onSave: (data: AddPersonPayload) => void;

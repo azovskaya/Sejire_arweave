@@ -17,7 +17,7 @@ type Props = {
   highlightAncestors?: boolean;
   onClose: () => void;
   onChange: (person: Person) => void;
-  onAdd: (role: "father" | "mother" | "child") => void;
+  onAdd: (role: "father" | "mother") => void;
   onSelectRelative: (id: string) => void;
   onDelete: () => void;
   onFocusAncestors?: () => void;
@@ -339,9 +339,6 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
               + Мама
             </button>
           ) : null}
-          <button type="button" className="btn ghost" onClick={() => onAdd("child")}>
-            + Ребёнок
-          </button>
         </div>
         {relatives.length > 0 && (
           <ul className="rel-list">

@@ -44,8 +44,7 @@ type Props = {
 
 type PendingAdd =
   | { type: "self" }
-  | { type: "parent"; childId: string; role: "father" | "mother" }
-  | { type: "child"; parentId: string };
+  | { type: "parent"; childId: string; role: "father" | "mother" };
 
 type ToastState = {
   message: string;
@@ -246,16 +245,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       setSelectedId(id);
       setProfileOpen(true);
       flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
-    } else if (pending.type === "child") {
-      person.parents = [pending.parentId];
-      next = setDraftPerson(store, person);
-      setSelectedId(id);
-      setProfileOpen(true);
-      flash(
-        "Ребёнок добавлен. На схеме видны предки — чтобы увидеть его карточку, откройте схему от него.",
-        () => setFocus(id),
-        "Показать от него"
-      );
     }
 
     persist(next);
@@ -423,9 +412,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         ? pending.role === "mother"
           ? "Добавить маму"
           : "Добавить папу"
-        : pending?.type === "child"
-          ? "Добавить ребёнка"
-          : "";
+        : "";
 
   return (
     <div className="app-frame">
@@ -645,8 +632,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           }}
           onAdd={(role) => {
             if (!selected) return;
-            if (role === "child") setPending({ type: "child", parentId: selected.id });
-            else setPending({ type: "parent", childId: selected.id, role });
+            setPending({ type: "parent", childId: selected.id, role });
           }}
         />
       </div>
@@ -655,9 +641,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         <AddPersonModal
           title={modalTitle}
           defaultSex={
-            pending.type === "parent" ? (pending.role === "mother" ? "F" : "M") : pending.type === "self" ? "U" : "U"
+            pending.type === "parent" ? (pending.role === "mother" ? "F" : "M") : "U"
           }
-          askSex={pending.type === "self" || pending.type === "child"}
+          askSex={pending.type === "self"}
           onCancel={() => setPending(null)}
           onSave={completeAdd}
         />
