@@ -884,6 +884,42 @@ a {
   color: var(--ink);
 }
 
+.person-card.is-compact .card-inner {
+  padding: 0.28rem 0.35rem 0.22rem;
+  gap: 0.08rem;
+  justify-content: center;
+}
+
+.person-card.is-compact .card-title {
+  font-size: 0.72rem;
+  max-height: 2.4em;
+}
+
+.person-card.is-compact.add-me .card-title {
+  font-size: 0.62rem;
+}
+
+.person-card.is-tiny .card-inner {
+  padding: 0.08rem 0.16rem;
+  gap: 0;
+  justify-content: center;
+}
+
+.person-card.is-tiny .card-title {
+  font-size: 0.58rem;
+  -webkit-line-clamp: 1;
+  max-height: 1.25em;
+}
+
+.person-card.is-tiny .card-row,
+.person-card.is-tiny .card-meta {
+  display: none;
+}
+
+.person-card.is-tiny .add-plus {
+  font-size: 0.7rem;
+}
+
 .add-plus {
   font-size: 1.15rem;
   color: var(--accent);

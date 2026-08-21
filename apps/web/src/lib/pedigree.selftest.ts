@@ -4,9 +4,8 @@
 import {
   buildPedigree,
   generationFromFocus,
-  parentAddNeedsFocusShift,
   splitParents,
-  SCREEN_PEDIGREE_GENERATIONS,
+  PEDIGREE_MAX_GENERATIONS,
 } from "./pedigree";
 import type { Person, Snapshot } from "./types";
 
@@ -63,15 +62,17 @@ const six = completeAncestry(6);
 assert(generationFromFocus(six, "a1", "a1") === 0, "focus gen 0");
 assert(generationFromFocus(six, "a1", "a2") === 1, "father gen 1");
 assert(generationFromFocus(six, "a1", "a32") === 5, "oldest 6-knee person is gen 5");
-assert(parentAddNeedsFocusShift(5), "adding a 7th knee must shift the window");
-assert(!parentAddNeedsFocusShift(0), "adding parents of self does not shift");
 
-const sixPed = buildPedigree(six, "a1", SCREEN_PEDIGREE_GENERATIONS);
+const sixPed = buildPedigree(six, "a1", PEDIGREE_MAX_GENERATIONS);
 const sixAdds = sixPed.items.filter((i) => i.kind === "add");
-assert(sixAdds.length <= 8, `do not paint 64 plus-cards after a full 6th knee (${sixAdds.length})`);
+assert(sixAdds.length <= 8, `do not paint a wall of plus-cards after a full 6th knee (${sixAdds.length})`);
 assert(
   sixPed.items.some((i) => i.kind === "person" && i.id === "a32"),
   "oldest 6-knee people stay on the canvas"
+);
+assert(
+  sixPed.items.filter((i) => i.kind === "person").length === 63,
+  "all 63 people of a 6-knee tree stay on one sheet"
 );
 
 const withSeventh: Snapshot = {
@@ -81,15 +82,52 @@ const withSeventh: Snapshot = {
   },
 };
 withSeventh.persons.a32 = { ...withSeventh.persons.a32, parents: ["a64"] };
-const shifted = buildPedigree(withSeventh, "a32", SCREEN_PEDIGREE_GENERATIONS);
+const fromSelf = buildPedigree(withSeventh, "a1", PEDIGREE_MAX_GENERATIONS);
 assert(
-  shifted.items.some((i) => i.kind === "person" && i.id === "a64"),
-  "after looking from the 6th-knee person, the 7th knee is visible"
+  fromSelf.items.some((i) => i.kind === "person" && i.id === "a1"),
+  "self stays on the same canvas"
 );
+assert(
+  fromSelf.items.some((i) => i.kind === "person" && i.id === "a32"),
+  "6th knee stays on the same canvas"
+);
+assert(
+  fromSelf.items.some((i) => i.kind === "person" && i.id === "a64"),
+  "7th knee is visible from self — no window shift"
+);
+
+function maleLine(knees: number): Snapshot {
+  const persons: Record<string, Person> = {};
+  for (let i = 1; i <= knees; i += 1) {
+    const parent = i < knees ? `m${i + 1}` : null;
+    persons[`m${i}`] = {
+      id: `m${i}`,
+      name: `M${i}`,
+      sex: "M",
+      parents: parent ? [parent] : [],
+      media: [],
+    };
+  }
+  return { persons };
+}
+
+const line = maleLine(13);
+const linePed = buildPedigree(line, "m1", PEDIGREE_MAX_GENERATIONS);
+assert(
+  linePed.items.filter((i) => i.kind === "person").length === 13,
+  "all 13 male-line knees on one canvas"
+);
+assert(
+  linePed.items.some((i) => i.kind === "person" && i.id === "m13"),
+  "13th knee visible from self"
+);
+assert(linePed.height < 600, `13-knee male line stays compact (${linePed.height}px)`);
 
 console.log("pedigree.selftest: OK", {
   items: ped.items.length,
   edges: ped.edges.length,
   soloH: soloPed.height,
   sixAdds: sixAdds.length,
+  sevenFromSelf: fromSelf.items.filter((i) => i.kind === "person").length,
+  lineH: linePed.height,
 });

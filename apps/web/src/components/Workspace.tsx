@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Person, TreeStore } from "../lib/types";
 import { saveDraftTree } from "../lib/draftStorage";
 import { type GuideState, defaultGuide, saveGuide } from "../lib/guide";
-import { pickDefaultFocus, pickHomeFocus, splitParents, generationFromFocus, parentAddNeedsFocusShift, type AddMeSlot } from "../lib/pedigree";
+import { pickDefaultFocus, pickHomeFocus, splitParents, type AddMeSlot } from "../lib/pedigree";
 import { PedigreeView } from "./PedigreeView";
 import { PersonPanel, type PersonPanelHandle } from "./PersonPanel";
 import { AddPersonModal, type AddPersonPayload } from "./AddPersonModal";
@@ -243,21 +243,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       }
       if (pending.role === "mother") nextGuide.motherId = id;
       if (pending.role === "father") nextGuide.fatherId = id;
-      const childGen = generationFromFocus(store.draft, focusId, pending.childId);
-      const shift = parentAddNeedsFocusShift(childGen);
       setSelectedId(id);
       setProfileOpen(true);
-      if (shift) {
-        setFocusId(pending.childId);
-        const childName = child?.name?.trim() || "этого человека";
-        flash(
-          pending.role === "mother"
-            ? `Мама добавлена. Схема от «${childName}» — видно следующее колено.`
-            : `Папа добавлен. Схема от «${childName}» — видно следующее колено.`
-        );
-      } else {
-        flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
-      }
+      flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
     } else if (pending.type === "child") {
       person.parents = [pending.parentId];
       next = setDraftPerson(store, person);
@@ -628,9 +616,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           onClose={closeProfile}
           onChange={onPersonChange}
           showFocusAncestors={Boolean(selected && focusId && selected.id !== focusId)}
-          nextKneeShiftsView={parentAddNeedsFocusShift(
-            selected ? generationFromFocus(store.draft, focusId, selected.id) : null
-          )}
           onFocusAncestors={() => {
             if (!selected) return;
             setAncestorsHint(false);

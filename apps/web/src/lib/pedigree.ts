@@ -41,8 +41,24 @@ const GAP_Y = 20;
 
 export const PEDIGREE_CARD = { w: CARD_W, h: CARD_H, gapX: GAP_X, gapY: GAP_Y };
 
-/** Visible ancestor columns on the canvas (focus + this many − 1). Deeper knees: look from an older person. */
-export const SCREEN_PEDIGREE_GENERATIONS = 7;
+/** All ancestor knees from the focus, matching шежіре depth. One canvas, not a sliding 7-gen window. */
+export const PEDIGREE_MAX_GENERATIONS = 13;
+/** @deprecated use PEDIGREE_MAX_GENERATIONS — kept so older tests/imports keep working */
+export const SCREEN_PEDIGREE_GENERATIONS = PEDIGREE_MAX_GENERATIONS;
+
+export type PedigreeCardMetrics = { w: number; h: number; gapX: number; gapY: number };
+
+function cardMetrics(maxRows: number): PedigreeCardMetrics {
+  const naturalPitch = CARD_H + GAP_Y;
+  const cap = 1600;
+  const scale = maxRows * naturalPitch > cap ? cap / (maxRows * naturalPitch) : 1;
+  return {
+    w: Math.max(72, Math.round(CARD_W * scale)),
+    h: Math.max(28, Math.round(CARD_H * scale)),
+    gapX: Math.max(12, Math.round(GAP_X * scale)),
+    gapY: Math.max(3, Math.round(GAP_Y * scale)),
+  };
+}
 
 function yearOf(iso?: string | null) {
   return yearFromDate(iso);
@@ -106,62 +122,89 @@ export function splitParents(snapshot: Snapshot, personId: string) {
 }
 
 /**
- * Classic landscape pedigree (FamilySearch-style):
- * focus on the left, ancestors in columns to the right.
- * Default 7 columns = self + 6 ancestor gens (жети ата depth on screen).
- * Beyond that, shift the window ("Смотреть предков отсюда") — a full 7th
- * empty binary column would be 64 giant "+" cards and a 9000px canvas.
+ * Classic landscape pedigree: focus on the left, ancestors to the right.
+ * The whole ancestor line from the focus (up to 13 knees) stays on one canvas.
+ * Cards shrink when a generation is wide so the sheet remains pannable.
  */
 export function buildPedigree(
   snapshot: Snapshot,
   focusId: string | null,
-  maxGenerations = SCREEN_PEDIGREE_GENERATIONS
-): { items: PedigreeItem[]; edges: PedigreeEdge[]; width: number; height: number; focusId: string | null } {
+  maxGenerations = PEDIGREE_MAX_GENERATIONS
+): {
+  items: PedigreeItem[];
+  edges: PedigreeEdge[];
+  width: number;
+  height: number;
+  focusId: string | null;
+  card: PedigreeCardMetrics;
+} {
   const people = activePersons(snapshot);
+  const emptyCard = { ...PEDIGREE_CARD };
   if (!people.length || !focusId || !snapshot.persons[focusId] || snapshot.persons[focusId].tombstone) {
-    return { items: [], edges: [], width: 800, height: 480, focusId: null };
+    return { items: [], edges: [], width: 800, height: 480, focusId: null, card: emptyCard };
   }
 
-  type Cell = { personId: string | null; add?: "father" | "mother"; childId?: string };
+  type Cell = {
+    personId: string | null;
+    add?: "father" | "mother";
+    childId?: string;
+    slot: number;
+  };
   const gens: Cell[][] = [];
-
-  // gen 0
-  gens[0] = [{ personId: focusId }];
+  const placed = new Set<string>();
+  gens[0] = [{ personId: focusId, slot: 0 }];
+  placed.add(focusId);
 
   for (let g = 0; g < maxGenerations - 1; g += 1) {
     const next: Cell[] = [];
     for (const cell of gens[g]) {
-      if (!cell.personId) {
-        next.push({ personId: null }, { personId: null });
-        continue;
-      }
+      if (!cell.personId) continue;
       const { fatherId, motherId } = splitParents(snapshot, cell.personId);
-      if (fatherId) next.push({ personId: fatherId });
-      else next.push({ personId: null, add: "father", childId: cell.personId });
-      if (motherId) next.push({ personId: motherId });
-      else next.push({ personId: null, add: "mother", childId: cell.personId });
+      if (fatherId && snapshot.persons[fatherId] && !snapshot.persons[fatherId].tombstone && !placed.has(fatherId)) {
+        placed.add(fatherId);
+        next.push({ personId: fatherId, slot: cell.slot * 2 });
+      } else if (!fatherId || !snapshot.persons[fatherId] || snapshot.persons[fatherId].tombstone) {
+        next.push({ personId: null, add: "father", childId: cell.personId, slot: cell.slot * 2 });
+      }
+      if (motherId && snapshot.persons[motherId] && !snapshot.persons[motherId].tombstone && !placed.has(motherId)) {
+        placed.add(motherId);
+        next.push({ personId: motherId, slot: cell.slot * 2 + 1 });
+      } else if (!motherId || !snapshot.persons[motherId] || snapshot.persons[motherId].tombstone) {
+        next.push({ personId: null, add: "mother", childId: cell.personId, slot: cell.slot * 2 + 1 });
+      }
     }
+    if (!next.length) break;
     const hasPeople = next.some((c) => c.personId);
-    // A wall of only "+" cards (32 people × 2) is unusable and buries the focus.
-    if (!hasPeople && next.length > 8) break;
-    gens[g + 1] = next;
+    const addCount = next.filter((c) => c.add).length;
+    // Do not paint a wall of "+" cards (32 people × 2). Missing parents stay on the profile.
+    if (!hasPeople && addCount > 8) break;
+    gens[g + 1] = hasPeople && addCount > 8 ? next.filter((c) => c.personId) : next;
     if (!hasPeople) break;
   }
 
-  const items: PedigreeItem[] = [];
-  const colX = (g: number) => 40 + g * (CARD_W + GAP_X);
-  const maxRows = gens[gens.length - 1]?.length ?? 1;
-  const totalH = maxRows * (CARD_H + GAP_Y);
-  const yFor = (g: number, slot: number) => {
+  const maxRows = Math.max(1, ...gens.map((col) => col.length));
+  const maxSlot = Math.max(0, ...gens.flatMap((col) => col.map((c) => c.slot)));
+  const card = cardMetrics(maxRows);
+  const bushy = maxRows > 4;
+  const leafSlots = maxSlot + 1;
+  const contentH = (bushy ? Math.max(leafSlots, maxRows) : Math.max(maxRows, 2)) * (card.h + card.gapY);
+  const colX = (g: number) => 40 + g * (card.w + card.gapX);
+
+  const yFor = (g: number, cell: Cell, index: number) => {
+    if (bushy) {
+      const denom = 2 ** g;
+      return 40 + ((cell.slot + 0.5) / denom) * contentH - card.h / 2;
+    }
     const rows = gens[g].length;
-    const block = totalH / rows;
-    return 40 + slot * block + (block - CARD_H) / 2;
+    const block = contentH / rows;
+    return 40 + index * block + (block - card.h) / 2;
   };
 
+  const items: PedigreeItem[] = [];
   gens.forEach((cells, g) => {
-    cells.forEach((cell, slot) => {
+    cells.forEach((cell, index) => {
       const x = colX(g);
-      const y = yFor(g, slot);
+      const y = yFor(g, cell, index);
       if (cell.personId) {
         const person = snapshot.persons[cell.personId];
         if (!person || person.tombstone) return;
@@ -170,7 +213,7 @@ export function buildPedigree(
           id: person.id,
           person,
           generation: g,
-          slot,
+          slot: cell.slot,
           x,
           y,
         });
@@ -181,7 +224,7 @@ export function buildPedigree(
           childId: cell.childId,
           role: cell.add,
           generation: g,
-          slot,
+          slot: cell.slot,
           x,
           y,
         });
@@ -191,33 +234,27 @@ export function buildPedigree(
 
   const byKey = new Map<string, { x: number; y: number }>();
   for (const it of items) {
-    if (it.kind === "person") byKey.set(it.id, { x: it.x + CARD_W, y: it.y + CARD_H / 2 });
-    else byKey.set(it.key, { x: it.x, y: it.y + CARD_H / 2 });
+    if (it.kind === "person") byKey.set(it.id, { x: it.x + card.w, y: it.y + card.h / 2 });
+    else byKey.set(it.key, { x: it.x, y: it.y + card.h / 2 });
   }
 
-  // child left-center → parent left-center (edge from child right to parent left)
   const edges: PedigreeEdge[] = [];
   for (const it of items) {
     if (it.kind !== "person" || it.generation === 0) continue;
-    // find child in previous generation that points here
     const prev = gens[it.generation - 1];
-    const parentSlot = it.slot;
-    const childSlot = Math.floor(parentSlot / 2);
-    const childCell = prev[childSlot];
+    const childCell = prev.find((c) => c.slot === Math.floor(it.slot / 2) && c.personId);
     if (!childCell?.personId) continue;
     const childPos = byKey.get(childCell.personId);
-    const parentPos = byKey.get(it.id);
-    if (!childPos || !parentPos) continue;
+    if (!childPos) continue;
     edges.push({
       fromId: childCell.personId,
       toKey: it.id,
       x1: childPos.x,
       y1: childPos.y,
       x2: it.x,
-      y2: it.y + CARD_H / 2,
+      y2: it.y + card.h / 2,
     });
   }
-  // edges to add-me slots
   for (const it of items) {
     if (it.kind !== "add") continue;
     const childPos = byKey.get(it.childId);
@@ -228,13 +265,13 @@ export function buildPedigree(
       x1: childPos.x,
       y1: childPos.y,
       x2: it.x,
-      y2: it.y + CARD_H / 2,
+      y2: it.y + card.h / 2,
     });
   }
 
-  const width = colX(gens.length - 1) + CARD_W + 80;
-  const height = totalH + 80;
-  return { items, edges, width, height, focusId };
+  const width = colX(gens.length - 1) + card.w + 80;
+  const height = contentH + 80;
+  return { items, edges, width, height, focusId, card };
 }
 
 export function pickDefaultFocus(snapshot: Snapshot, preferredId?: string | null) {
@@ -277,12 +314,6 @@ export function generationFromFocus(
     frontier = next;
   }
   return null;
-}
-
-/** Adding a parent to someone this far right would land off-screen or in a clipped column. */
-export function parentAddNeedsFocusShift(childGeneration: number | null): boolean {
-  if (childGeneration == null) return false;
-  return childGeneration >= SCREEN_PEDIGREE_GENERATIONS - 2;
 }
 
 /** Prefer guided "self", else youngest person in the graph. */
