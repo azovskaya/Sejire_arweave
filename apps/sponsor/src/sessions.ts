@@ -10,6 +10,8 @@ export type PaymentSession = {
   amountMinor: number;
   currency: string;
   provider: string;
+  /** Vault this payment may publish — bind at checkout. */
+  vaultId: string;
   createdAt: number;
   paidAt?: number;
   txId?: string;
@@ -48,6 +50,7 @@ export function kvSessionStore(kv: KVNamespace): SessionStore {
           amountMinor: 0,
           currency: "USD",
           provider: "legacy",
+          vaultId: "",
           createdAt: 0,
           txId: raw,
         };

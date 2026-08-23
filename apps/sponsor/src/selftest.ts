@@ -3,6 +3,7 @@
  * npm run test -C apps/sponsor  (via tsx)
  */
 import { assertSafeEnvelope, envelopeByteLength } from "./envelope";
+import { cashierGuardError } from "./cashierGuard";
 import {
   assertSessionPaid,
   createCheckoutSession,
@@ -54,6 +55,7 @@ async function main() {
     provider: "mock",
     amountMinor: 1500,
     currency: "KZT",
+    vaultId: goodEnvelope.vault_id,
   });
   assert(checkout.mockPayable && checkout.sessionId.startsWith("sej_"), "checkout mock");
   n += 1;
@@ -73,6 +75,7 @@ async function main() {
       provider: "kaspi",
       amountMinor: 1500,
       currency: "KZT",
+      vaultId: goodEnvelope.vault_id,
     });
     throw new Error("kaspi should fail");
   } catch (e) {
@@ -90,6 +93,44 @@ async function main() {
   const again = await assertSessionPaid(store, checkout.sessionId, 1500);
   assert(again.txId === up.txId, "idempotent tx");
   n += 1;
+
+  try {
+    await assertSessionPaid(store, checkout.sessionId, 1500, "other-vault-id-xx");
+    throw new Error("vault mismatch should fail");
+  } catch (e) {
+    assert(e instanceof Error && e.message === "vault_mismatch", "vault bound to session");
+    n += 1;
+  }
+
+  assert(
+    cashierGuardError({ PAYMENT_PROVIDER: "mock", TURBO_JWK: '{"kty":"RSA"}' })?.error ===
+      "mock_forbidden_with_treasury",
+    "mock + treasury"
+  );
+  n += 1;
+  assert(
+    cashierGuardError({ PAYMENT_PROVIDER: "kaspi" })?.error === "kv_required",
+    "kaspi needs KV"
+  );
+  n += 1;
+  assert(
+    cashierGuardError({ PAYMENT_PROVIDER: "mock" }) === null,
+    "mock without treasury ok"
+  );
+  n += 1;
+
+  try {
+    await createCheckoutSession(store, {
+      provider: "mock",
+      amountMinor: 1500,
+      currency: "KZT",
+      vaultId: "",
+    });
+    throw new Error("empty vaultId should fail");
+  } catch (e) {
+    assert(e instanceof Error && e.message === "missing_vault_id", "checkout needs vault");
+    n += 1;
+  }
 
   console.log(`sponsor.selftest: ${n} asserts ok`);
 }

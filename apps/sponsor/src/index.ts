@@ -17,6 +17,7 @@
  *  - MAX_ENVELOPE_BYTES   = "524288"
  *  - APP_ORIGIN           = comma-separated allowed origins
  */
+import { cashierGuardError } from "./cashierGuard";
 import { assertSafeEnvelope, envelopeByteLength } from "./envelope";
 import {
   assertSessionPaid,
@@ -115,11 +116,17 @@ export default {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const status =
-        msg === "session_not_found" || msg === "not_paid" || msg === "forbidden_field"
+        msg === "session_not_found" ||
+        msg === "not_paid" ||
+        msg === "forbidden_field" ||
+        msg === "missing_vault_id" ||
+        msg === "vault_mismatch"
           ? 400
           : msg === "envelope_too_large"
             ? 413
-            : 500;
+            : msg === "mock_forbidden_with_treasury" || msg === "kv_required"
+              ? 503
+              : 500;
       return json(origin, status, { ok: false, error: msg });
     }
   },
@@ -131,11 +138,19 @@ async function createCheckout(
   store: SessionStore,
   origin: string
 ): Promise<Response> {
-  let body: { successUrl?: string; cancelUrl?: string } = {};
+  const blocked = cashierGuardError(env);
+  if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
+
+  let body: { successUrl?: string; cancelUrl?: string; vaultId?: string } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
     body = {};
+  }
+
+  const vaultId = (body.vaultId || "").trim();
+  if (vaultId.length < 8) {
+    return json(origin, 400, { ok: false, error: "missing_vault_id" });
   }
 
   const provider = (env.PAYMENT_PROVIDER || "mock").toLowerCase();
@@ -144,6 +159,7 @@ async function createCheckout(
       provider,
       amountMinor: priceMinor(env),
       currency: env.PUBLISH_CURRENCY || "KZT",
+      vaultId,
       kaspiMerchantToken: env.KASPI_MERCHANT_TOKEN,
       successUrl: body.successUrl,
       cancelUrl: body.cancelUrl,
@@ -171,6 +187,8 @@ async function mockPay(
   store: SessionStore,
   origin: string
 ): Promise<Response> {
+  const blocked = cashierGuardError(env);
+  if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
   if ((env.PAYMENT_PROVIDER || "mock").toLowerCase() !== "mock") {
     return json(origin, 403, { ok: false, error: "mock_pay_disabled" });
   }
@@ -224,8 +242,11 @@ async function publishEnvelope(
     return json(origin, 413, { ok: false, error: "envelope_too_large" });
   }
 
+  const blocked = cashierGuardError(env);
+  if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
+
   const amount = priceMinor(env);
-  const session = await assertSessionPaid(store, sessionId, amount);
+  const session = await assertSessionPaid(store, sessionId, amount, envelope.vault_id);
   if (session.txId) {
     return json(origin, 200, { ok: true, txId: session.txId, idempotent: true });
   }

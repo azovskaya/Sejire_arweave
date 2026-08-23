@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
+import { isPagesTestMirror } from "../lib/siteMirror";
 
 type Props = {
   onStartNew: (title: string) => void;
@@ -48,6 +49,15 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
         <button type="button" className="welcome-menu-brand" onClick={() => setStep("brand")}>
           SEJIRE
         </button>
+        {isPagesTestMirror() ? (
+          <p className="welcome-menu-sub">
+            Это тестовое зеркало GitHub Pages. Канон{" "}
+            <a href="https://sejire.ar.io" target="_blank" rel="noreferrer">
+              sejire.ar.io
+            </a>{" "}
+            пока со старым паком.
+          </p>
+        ) : null}
 
         <div className="welcome-menu-actions">
           {hasDraft ? (

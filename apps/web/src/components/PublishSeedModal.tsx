@@ -16,7 +16,6 @@ import {
 } from "../lib/crypto/vault";
 import type { EnvelopeV1 } from "../lib/crypto/encrypt";
 import { loadVaultForPublish } from "../lib/arweave/loadVault";
-import { fetchLatestEnvelope } from "../lib/arweave/fetch";
 import { addressFromJwk, jwkFromSeed } from "../lib/arweave/wallet";
 import { getWalletBalanceAr, publishEnvelope } from "../lib/arweave/publish";
 import { isDemoPublishEnabled, isSponsorPublishEnabled } from "../lib/sponsor/config";
@@ -172,21 +171,12 @@ export function PublishSeedModal({
   }> {
     const keys = deriveKeysFromMnemonic(phrase);
     setStatus(`Сейф ${fingerprintVaultId(keys.vaultId)}…`);
-    let parentTx = publishParentTx;
-    if (!parentTx) {
-      try {
-        const latest = await fetchLatestEnvelope(keys.vaultId);
-        if (latest) parentTx = latest.txId;
-      } catch {
-        /* offline — first publish or no chain link */
-      }
-    }
-    setPublishParentTx(parentTx);
-    let vault = await loadVaultForPublish(keys, { parentTxId: parentTx });
-    vault = putTree(vault, store);
+    const loaded = await loadVaultForPublish(keys, { parentTxId: publishParentTx });
+    setPublishParentTx(loaded.parentTxId);
+    const vault = putTree(loaded.vault, store);
     setStatus("Шифруем сейф ключом из 12 слов…");
     const envelope = await sealVault(keys, vault);
-    return { keys, envelope, parentTx };
+    return { keys, envelope, parentTx: loaded.parentTxId };
   }
 
   function rememberSession(
@@ -312,6 +302,7 @@ export function PublishSeedModal({
       setPublishParentTx(parentTx);
       setStatus("Создаём сессию оплаты…");
       const sessionPay = await sponsorCheckout({
+        vaultId: envelope.vault_id,
         successUrl: typeof window !== "undefined" ? window.location.href : undefined,
         cancelUrl: typeof window !== "undefined" ? window.location.href : undefined,
       });

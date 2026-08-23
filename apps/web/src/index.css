@@ -417,6 +417,18 @@ a {
   display: block;
 }
 
+.brand-mirror {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-dim);
+  max-width: min(52vw, 320px);
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .tree-title {
   display: block;
   color: var(--ink-dim);

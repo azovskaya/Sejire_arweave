@@ -1,5 +1,5 @@
 import type { EnvelopeV1 } from "../crypto/encrypt";
-import { fetchTxJson, graphqlQuery } from "./gateways";
+import { fetchTxJson, graphqlQuery, isGatewayUnavailable } from "./gateways";
 
 export { GatewayUnavailableError, isGatewayUnavailable } from "./gateways";
 
@@ -43,7 +43,8 @@ export async function fetchEnvelopeByTx(txId: string): Promise<EnvelopeV1 | null
   try {
     const envelope = (await fetchTxJson(txId)) as EnvelopeV1 | null;
     if (envelope?.schema === "sejire/envelope/v1") return envelope;
-  } catch {
+  } catch (e) {
+    if (isGatewayUnavailable(e)) throw e;
     return null;
   }
   return null;

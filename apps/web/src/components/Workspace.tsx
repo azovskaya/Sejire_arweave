@@ -29,6 +29,7 @@ import {
 } from "../lib/vaultSession/session";
 import type { VaultV1 } from "../lib/crypto/vault";
 import { STORAGE_QUOTA_HINT } from "../lib/storageQuota";
+import { isPagesTestMirror } from "../lib/siteMirror";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -384,15 +385,15 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   }
 
   async function loadDemoThirteen() {
-    if (!confirmReplaceDraft("пример полного древа на 13 колен")) return;
+    if (!confirmReplaceDraft("пример линии ата на 13 колен")) return;
     const {
       QA_13_FOCUS_ID,
-      QA_13_PERSON_COUNT,
-      qaThirteenGenerationMeta,
-      qaThirteenGenerationSnapshot,
+      qaPaternalLineMeta,
+      qaPaternalLinePersonCount,
+      qaPaternalLineSnapshot,
     } = await import("../lib/pdf/thirteenLineage.fixture");
-    const snapshot = qaThirteenGenerationSnapshot();
-    const meta = qaThirteenGenerationMeta();
+    const snapshot = qaPaternalLineSnapshot(13);
+    const meta = qaPaternalLineMeta(13);
     const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
     if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
@@ -402,7 +403,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     setFocusId(QA_13_FOCUS_ID);
     setSelectedId(QA_13_FOCUS_ID);
     setProfileOpen(false);
-    flash(`Пример: ${QA_13_PERSON_COUNT} чел., у каждого отец и мать до 13-го колена`);
+    flash(
+      `Пример: линия ата на 13 колен · ${qaPaternalLinePersonCount(13)} чел. (полное двоичное на схему не грузим)`
+    );
   }
 
   async function loadDemoSeven() {
@@ -440,6 +443,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <span className="brand-glyph" aria-hidden />
           <div>
             <strong>SEJIRE</strong>
+            {isPagesTestMirror() ? (
+              <span className="brand-mirror">Тестовое зеркало · sejire.ar.io пока старый пак</span>
+            ) : null}
             {shezhireLine ? (
               <button
                 type="button"
@@ -538,9 +544,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       closeMoreMenu();
                       void loadDemoThirteen();
                     }}
-                    title="Полное двоичное древо: отец и мать у каждого до 13-го колена"
+                    title="Мужская линия и жёны на 13 колен. Полные 8191 карточек на схему не грузим — телефон не выдержит."
                   >
-                    Пример: 13 колен
+                    Пример: 13 колен (линия ата)
                   </button>
                 </>
               ) : null}

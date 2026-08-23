@@ -21,12 +21,15 @@ export async function createCheckoutSession(
     provider: string;
     amountMinor: number;
     currency: string;
+    vaultId: string;
     kaspiMerchantToken?: string;
     successUrl?: string;
     cancelUrl?: string;
   }
 ): Promise<CheckoutResult> {
   const provider = (opts.provider || "mock").toLowerCase();
+  const vaultId = (opts.vaultId || "").trim();
+  if (vaultId.length < 8) throw new Error("missing_vault_id");
   const id = createSessionId();
   const session: PaymentSession = {
     id,
@@ -34,6 +37,7 @@ export async function createCheckoutSession(
     amountMinor: opts.amountMinor,
     currency: opts.currency,
     provider,
+    vaultId,
     createdAt: Date.now(),
   };
   await store.put(session);
@@ -95,10 +99,14 @@ export async function markSessionPaid(
 export async function assertSessionPaid(
   store: SessionStore,
   sessionId: string,
-  expectedAmount: number
+  expectedAmount: number,
+  expectedVaultId?: string
 ): Promise<PaymentSession> {
   const session = await store.get(sessionId);
   if (!session) throw new Error("session_not_found");
+  if (expectedVaultId && session.vaultId !== expectedVaultId) {
+    throw new Error("vault_mismatch");
+  }
   if (session.status === "consumed" && session.txId) return session;
   if (session.status !== "paid" && session.status !== "consumed") {
     throw new Error("not_paid");

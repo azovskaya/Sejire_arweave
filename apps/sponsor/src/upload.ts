@@ -26,6 +26,9 @@ export async function uploadEnvelope(
   envelope: EnvelopeLike,
   opts: UploadEnvelopeOptions
 ): Promise<UploadResult> {
+  if (opts.turboJwk && opts.allowMockUpload) {
+    throw new Error("mock_forbidden_with_treasury");
+  }
   if (!opts.turboJwk) {
     if (!opts.allowMockUpload) {
       throw new Error("turbo_not_configured");

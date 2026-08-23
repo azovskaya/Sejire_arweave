@@ -18,12 +18,14 @@
     "test:json": "tsx src/lib/treeJson.selftest.ts",
     "test:zhuz": "tsx src/lib/zhuzRu.selftest.ts",
     "test:sponsor": "tsx src/lib/sponsor/client.selftest.ts",
+    "test:loadVault": "tsx src/lib/arweave/loadVault.selftest.ts",
+    "test:mirror": "tsx src/lib/siteMirror.selftest.ts",
     "test:fetch": "tsx src/lib/arweave/fetch.selftest.ts",
     "test:gateways": "tsx src/lib/arweave/gateways.selftest.ts",
     "test:storage": "tsx src/lib/storageQuota.selftest.ts",
     "test:archive": "tsx src/lib/vaultSession/localArchive.selftest.ts",
     "test:protocol": "tsx src/lib/ao/protocol.selftest.ts",
-    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:thirteen && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor && npm run test:fetch && npm run test:gateways && npm run test:storage && npm run test:archive && npm run test:protocol"
+    "test": "npm run test:engine && npm run test:crypto && npm run test:kinship && npm run test:pedigree && npm run test:lineage && npm run test:thirteen && npm run test:dates && npm run test:json && npm run test:zhuz && npm run test:sponsor && npm run test:loadVault && npm run test:mirror && npm run test:fetch && npm run test:gateways && npm run test:storage && npm run test:archive && npm run test:protocol"
   },
   "dependencies": {
     "@fontsource/work-sans": "^5.3.0",

@@ -70,7 +70,8 @@ export async function sponsorHealth(): Promise<{
   return readJson(res);
 }
 
-export async function sponsorCheckout(opts?: {
+export async function sponsorCheckout(opts: {
+  vaultId: string;
   successUrl?: string;
   cancelUrl?: string;
 }): Promise<CheckoutResponse> {

@@ -5,6 +5,8 @@ import {
   QA_13_GENERATIONS,
   QA_13_PERSON_COUNT,
   qaCompleteAncestrySnapshot,
+  qaPaternalLinePersonCount,
+  qaPaternalLineSnapshot,
   qaThirteenGenerationSnapshot,
 } from "./thirteenLineage.fixture";
 
@@ -60,6 +62,14 @@ assert(Object.keys(seven.persons).length === 127, "7-knee complete tree is 127 p
 const sevenPoster = choosePedigreePoster(seven, QA_13_FOCUS_ID, 13);
 assert(sevenPoster.format === "a2", `7-knee poster is A2, got ${sevenPoster.format}`);
 assert(sevenPoster.generations === 7 && !sevenPoster.truncated, "7-knee fits on one A2 sheet");
+
+const ata = qaPaternalLineSnapshot(13);
+assert(Object.keys(ata.persons).length === qaPaternalLinePersonCount(13), "13-knee ata line is 25 people");
+assert(Object.keys(ata.persons).length < 40, "ata line must stay tiny enough for the screen");
+assert(ata.persons.a1 && ata.persons.a2 && ata.persons.a4096, "ata line keeps self, father, oldest");
+assert(!ata.persons.a6, "mother's father is not on the paternal-line canvas");
+const ataSlots = ancestorSlotLayout(ata, QA_13_FOCUS_ID, 13);
+assert(ataSlots.length === Object.keys(ata.persons).length, "ata layout paints only kept people");
 
 console.log("thirteenLineage.fixture.selftest: OK", {
   people: ids.length,

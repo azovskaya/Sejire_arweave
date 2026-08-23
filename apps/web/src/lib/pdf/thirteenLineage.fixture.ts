@@ -160,3 +160,44 @@ export function qaThirteenGenerationSnapshot(): Snapshot {
 export function qaThirteenGenerationMeta(): TreeMeta {
   return qaCompleteAncestryMeta(QA_13_GENERATIONS);
 }
+
+/**
+ * Paternal line + wives only (25 people at 13 knees). Safe for the on-screen
+ * canvas — the full 8191-person binary tree must never be mounted in the DOM.
+ */
+export function qaPaternalLineSnapshot(generations: number): Snapshot {
+  const full = qaCompleteAncestrySnapshot(generations);
+  const keep = new Set<string>(["a1"]);
+  for (let k = 1; k < generations; k += 1) {
+    keep.add(`a${2 ** k}`);
+    keep.add(`a${2 ** k + 1}`);
+  }
+  const persons: Record<string, Person> = {};
+  for (const id of keep) {
+    const src = full.persons[id];
+    if (!src) continue;
+    persons[id] = {
+      ...src,
+      parents: src.parents.filter((pid) => keep.has(pid)),
+    };
+  }
+  return { persons };
+}
+
+export function qaPaternalLineMeta(generations: number): TreeMeta {
+  return {
+    id: `tree_qa_${generations}_ata`,
+    title: `Беков — ${generations} колен, линия ата`,
+    head: null,
+    next_version: 1,
+    created_at: "2026-08-21T00:00:00.000Z",
+    author: "local:qa",
+    zhuz: "orta",
+    clanName: "Арғын · Беков",
+    tamgaUrl: null,
+  };
+}
+
+export function qaPaternalLinePersonCount(generations: number): number {
+  return 2 * generations - 1;
+}
