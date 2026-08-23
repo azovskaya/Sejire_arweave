@@ -14,13 +14,36 @@ import {
   type GuideState,
 } from "./lib/guide";
 import { clearVaultSession } from "./lib/vaultSession/session";
+import {
+  readLastScreen,
+  rememberScreen,
+  shouldResumeDraft,
+} from "./lib/lastScreen";
 
 type Screen = "welcome" | "work" | "restore";
 
+function bootApp(): { screen: Screen; store: TreeStore | null; guide: GuideState } {
+  const draft = loadDraftTree();
+  if (shouldResumeDraft(readLastScreen(), Boolean(draft)) && draft) {
+    return {
+      screen: "work",
+      store: draft,
+      guide: loadGuide() ?? { ...defaultGuide(), step: "done" },
+    };
+  }
+  return { screen: "welcome", store: null, guide: defaultGuide() };
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("welcome");
-  const [store, setStore] = useState<TreeStore | null>(null);
-  const [guide, setGuide] = useState<GuideState>(defaultGuide());
+  const [boot] = useState(bootApp);
+  const [screen, setScreen] = useState<Screen>(boot.screen);
+  const [store, setStore] = useState<TreeStore | null>(boot.store);
+  const [guide, setGuide] = useState<GuideState>(boot.guide);
+
+  function go(next: Screen) {
+    rememberScreen(next);
+    setScreen(next);
+  }
 
   function startNew(title: string) {
     clearDraftTree();
@@ -31,7 +54,7 @@ export default function App() {
     saveGuide(started.guide);
     setStore(started.store);
     setGuide(started.guide);
-    setScreen("work");
+    go("work");
   }
 
   function continueDraft(opened?: TreeStore | null) {
@@ -40,7 +63,7 @@ export default function App() {
     saveDraftTree(draft);
     setStore(draft);
     setGuide(loadGuide() ?? { ...defaultGuide(), step: "done" });
-    setScreen("work");
+    go("work");
   }
 
   return (
@@ -49,13 +72,13 @@ export default function App() {
         <Welcome
           onStartNew={startNew}
           onContinueDraft={continueDraft}
-          onRestoreSeed={() => setScreen("restore")}
+          onRestoreSeed={() => go("restore")}
         />
       )}
 
       {screen === "restore" && (
         <RestoreSeed
-          onBack={() => setScreen("welcome")}
+          onBack={() => go("welcome")}
           onRestored={(opened) => continueDraft(opened)}
         />
       )}
@@ -72,7 +95,7 @@ export default function App() {
             });
           }}
           onGuideChange={setGuide}
-          onHome={() => setScreen("welcome")}
+          onHome={() => go("welcome")}
         />
       )}
     </div>

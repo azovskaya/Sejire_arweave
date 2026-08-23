@@ -8,6 +8,7 @@ import {
   cardFactLines,
   type AddMeSlot,
 } from "../lib/pedigree";
+import { clampPedigreeScale, fitPedigreeView } from "../lib/pedigreeFit";
 
 type Props = {
   snapshot: Snapshot;
@@ -36,7 +37,7 @@ function cardTooltip(person: {
   return [
     person.name,
     "Клик — открыть профиль",
-    "Двойной клик / кнопка в профиле — смотреть предков отсюда",
+    "Двойной клик / кнопка в профиле — показать предков на схеме",
     person.maidenName ? `девичья: ${person.maidenName}` : "",
     person.born ? `рождение: ${person.born}` : "",
     person.birthPlace || person.place?.label
@@ -90,6 +91,14 @@ export function PedigreeView({
     setPan(panToFocus(vh, focusCardY));
   }
 
+  function fitView() {
+    const el = viewportRef.current;
+    if (!el) return;
+    const next = fitPedigreeView(width, height, el.clientWidth || 800, el.clientHeight || 480);
+    setScale(next.scale);
+    setPan({ x: next.x, y: next.y });
+  }
+
   useLayoutEffect(() => {
     if (empty) return;
     const el = viewportRef.current;
@@ -134,7 +143,7 @@ export function PedigreeView({
       if (e.touches.length === 2 && pinch.current) {
         e.preventDefault();
         const d = distance(e.touches[0], e.touches[1]);
-        const next = Math.min(1.45, Math.max(0.55, pinch.current.scale * (d / pinch.current.dist)));
+        const next = clampPedigreeScale(pinch.current.scale * (d / pinch.current.dist));
         setScale(next);
       }
     }
@@ -155,7 +164,7 @@ export function PedigreeView({
 
   function onWheel(e: ReactWheelEvent) {
     e.preventDefault();
-    setScale((s) => Math.min(1.45, Math.max(0.55, s - e.deltaY * 0.001)));
+    setScale((s) => clampPedigreeScale(s - e.deltaY * 0.001));
   }
 
   function onPointerDown(e: ReactPointerEvent) {
@@ -243,23 +252,30 @@ export function PedigreeView({
             </button>
           ) : null}
         </div>
-        {(scale !== 1 ||
-          Math.abs(pan.x - 28) > 2 ||
-          Math.abs(pan.y - panToFocus(viewportRef.current?.clientHeight || 480, focusCardY).y) >
-            2) && (
-          <div className="pedigree-toolbar" aria-label="Вид">
+        <div className="pedigree-toolbar" aria-label="Вид">
+          <button
+            type="button"
+            className="tool-btn wide"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => fitView()}
+            title="Уменьшить, чтобы всё древо было видно. Карточки сами не сжимаются."
+          >
+            Вместить
+          </button>
+          {(scale !== 1 ||
+            Math.abs(pan.x - 28) > 2 ||
+            Math.abs(pan.y - panToFocus(viewportRef.current?.clientHeight || 480, focusCardY).y) >
+              2) && (
             <button
               type="button"
               className="tool-btn wide"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                resetView();
-              }}
+              onClick={() => resetView()}
             >
               Сброс вида
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div

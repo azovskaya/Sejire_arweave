@@ -30,6 +30,7 @@ import {
 import type { VaultV1 } from "../lib/crypto/vault";
 import { STORAGE_QUOTA_HINT } from "../lib/storageQuota";
 import { isPagesTestMirror } from "../lib/siteMirror";
+import { pickPdfRootId } from "../lib/pdfRoot";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -274,11 +275,11 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     setProfileOpen(false);
     setAncestorsHint(false);
     const name = store.draft.persons[id]?.name;
-    flash(name ? `Смотрим предков от «${name}»` : "Схема перестроена");
+    flash(name ? `На схеме предки «${name}»` : "Схема перестроена");
   }
 
   async function exportClassicPdf() {
-    const id = focusId ?? homeFocusId ?? selectedId;
+    const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
       flash("Сначала добавьте человека на древо");
       return;
@@ -298,7 +299,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   }
 
   function openShezhirePdfPicker() {
-    const id = selectedId ?? homeFocusId ?? focusId;
+    const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
       flash("Сначала добавьте человека на древо");
       return;
@@ -307,7 +308,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   }
 
   async function exportShezhirePdf(template: ShezhireTemplateId) {
-    const id = selectedId ?? homeFocusId ?? focusId;
+    const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
       flash("Сначала добавьте человека на древо");
       return;

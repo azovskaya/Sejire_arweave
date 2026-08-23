@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
+import { rememberScreen } from "../lib/lastScreen";
 import { defaultGuide, loadGuide } from "../lib/guide";
 import { downloadTreeJson } from "../lib/treeJson";
 
@@ -44,13 +45,20 @@ export class AppErrorBoundary extends Component<Props, State> {
         <p className="crash-brand">SEJIRE</p>
         <h1>Приложение остановилось</h1>
         <p className="sub">
-          Черновик в браузере обычно цел. Обновите страницу. Если ошибка повторяется —
-          выгрузите JSON, пока вкладка ещё открыта.
+          Черновик в браузере обычно цел. Откройте его — схема должна вернуться.
+          Если ошибка повторяется, выгрузите JSON, пока вкладка ещё открыта.
         </p>
         <pre className="crash-detail">{this.state.error.message}</pre>
         {this.state.exportHint ? <p className="sub">{this.state.exportHint}</p> : null}
-        <button type="button" className="btn" onClick={() => window.location.reload()}>
-          Обновить
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            if (loadDraftTree()) rememberScreen("work");
+            window.location.reload();
+          }}
+        >
+          {loadDraftTree() ? "Открыть черновик" : "Обновить"}
         </button>
         <button type="button" className="btn ghost" onClick={this.exportDraft}>
           Выгрузить JSON

@@ -207,7 +207,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
           }`}
         >
           <button type="button" className="btn ghost" onClick={onFocusAncestors}>
-            Смотреть предков отсюда
+            Показать предков на схеме
           </button>
         </div>
       ) : null}
