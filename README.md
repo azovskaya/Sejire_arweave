@@ -35,7 +35,7 @@ npm run deploy:pages
 | Путь | Содержание |
 |------|------------|
 | `apps/web` | Клиент (сбор древа + PDF + JSON + публикация) |
-| `apps/sponsor` | Скелет кассира оплаты (Kaspi/Stripe later) |
+| `apps/sponsor` | Кассир: mock + Kaspi Merchant API v2 + Turbo treasury |
 | `docs/` | Протокол, чекпоинт, locked decisions, rollout |
 | `ao/processes` | Lua Tree / Factory (`sejire/v0.3`) |
 | `packages/schema` | JSON Schema |

@@ -65,6 +65,8 @@ export async function sponsorHealth(): Promise<{
   provider?: string;
   priceMinor?: number;
   currency?: string;
+  kaspiReady?: boolean;
+  treasuryReady?: boolean;
 }> {
   const res = await sponsorFetch("/v1/health", { method: "GET" });
   return readJson(res);
@@ -89,6 +91,21 @@ export async function sponsorMockPay(sessionId: string): Promise<void> {
     body: JSON.stringify({ sessionId }),
   });
   await readJson(res);
+}
+
+export type SessionStatusResponse = {
+  ok: true;
+  sessionId: string;
+  status: string;
+  provider?: string;
+  paid: boolean;
+};
+
+export async function sponsorSessionStatus(sessionId: string): Promise<SessionStatusResponse> {
+  const res = await sponsorFetch(`/v1/session?sessionId=${encodeURIComponent(sessionId)}`, {
+    method: "GET",
+  });
+  return readJson(res);
 }
 
 export async function sponsorPublish(

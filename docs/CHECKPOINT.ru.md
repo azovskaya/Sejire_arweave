@@ -63,10 +63,10 @@
 
 ## 4. Что делать дальше
 
-1. **Сейчас:** тестировать и править на GitHub Pages. **Не выкладывать ArNS**, пока зеркало не ок и в чате не скажем «пачка готова».
-2. **Потом одним деплоем:** `npm run deploy:permaweb` → Phantom → Target ID. Ключ в чат не слать.
+1. **Сейчас:** тестировать и править на GitHub Pages. **Не выкладывать ArNS**, пока зеркало не ок.
+2. **Пак на Arweave:** когда зеркало ок — GitHub Actions → workflow «Upload SEJIRE SPA to Arweave» → confirm `pack-ready` (secret `PERMAWEB_JWK`) **или** локально `npm run deploy:permaweb` с `wallet.json`. Затем Phantom → Target ID. Ключ в чат не слать.
 3. **aos:** Factory + Tree process IDs — отдельно, не блокер сейфа.
-4. **Kaspi live** — после ИП/мерчанта.
+4. **Kaspi live:** протокол в коде готов. Включить — ИП/ТОО + `KASPI_MERCHANT_TOKEN` + KV + `PAYMENT_PROVIDER=kaspi` + `TURBO_JWK`.
 5. Позже: медиа Turbo, GEDCOM, UI родства из AO.
 
 **Не начинать** с переписывания редактора на Lua.

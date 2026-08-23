@@ -24,6 +24,7 @@ import {
   sponsorHealth,
   sponsorMockPay,
   sponsorPublish,
+  sponsorSessionStatus,
   type CheckoutResponse,
 } from "../lib/sponsor/client";
 import {
@@ -126,6 +127,27 @@ export function PublishSeedModal({
         setPriceHint(null);
       });
   }, [sponsorOn]);
+
+  useEffect(() => {
+    if (mode !== "pay" || !checkout || checkout.mockPayable) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const st = await sponsorSessionStatus(checkout.sessionId);
+        if (!cancelled && st.paid) {
+          setStatus("Kaspi подтвердил оплату. Можно сохранить.");
+        }
+      } catch {
+        /* сеть кассира могла моргнуть — следующая попытка */
+      }
+    };
+    void tick();
+    const id = window.setInterval(() => void tick(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [mode, checkout]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -328,8 +350,22 @@ export function PublishSeedModal({
       if (checkout.mockPayable) {
         setStatus("Подтверждаем mock-оплату…");
         await sponsorMockPay(checkout.sessionId);
-      } else if (checkout.payUrl) {
-        setStatus("Проверяем оплату у кассира…");
+      } else {
+        setStatus("Спрашиваем Kaspi, прошла ли оплата…");
+        let paid = false;
+        for (let i = 0; i < 8; i += 1) {
+          const st = await sponsorSessionStatus(checkout.sessionId);
+          if (st.paid) {
+            paid = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        if (!paid) {
+          throw new Error(
+            "Kaspi ещё не подтвердил оплату. Откройте ссылку Kaspi, оплатите, затем нажмите кнопку снова."
+          );
+        }
       }
       setStatus("Отправляем только шифр в сеть…");
       const result = await sponsorPublish(checkout.sessionId, sealedEnvelope, {

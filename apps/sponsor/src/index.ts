@@ -2,7 +2,7 @@
  * SEJIRE sponsor edge — Cloudflare Worker cashier.
  *
  * Responsibilities:
- *  - Create payment sessions (mock now; Kaspi Pay Business later)
+ *  - Create payment sessions (mock or Kaspi Pay Business)
  *  - Verify payment and upload sealed vault envelopes via Turbo (treasury)
  *  - NEVER accept or handle BIP-39 mnemonics / plaintext trees
  *
@@ -19,12 +19,20 @@
  */
 import { cashierGuardError } from "./cashierGuard";
 import { assertSafeEnvelope, envelopeByteLength } from "./envelope";
+import { mapKaspiStatus, verifyKaspiWebhook } from "./kaspi";
 import {
   assertSessionPaid,
   createCheckoutSession,
   markSessionPaid,
+  syncKaspiSession,
+  type KaspiRuntime,
 } from "./payments";
-import { kvSessionStore, memorySessionStore, type SessionStore } from "./sessions";
+import {
+  findSessionByOrderId,
+  kvSessionStore,
+  memorySessionStore,
+  type SessionStore,
+} from "./sessions";
 import { uploadEnvelope } from "./upload";
 
 export interface Env {
@@ -38,6 +46,8 @@ export interface Env {
   MAX_ENVELOPE_BYTES: string;
   APP_ORIGIN: string;
   IDEMPOTENCY?: KVNamespace;
+  KASPI_API_BASE?: string;
+  KASPI_TRADE_POINT_ID?: string;
 }
 
 type Json = Record<string, unknown>;
@@ -83,6 +93,22 @@ function getStore(env: Env): SessionStore {
   return memorySessionStore();
 }
 
+function kaspiRuntime(
+  env: Env,
+  urls?: { successUrl?: string; cancelUrl?: string }
+): KaspiRuntime | undefined {
+  const apiKey = env.KASPI_MERCHANT_TOKEN;
+  if (!apiKey) return undefined;
+  return {
+    apiBase: env.KASPI_API_BASE || "https://pay.kaspi.kz/api/v2",
+    apiKey,
+    tradePointId: env.KASPI_TRADE_POINT_ID,
+    description: "SEJIRE — вечный сейф на Arweave",
+    returnUrl: urls?.successUrl,
+    failUrl: urls?.cancelUrl,
+  };
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = allowedOrigin(env, request);
@@ -101,6 +127,8 @@ export default {
           provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
           currency: env.PUBLISH_CURRENCY || "KZT",
           priceMinor: priceMinor(env),
+          kaspiReady: Boolean(env.KASPI_MERCHANT_TOKEN),
+          treasuryReady: Boolean(env.TURBO_JWK),
         });
       }
       if (url.pathname === "/v1/checkout" && request.method === "POST") {
@@ -111,6 +139,12 @@ export default {
       }
       if (url.pathname === "/v1/publish" && request.method === "POST") {
         return publishEnvelope(request, env, store, origin);
+      }
+      if (url.pathname === "/v1/session" && request.method === "GET") {
+        return readSession(url, env, store, origin);
+      }
+      if (url.pathname === "/v1/kaspi-webhook" && request.method === "POST") {
+        return kaspiWebhook(request, env, store, origin);
       }
       return json(origin, 404, { ok: false, error: "not_found" });
     } catch (e) {
@@ -163,6 +197,7 @@ async function createCheckout(
       kaspiMerchantToken: env.KASPI_MERCHANT_TOKEN,
       successUrl: body.successUrl,
       cancelUrl: body.cancelUrl,
+      kaspi: kaspiRuntime(env, body),
     });
     return json(origin, 200, { ok: true, ...result });
   } catch (e) {
@@ -246,6 +281,10 @@ async function publishEnvelope(
   if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
 
   const amount = priceMinor(env);
+  const kaspi = kaspiRuntime(env);
+  if (kaspi) {
+    await syncKaspiSession(store, sessionId, kaspi).catch(() => undefined);
+  }
   const session = await assertSessionPaid(store, sessionId, amount, envelope.vault_id);
   if (session.txId) {
     return json(origin, 200, { ok: true, txId: session.txId, idempotent: true });
@@ -272,4 +311,63 @@ async function publishEnvelope(
     mock: uploaded.mock,
     vaultId: envelope.vault_id,
   });
+}
+
+async function readSession(
+  url: URL,
+  env: Env,
+  store: SessionStore,
+  origin: string
+): Promise<Response> {
+  const sessionId = url.searchParams.get("sessionId") || "";
+  if (!sessionId) return json(origin, 400, { ok: false, error: "missing_session" });
+  const kaspi = kaspiRuntime(env);
+  if (kaspi) {
+    await syncKaspiSession(store, sessionId, kaspi).catch(() => undefined);
+  }
+  const session = await store.get(sessionId);
+  if (!session) return json(origin, 404, { ok: false, error: "session_not_found" });
+  return json(origin, 200, {
+    ok: true,
+    sessionId: session.id,
+    status: session.status,
+    provider: session.provider,
+    paid: session.status === "paid" || session.status === "consumed",
+  });
+}
+
+async function kaspiWebhook(
+  request: Request,
+  env: Env,
+  store: SessionStore,
+  origin: string
+): Promise<Response> {
+  const token = env.KASPI_MERCHANT_TOKEN;
+  if (!token) return json(origin, 503, { ok: false, error: "kaspi_merchant_not_configured" });
+  const blocked = cashierGuardError(env);
+  if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return json(origin, 400, { ok: false, error: "invalid_json" });
+  }
+  const okSig = await verifyKaspiWebhook(body, token);
+  if (!okSig) return json(origin, 400, { ok: false, error: "bad_webhook_signature" });
+  const orderId = String(body.orderId || body.order_id || "");
+  if (!orderId) return json(origin, 400, { ok: false, error: "missing_order" });
+  const session = await findSessionByOrderId(store, orderId);
+  if (!session) return json(origin, 404, { ok: false, error: "session_not_found" });
+  if (body.amount != null && Math.round(Number(body.amount)) !== session.amountMinor) {
+    return json(origin, 400, { ok: false, error: "amount_mismatch" });
+  }
+  if (mapKaspiStatus(body.status) === "paid") {
+    await markSessionPaid(store, session.id, { allowMock: false, provider: "kaspi" });
+  } else {
+    const kaspi = kaspiRuntime(env);
+    if (kaspi) {
+      await syncKaspiSession(store, session.id, kaspi).catch(() => undefined);
+    }
+  }
+  return json(origin, 200, { ok: true, received: true });
 }

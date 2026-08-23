@@ -59,8 +59,8 @@
 - [x] Kinship query handlers in AO (`GetAncestors`, `GetJetiAta`, `Relate`) + local process double
 - [ ] Live aos Factory/Tree process IDs (`VITE_SEJIRE_FACTORY_ID`)
 - [ ] Dual-base + привязка `sejire.ar.io` → TX манифеста
-- [ ] Kaspi мерчант (ИП/ТОО) → live Pay Business вместо mock
-- [ ] `TURBO_JWK` treasury → реальный upload
+- [x] Kaspi Merchant API v2 в кассире (invoice / poll / webhook); live после секретов ИП
+- [x] `TURBO_JWK` treasury → реальный upload (если секрет задан; иначе mock)
 - [x] Keep GitHub Pages as mirror
 - [x] Stripe **не** используем (см. LOCKED_DECISIONS)
 

@@ -12,9 +12,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 WALLET="${WALLET_PATH:-$ROOT/wallet.json}"
+CLEANUP_WALLET=0
+if [[ -n "${PERMAWEB_JWK:-}" && ! -f "$WALLET" ]]; then
+  printf '%s' "$PERMAWEB_JWK" > "$WALLET"
+  CLEANUP_WALLET=1
+  trap 'rm -f "$WALLET"' EXIT
+fi
 if [[ ! -f "$WALLET" ]]; then
   echo "Нет файла кошелька: $WALLET"
   echo "Экспортируйте keyfile из Wander → сохраните как wallet.json в корне репо."
+  echo "Или задайте PERMAWEB_JWK (JSON keyfile) в GitHub Actions secret."
   echo "Не присылайте этот файл в чат."
   exit 1
 fi

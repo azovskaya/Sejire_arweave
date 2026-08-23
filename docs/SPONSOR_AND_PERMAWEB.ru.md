@@ -27,14 +27,16 @@
 ### Slice 1 — Docs + skeleton ✓
 - ADR-0006, flow 10, Worker stub.
 
-### Slice 2 — Cashier + client wire (this work)
-- Worker: `mock` provider + Kaspi-ready API (`/v1/checkout`, `/v1/mock-pay`, `/v1/publish`).
-- Client: `VITE_PUBLISH_MODE=sponsor` + `VITE_SPONSOR_URL`; PublishSeedModal pay step.
+### Slice 2 — Cashier + client wire ✓
+- Worker: `mock` provider + **live Kaspi Merchant API v2** (`/v1/checkout` → invoice, `/v1/session` poll, `/v1/kaspi-webhook`, `/v1/publish`).
+- Client: `VITE_PUBLISH_MODE=sponsor` + `VITE_SPONSOR_URL`; PublishSeedModal pay step + poll.
 - Self-fund AR remains as fallback button.
-- Live Turbo upload when `TURBO_JWK` is set (else mock tx in mock provider).
+- Live Turbo upload when `TURBO_JWK` is set (else mock tx in mock provider). Mock + treasury is refused.
 
 ### Slice 3 — Permaweb site
-- Project JWK in CI secrets; `permaweb-deploy`; bind ArNS `sejire`.
+- Local: `npm run deploy:permaweb` with gitignored `wallet.json`.
+- CI: Actions workflow **Upload SEJIRE SPA to Arweave (manual)** — type `pack-ready`; secret `PERMAWEB_JWK`. Never on push. Does not bind ArNS.
+- Owner then: Phantom → `sejire` → Target ID.
 
 ### Slice 4 — Hardening
 - KV idempotency in prod; size quotas; Kaspi refunds; optional Credit Share.

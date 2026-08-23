@@ -4,12 +4,15 @@
  */
 import { assertSafeEnvelope, envelopeByteLength } from "./envelope";
 import { cashierGuardError } from "./cashierGuard";
+import { createKaspiInvoice, mapKaspiStatus, signKaspiParams, verifyKaspiWebhook } from "./kaspi";
 import {
   assertSessionPaid,
   createCheckoutSession,
   markSessionPaid,
+  syncKaspiSession,
 } from "./payments";
-import { memorySessionStore } from "./sessions";
+import { findSessionByOrderId, memorySessionStore } from "./sessions";
+import { parseTreasuryJwk } from "./turbo";
 import { uploadEnvelope } from "./upload";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -129,6 +132,101 @@ async function main() {
     throw new Error("empty vaultId should fail");
   } catch (e) {
     assert(e instanceof Error && e.message === "missing_vault_id", "checkout needs vault");
+    n += 1;
+  }
+
+
+  const hmac = await signKaspiParams({ amount: "1500", orderId: "sej_1" }, "key");
+  assert(typeof hmac === "string" && hmac.length === 64, "kaspi hmac");
+  n += 1;
+  assert(mapKaspiStatus("APPROVED") === "paid", "kaspi approved");
+  n += 1;
+
+  const kaspiStore = memorySessionStore();
+  const kaspiPay = await createCheckoutSession(kaspiStore, {
+    provider: "kaspi",
+    amountMinor: 1500,
+    currency: "KZT",
+    vaultId: goodEnvelope.vault_id,
+    kaspiMerchantToken: "secret",
+    kaspi: {
+      apiBase: "https://pay.kaspi.kz/api/v2",
+      apiKey: "secret",
+      description: "test",
+      createInvoice: async () => ({
+        orderId: "sej_k1",
+        payUrl: "https://pay.kaspi.kz/pay/demo",
+      }),
+      fetchStatus: async () => "paid" as const,
+    },
+  });
+  assert(Boolean(kaspiPay.payUrl) && kaspiPay.mockPayable === false, "kaspi invoice url");
+  n += 1;
+  const synced = await syncKaspiSession(kaspiStore, kaspiPay.sessionId, {
+    apiBase: "https://pay.kaspi.kz/api/v2",
+    apiKey: "secret",
+    description: "test",
+    fetchStatus: async () => "paid" as const,
+  });
+  assert(synced.session.status === "paid", "kaspi poll marks paid");
+  n += 1;
+  const signed = await signKaspiParams(
+    { amount: "1500", orderId: "sej_k1", status: "APPROVED" },
+    "secret"
+  );
+  assert(
+    await verifyKaspiWebhook({ amount: "1500", orderId: "sej_k1", status: "APPROVED", signature: signed }, "secret"),
+    "webhook hmac"
+  );
+  n += 1;
+
+  const invoice = await createKaspiInvoice(
+    {
+      apiBase: "https://pay.kaspi.kz/api/v2",
+      apiKey: "secret",
+      amountTenge: 1500,
+      orderId: "sej_inv",
+      description: "test",
+    },
+    async (url, init) => {
+      assert(String(url).endsWith("/orders/create"), "kaspi create path");
+      const body = JSON.parse(String(init?.body || "{}")) as { signature?: string };
+      assert(typeof body.signature === "string" && body.signature.length === 64, "invoice hmac sent");
+      return new Response(
+        JSON.stringify({ paymentUrl: "https://pay.kaspi.kz/pay/x", orderId: "kaspi_rewritten" }),
+        { status: 200 }
+      );
+    }
+  );
+  assert(invoice.payUrl.startsWith("https://") && invoice.orderId === "kaspi_rewritten", "invoice parse");
+  n += 1;
+
+  const indexed = memorySessionStore();
+  const withKaspi = await createCheckoutSession(indexed, {
+    provider: "kaspi",
+    amountMinor: 1500,
+    currency: "KZT",
+    vaultId: goodEnvelope.vault_id,
+    kaspiMerchantToken: "secret",
+    kaspi: {
+      apiBase: "https://pay.kaspi.kz/api/v2",
+      apiKey: "secret",
+      description: "test",
+      createInvoice: async () => ({
+        orderId: "kaspi_other",
+        payUrl: "https://pay.kaspi.kz/pay/y",
+      }),
+    },
+  });
+  const found = await findSessionByOrderId(indexed, "kaspi_other");
+  assert(found?.id === withKaspi.sessionId, "kaspi order index");
+  n += 1;
+
+  try {
+    parseTreasuryJwk("not-json");
+    throw new Error("invalid jwk should fail");
+  } catch (e) {
+    assert(e instanceof Error && e.message === "turbo_jwk_invalid", "turbo jwk parse");
     n += 1;
   }
 

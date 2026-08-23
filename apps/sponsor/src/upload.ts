@@ -4,6 +4,7 @@
  */
 
 import type { EnvelopeLike } from "./envelope";
+import { uploadJsonWithTreasury } from "./turbo";
 
 export type UploadResult = { txId: string; mock: boolean };
 
@@ -36,13 +37,13 @@ export async function uploadEnvelope(
     return { txId: mockTxId(String(envelope.vault_id || "vault")), mock: true };
   }
 
-  // Live Turbo path — wire @ardrive/turbo-sdk when treasury is ready.
-  // Keep tags identical to apps/web publish.ts for GraphQL restore
-  // (Vault-Id, Updated-At, Parent-Tx, …).
-  void opts.turboJwk;
-  void opts.parentTxId;
-  void opts.updatedAt;
-  throw new Error("turbo_sdk_not_wired");
+  const tags = buildArweaveTags(String(envelope.vault_id || "vault"), {
+    parentTxId: opts.parentTxId,
+    updatedAt: opts.updatedAt,
+    schema: typeof envelope.schema === "string" ? envelope.schema : undefined,
+  });
+  const live = await uploadJsonWithTreasury(envelope, { turboJwk: opts.turboJwk, tags });
+  return { txId: live.txId, mock: false };
 }
 
 export function buildArweaveTags(

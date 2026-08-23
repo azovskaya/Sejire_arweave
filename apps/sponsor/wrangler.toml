@@ -1,6 +1,7 @@
 name = "sejire-sponsor"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 PAYMENT_PROVIDER = "mock"
@@ -8,7 +9,14 @@ PUBLISH_PRICE_MINOR = "1500"
 PUBLISH_CURRENCY = "KZT"
 MAX_ENVELOPE_BYTES = "524288"
 # Comma-separated; include local Vite when developing
-APP_ORIGIN = "https://azovskaya.github.io,http://localhost:5173,http://127.0.0.1:5173"
+APP_ORIGIN = "https://azovskaya.github.io,https://sejire.ar.io,http://localhost:5173,http://127.0.0.1:5173"
+# Optional live Kaspi (defaults in Worker if unset):
+# KASPI_API_BASE = "https://pay.kaspi.kz/api/v2"
+# KASPI_TRADE_POINT_ID = "from-kaspi-cabinet"
+
+# Secrets (do not commit):
+#   npx wrangler secret put KASPI_MERCHANT_TOKEN
+#   npx wrangler secret put TURBO_JWK
 
 # Optional KV for production idempotency (mock uses memory if unset / REPLACE)
 # [[kv_namespaces]]
