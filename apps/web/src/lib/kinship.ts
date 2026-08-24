@@ -100,13 +100,18 @@ const RU_LABEL: Record<KinshipCode, string> = {
   unrelated: "нет общей линии в этом снимке",
 };
 
+/** Human phrase for a protocol kinship code (sejire/relate/v1). */
+export function kinshipCodeLabel(code: string): string {
+  return RU_LABEL[code as KinshipCode] ?? code;
+}
+
 /** Lowest common ancestor distance heuristic for kinship label. */
 export function relationshipLabel(snapshot: Snapshot, aId: string, bId: string): string {
   const rel = relationship(snapshot, aId, bId);
   if (rel.code === "related" && rel.da != null && rel.db != null) {
     return `общие предки (шаги ${rel.da}+${rel.db})`;
   }
-  return RU_LABEL[rel.code];
+  return kinshipCodeLabel(rel.code);
 }
 
 export type LayoutNode = {

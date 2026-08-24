@@ -138,6 +138,12 @@ export class SejireAoClient {
     return tree.handle(msg);
   }
 
+  async init(processId: string, from: string, title?: string) {
+    const Tags: Record<string, string> = { Action: "Init" };
+    if (title) Tags.Title = title;
+    return this.dispatch(processId, { From: from, Tags });
+  }
+
   async commit(processId: string, from: string, payload: TreeCommitPayload) {
     return this.dispatch(processId, {
       From: from,
@@ -156,5 +162,47 @@ export class SejireAoClient {
     const Tags: Record<string, string> = { Action: "GetJetiAta", "Person-Id": personId };
     if (commitId) Tags["Commit-Id"] = commitId;
     return this.dispatch(processId, { From: from, Tags });
+  }
+
+  async ancestors(processId: string, from: string, personId: string, opts?: { maxDepth?: number; commitId?: string }) {
+    const Tags: Record<string, string> = { Action: "GetAncestors", "Person-Id": personId };
+    if (opts?.maxDepth != null) Tags["Max-Depth"] = String(opts.maxDepth);
+    if (opts?.commitId) Tags["Commit-Id"] = opts.commitId;
+    return this.dispatch(processId, { From: from, Tags });
+  }
+
+  async head(processId: string, from: string) {
+    return this.dispatch(processId, { From: from, Tags: { Action: "GetHead" } });
+  }
+
+  async commitById(processId: string, from: string, commitId: string) {
+    return this.dispatch(processId, {
+      From: from,
+      Tags: { Action: "GetCommit", "Commit-Id": commitId },
+    });
+  }
+
+  async history(processId: string, from: string) {
+    return this.dispatch(processId, { From: from, Tags: { Action: "History" } });
+  }
+
+  async addOwner(processId: string, from: string, address: string) {
+    return this.dispatch(processId, {
+      From: from,
+      Tags: { Action: "AddOwner", Address: address },
+    });
+  }
+
+  async removeOwner(processId: string, from: string, address: string) {
+    return this.dispatch(processId, {
+      From: from,
+      Tags: { Action: "RemoveOwner", Address: address },
+    });
+  }
+
+  registerTree(from: string, processId: string, title?: string) {
+    const Tags: Record<string, string> = { Action: "RegisterTree", "Process-Id": processId };
+    if (title) Tags.Title = title;
+    return this.factory.handle({ From: from, Tags });
   }
 }

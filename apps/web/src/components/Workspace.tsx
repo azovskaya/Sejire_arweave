@@ -31,6 +31,11 @@ import type { VaultV1 } from "../lib/crypto/vault";
 import { STORAGE_QUOTA_HINT } from "../lib/storageQuota";
 import { isPagesTestMirror } from "../lib/siteMirror";
 import { pickPdfRootId } from "../lib/pdfRoot";
+import { mirrorStoreToProtocol } from "../lib/ao/protocolMirror";
+import {
+  queryPersonFromDraft,
+  type PersonProtocolView,
+} from "../lib/ao/protocolKinship";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -70,6 +75,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   const [showShezhireMeta, setShowShezhireMeta] = useState(false);
   const [showShezhireTemplate, setShowShezhireTemplate] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [protocolView, setProtocolView] = useState<PersonProtocolView | null>(null);
+  const [protocolLoading, setProtocolLoading] = useState(false);
   const vaultSession = getVaultSession();
 
   const shezhireLine = useMemo(
@@ -121,6 +128,32 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       document.body.style.overflow = prev;
     };
   }, [selectedId, profileOpen]);
+
+  useEffect(() => {
+    if (!selectedId || !profileOpen) {
+      setProtocolView(null);
+      setProtocolLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setProtocolLoading(true);
+    const timer = window.setTimeout(() => {
+      void queryPersonFromDraft(store, selectedId)
+        .then((view) => {
+          if (!cancelled) setProtocolView(view);
+        })
+        .catch(() => {
+          if (!cancelled) setProtocolView(null);
+        })
+        .finally(() => {
+          if (!cancelled) setProtocolLoading(false);
+        });
+    }, 160);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [selectedId, profileOpen, store]);
 
   const people = activePersons(store.draft);
   const selected = selectedId ? store.draft.persons[selectedId] ?? null : null;
@@ -264,6 +297,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       next = commitDraft(store, "Снимок перед сохранением");
       persist(next);
     }
+    void mirrorStoreToProtocol(next).catch(() => {
+      /* локальное зеркало не должно ломать сохранение сейфа */
+    });
     setPublishStore(next);
     setShowPublish(true);
   }
@@ -635,6 +671,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           ref={panelRef}
           person={selected}
           relatives={relatives}
+          protocolView={protocolView}
+          protocolLoading={protocolLoading}
           open={profileOpen}
           hasFather={Boolean(selected && relatives.some((r) => r.relation === "Папа"))}
           hasMother={Boolean(selected && relatives.some((r) => r.relation === "Мама"))}

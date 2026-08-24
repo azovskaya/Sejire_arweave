@@ -166,4 +166,24 @@ Handlers.add(
   end
 )
 
+-- Last: unknown Action. Matcher must skip named handlers (AO continues the list).
+local FACTORY_KNOWN_ACTIONS = {
+  Ping = true,
+  Info = true,
+  SpawnTree = true,
+  RegisterTree = true,
+  ListTrees = true
+}
+
+Handlers.add(
+  "UnknownAction",
+  function(msg)
+    local a = msg.Tags and msg.Tags.Action
+    return type(a) == "string" and #a > 0 and not FACTORY_KNOWN_ACTIONS[a]
+  end,
+  function(msg)
+    reply(msg, { Action = "Error", ["Error-Code"] = "UnknownAction" }, "Unknown Action: " .. tostring(msg.Tags.Action))
+  end
+)
+
 print("SEJIRE factory process loaded: " .. tostring(ao.id))

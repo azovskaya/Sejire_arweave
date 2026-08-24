@@ -538,4 +538,31 @@ Handlers.add(
   end
 )
 
+-- Last: unknown Action. Matcher must skip named handlers (AO continues the list).
+local TREE_KNOWN_ACTIONS = {
+  Ping = true,
+  Info = true,
+  Init = true,
+  GetHead = true,
+  GetCommit = true,
+  History = true,
+  Commit = true,
+  AddOwner = true,
+  RemoveOwner = true,
+  GetAncestors = true,
+  GetJetiAta = true,
+  Relate = true
+}
+
+Handlers.add(
+  "UnknownAction",
+  function(msg)
+    local a = msg.Tags and msg.Tags.Action
+    return type(a) == "string" and #a > 0 and not TREE_KNOWN_ACTIONS[a]
+  end,
+  function(msg)
+    reply(msg, { Action = "Error", ["Error-Code"] = "UnknownAction" }, "Unknown Action: " .. tostring(msg.Tags.Action))
+  end
+)
+
 print("SEJIRE tree process loaded: " .. tostring(ao.id))

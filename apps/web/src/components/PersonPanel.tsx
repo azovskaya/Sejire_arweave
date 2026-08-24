@@ -2,6 +2,10 @@ import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "re
 import type { Person } from "../lib/types";
 import { lifespan } from "../lib/pedigree";
 import { normalizeDateInput } from "../lib/dates";
+import {
+  protocolViewHasKin,
+  type PersonProtocolView,
+} from "../lib/ao/protocolKinship";
 import { DateTextInput } from "./DateTextInput";
 
 export type PersonPanelHandle = {
@@ -22,6 +26,8 @@ type Props = {
   onDelete: () => void;
   onFocusAncestors?: () => void;
   showFocusAncestors?: boolean;
+  protocolView?: PersonProtocolView | null;
+  protocolLoading?: boolean;
 };
 
 function emptyPerson(): Person {
@@ -95,6 +101,8 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
   onDelete,
   onFocusAncestors,
   showFocusAncestors = false,
+  protocolView = null,
+  protocolLoading = false,
 }: Props,
   ref
 ) {
@@ -353,6 +361,80 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
           </ul>
         )}
       </div>
+
+      {protocolLoading || protocolViewHasKin(protocolView) ? (
+        <div className="panel-section protocol-kinship">
+          <h3>Родство по протоколу</h3>
+          <p className="hint">Локальный снимок процесса · сеть AO не вызывается</p>
+          {protocolLoading ? <p className="hint">Считаем жеті ата и связи…</p> : null}
+          {protocolViewHasKin(protocolView) && protocolView ? (
+            <>
+              {protocolView.jetiAta.some((x) => x.generation > 0) ? (
+                <div>
+                  <h4>Жеті ата</h4>
+                  <ol className="jeti-line">
+                    {protocolView.jetiAta.map((row) => (
+                      <li key={`jeti-${row.id}`}>
+                        {row.generation === 0 ? (
+                          <span>{row.name || row.id}</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="rel-link clamp-1"
+                            onClick={() => onSelectRelative(row.id)}
+                          >
+                            {row.name || row.id}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+              {protocolView.ancestors.some((x) => x.distance > 0) ? (
+                <div>
+                  <h4>Предки</h4>
+                  <ul className="rel-list">
+                    {protocolView.ancestors
+                      .filter((row) => row.distance > 0)
+                      .map((row) => (
+                        <li key={`anc-${row.id}`}>
+                          <span>колено {row.distance}</span>
+                          <button
+                            type="button"
+                            className="rel-link clamp-1"
+                            onClick={() => onSelectRelative(row.id)}
+                          >
+                            {row.name}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ) : null}
+              {protocolView.relatives.length > 0 ? (
+                <div>
+                  <h4>Связи Relate</h4>
+                  <ul className="rel-list">
+                    {protocolView.relatives.map((r) => (
+                      <li key={`proto-${r.code}-${r.id}`}>
+                        <span>{r.label}</span>
+                        <button
+                          type="button"
+                          className="rel-link clamp-1"
+                          onClick={() => onSelectRelative(r.id)}
+                        >
+                          {r.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="panel-section delete-zone">
         {!confirmDelete ? (
