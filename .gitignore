@@ -12,7 +12,13 @@ wallet.json
 .env
 .env.*
 !.env*.example
+.dev.vars
 .permaweb-deploy/
+
+# Project treasury — never commit
+treasury.local.json
+treasury.address.txt
+admin.local.json
 
 # Local QA exports (PDFs, JSON fixtures dumps)
 /artifacts/

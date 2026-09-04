@@ -17,6 +17,11 @@ APP_ORIGIN = "https://azovskaya.github.io,https://sejire.ar.io,http://localhost:
 # Secrets (do not commit):
 #   npx wrangler secret put KASPI_MERCHANT_TOKEN
 #   npx wrangler secret put TURBO_JWK
+#   npx wrangler secret put ADMIN_TOKEN
+# Optional:
+#   npx wrangler secret put OPS_SALT
+# Public treasury address (safe):
+# TREASURY_ADDRESS = "arweave-address-from-treasury-init"
 
 # Optional KV for production idempotency (mock uses memory if unset / REPLACE)
 # [[kv_namespaces]]

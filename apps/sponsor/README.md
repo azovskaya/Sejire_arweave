@@ -17,6 +17,8 @@ See `docs/LOCKED_DECISIONS.ru.md`, ADR-0006, `docs/flows/10-fiat-publish.md`.
 | GET | `/v1/session` | Poll payment (`paid` after Kaspi / mock) |
 | POST | `/v1/kaspi-webhook` | Kaspi HMAC callback |
 | POST | `/v1/publish` | `{ sessionId, envelope }` → verify → Turbo upload → `{ txId }` |
+| GET | `/admin` | Ops desk (counts + times, no user data) |
+| GET | `/v1/admin/overview` | Same JSON (`Authorization: Bearer ADMIN_TOKEN`) |
 
 ## Local mock
 
@@ -40,14 +42,16 @@ VITE_SPONSOR_URL=http://127.0.0.1:8787
 
 Protocol is wired (Merchant API v2: HMAC invoice, poll, webhook). Remaining is cabinet + secrets:
 
-1. ИП/ТОО + Kaspi Pay Business + API token + Trade Point Id  
-2. `npx wrangler kv namespace create IDEMPOTENCY` → uncomment in `wrangler.toml`  
-3. `npx wrangler secret put KASPI_MERCHANT_TOKEN`  
-4. Optional: `KASPI_TRADE_POINT_ID` / `KASPI_API_BASE` (`https://testpay.kaspi.kz/api/v2` for sandbox)  
-5. `PAYMENT_PROVIDER=kaspi` in `[vars]`  
-6. `npx wrangler secret put TURBO_JWK` (treasury JWK JSON — not user 12 words)  
-7. Set `APP_ORIGIN` to Pages + `https://sejire.ar.io`  
-8. In Kaspi cabinet, webhook = `https://<worker>/v1/kaspi-webhook`
+1. На Mac: `npm run treasury:init` — файл `treasury.local.json` не в git (см. `docs/TREASURY_AND_ADMIN.ru.md`)
+2. ИП/ТОО + Kaspi Pay Business + API token + Trade Point Id  
+3. `npx wrangler kv namespace create IDEMPOTENCY` → uncomment in `wrangler.toml`  
+4. `npx wrangler secret put KASPI_MERCHANT_TOKEN`  
+5. Optional: `KASPI_TRADE_POINT_ID` / `KASPI_API_BASE` (`https://testpay.kaspi.kz/api/v2` for sandbox)  
+6. `PAYMENT_PROVIDER=kaspi` in `[vars]`  
+7. `npx wrangler secret put TURBO_JWK` и `npx wrangler secret put ADMIN_TOKEN`  
+8. Set `APP_ORIGIN` to Pages + `https://sejire.ar.io`  
+9. In Kaspi cabinet, webhook = `https://<worker>/v1/kaspi-webhook`
+10. Админка: `https://<worker>/admin`
 
 ## Security
 

@@ -230,6 +230,73 @@ async function main() {
     n += 1;
   }
 
+  const { memoryOpsStore, recordPaid, recordSaved, toPublicOps, assertNoSecretsInPublic } =
+    await import("./opsLedger");
+  const ops = memoryOpsStore();
+  await recordPaid(ops, "salt", {
+    sessionId: "sej_aaa",
+    amountMinor: 1500,
+    currency: "KZT",
+    provider: "mock",
+    at: 1_700_000_000_000,
+  });
+  await recordSaved(ops, "salt", {
+    sessionId: "sej_aaa",
+    vaultId: "vault-one-xxxxxxxx",
+    at: 1_700_000_000_100,
+  });
+  await recordPaid(ops, "salt", {
+    sessionId: "sej_bbb",
+    amountMinor: 1500,
+    currency: "KZT",
+    provider: "kaspi",
+    at: 1_700_000_100_000,
+  });
+  await recordSaved(ops, "salt", {
+    sessionId: "sej_bbb",
+    vaultId: "vault-one-xxxxxxxx",
+    at: 1_700_000_100_100,
+  });
+  await recordPaid(ops, "salt", {
+    sessionId: "sej_aaa",
+    amountMinor: 1500,
+    currency: "KZT",
+    provider: "mock",
+  });
+  const pub = toPublicOps(await ops.load(), "KZT");
+  assert(pub.trees === 1, "one unique tree");
+  n += 1;
+  assert(pub.saves === 2, "two saves");
+  n += 1;
+  assert(pub.paidCount === 2, "two payments");
+  n += 1;
+  assert(pub.created.length === 1 && typeof pub.created[0].at === "string", "one created time");
+  n += 1;
+  assertNoSecretsInPublic(pub);
+  n += 1;
+  const dumped = JSON.stringify(pub);
+  assert(!dumped.includes("vault-one"), "no vault id in admin payload");
+  n += 1;
+  assert(!dumped.includes("sej_aaa"), "no session id in admin payload");
+  n += 1;
+
+  const { authorizeAdmin } = await import("./adminAuth");
+  const off = authorizeAdmin(new Request("https://x/v1/admin/overview"), {});
+  assert(off === "off", "admin off without token");
+  n += 1;
+  const env = { ADMIN_TOKEN: "a".repeat(16) };
+  const denied = authorizeAdmin(new Request("https://x/v1/admin/overview"), env);
+  assert(denied === "unauthorized", "admin denied");
+  n += 1;
+  const ok = authorizeAdmin(
+    new Request("https://x/v1/admin/overview", {
+      headers: { Authorization: `Bearer ${"a".repeat(16)}` },
+    }),
+    env
+  );
+  assert(ok === "ok", "admin bearer");
+  n += 1;
+
   console.log(`sponsor.selftest: ${n} asserts ok`);
 }
 
