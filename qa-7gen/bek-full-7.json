@@ -1,0 +1,1749 @@
+{
+  "schema": "sejire/tree-export/v1",
+  "exported_at": "2026-08-21T19:02:17.069Z",
+  "app": "SEJIRE",
+  "protocol": "sejire/v0.3",
+  "store": {
+    "meta": {
+      "id": "tree_qa_7_full",
+      "title": "Беков — 7 колен",
+      "head": null,
+      "next_version": 1,
+      "created_at": "2026-08-21T00:00:00.000Z",
+      "author": "local:qa",
+      "zhuz": "orta",
+      "clanName": "Арғын · Беков",
+      "tamgaUrl": null
+    },
+    "commits": {},
+    "versions": {},
+    "draft": {
+      "persons": {
+        "a1": {
+          "id": "a1",
+          "name": "Ерлан Бекжанулы Беков",
+          "sex": "M",
+          "born": "1998",
+          "died": null,
+          "birthPlace": "Астана",
+          "parents": [
+            "a2",
+            "a3"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a2": {
+          "id": "a2",
+          "name": "Бекжан Ерланулы Беков",
+          "sex": "M",
+          "born": "1971",
+          "died": null,
+          "birthPlace": "Астана",
+          "parents": [
+            "a4",
+            "a5"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a3": {
+          "id": "a3",
+          "name": "Айгуль Сериккызы Бекова",
+          "sex": "F",
+          "born": "1973",
+          "died": null,
+          "birthPlace": "Астана",
+          "parents": [
+            "a6",
+            "a7"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a4": {
+          "id": "a4",
+          "name": "Ерлан Смагулулы Беков",
+          "sex": "M",
+          "born": "1944",
+          "died": "2012",
+          "birthPlace": "Астана",
+          "parents": [
+            "a8",
+            "a9"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a5": {
+          "id": "a5",
+          "name": "Гульнара Касымкызы Бекова",
+          "sex": "F",
+          "born": "1946",
+          "died": "2014",
+          "birthPlace": "Астана",
+          "parents": [
+            "a10",
+            "a11"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a6": {
+          "id": "a6",
+          "name": "Серик Баймуратулы Беков",
+          "sex": "M",
+          "born": "1944",
+          "died": "2012",
+          "birthPlace": "Астана",
+          "parents": [
+            "a12",
+            "a13"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a7": {
+          "id": "a7",
+          "name": "Сауле Толегенкызы Бекова",
+          "sex": "F",
+          "born": "1946",
+          "died": "2014",
+          "birthPlace": "Астана",
+          "parents": [
+            "a14",
+            "a15"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a8": {
+          "id": "a8",
+          "name": "Смагул Мухтарулы Беков",
+          "sex": "M",
+          "born": "1917",
+          "died": "1985",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a16",
+            "a17"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a9": {
+          "id": "a9",
+          "name": "Ботагоз Бекжанкызы Бекова",
+          "sex": "F",
+          "born": "1919",
+          "died": "1987",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a18",
+            "a19"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a10": {
+          "id": "a10",
+          "name": "Касым Абайулы Беков",
+          "sex": "M",
+          "born": "1917",
+          "died": "1985",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a20",
+            "a21"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a11": {
+          "id": "a11",
+          "name": "Камшат Сарыбайкызы Бекова",
+          "sex": "F",
+          "born": "1919",
+          "died": "1987",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a22",
+            "a23"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a12": {
+          "id": "a12",
+          "name": "Баймурат Ерденулы Беков",
+          "sex": "M",
+          "born": "1917",
+          "died": "1985",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a24",
+            "a25"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a13": {
+          "id": "a13",
+          "name": "Айжан Алтынбеккызы Бекова",
+          "sex": "F",
+          "born": "1919",
+          "died": "1987",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a26",
+            "a27"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a14": {
+          "id": "a14",
+          "name": "Толеген Смагулулы Беков",
+          "sex": "M",
+          "born": "1917",
+          "died": "1985",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a28",
+            "a29"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a15": {
+          "id": "a15",
+          "name": "Меруерт Касымкызы Бекова",
+          "sex": "F",
+          "born": "1919",
+          "died": "1987",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a30",
+            "a31"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a16": {
+          "id": "a16",
+          "name": "Мухтар Баймуратулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a32",
+            "a33"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a17": {
+          "id": "a17",
+          "name": "Майра Толегенкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a34",
+            "a35"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a18": {
+          "id": "a18",
+          "name": "Бекжан Мухтарулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a36",
+            "a37"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a19": {
+          "id": "a19",
+          "name": "Гульнара Бекжанкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a38",
+            "a39"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a20": {
+          "id": "a20",
+          "name": "Абай Абайулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a40",
+            "a41"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a21": {
+          "id": "a21",
+          "name": "Салтанат Сарыбайкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a42",
+            "a43"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a22": {
+          "id": "a22",
+          "name": "Сарыбай Ерденулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a44",
+            "a45"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a23": {
+          "id": "a23",
+          "name": "Сауле Алтынбеккызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a46",
+            "a47"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a24": {
+          "id": "a24",
+          "name": "Ерден Смагулулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a48",
+            "a49"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a25": {
+          "id": "a25",
+          "name": "Жанар Касымкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a50",
+            "a51"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a26": {
+          "id": "a26",
+          "name": "Алтынбек Баймуратулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a52",
+            "a53"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a27": {
+          "id": "a27",
+          "name": "Шолпан Толегенкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a54",
+            "a55"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a28": {
+          "id": "a28",
+          "name": "Смагул Мухтарулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a56",
+            "a57"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a29": {
+          "id": "a29",
+          "name": "Ботагоз Бекжанкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a58",
+            "a59"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a30": {
+          "id": "a30",
+          "name": "Касым Абайулы Беков",
+          "sex": "M",
+          "born": "1890",
+          "died": "1958",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a60",
+            "a61"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a31": {
+          "id": "a31",
+          "name": "Камшат Сарыбайкызы Бекова",
+          "sex": "F",
+          "born": "1892",
+          "died": "1960",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a62",
+            "a63"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a32": {
+          "id": "a32",
+          "name": "Баймурат Ерденулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a64",
+            "a65"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a33": {
+          "id": "a33",
+          "name": "Айжан Алтынбеккызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a66",
+            "a67"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a34": {
+          "id": "a34",
+          "name": "Толеген Смагулулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a68",
+            "a69"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a35": {
+          "id": "a35",
+          "name": "Меруерт Касымкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a70",
+            "a71"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a36": {
+          "id": "a36",
+          "name": "Мухтар Баймуратулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a72",
+            "a73"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a37": {
+          "id": "a37",
+          "name": "Майра Толегенкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a74",
+            "a75"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a38": {
+          "id": "a38",
+          "name": "Бекжан Мухтарулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a76",
+            "a77"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a39": {
+          "id": "a39",
+          "name": "Гульнара Бекжанкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a78",
+            "a79"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a40": {
+          "id": "a40",
+          "name": "Абай Абайулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a80",
+            "a81"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a41": {
+          "id": "a41",
+          "name": "Салтанат Сарыбайкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a82",
+            "a83"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a42": {
+          "id": "a42",
+          "name": "Сарыбай Ерденулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a84",
+            "a85"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a43": {
+          "id": "a43",
+          "name": "Сауле Алтынбеккызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a86",
+            "a87"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a44": {
+          "id": "a44",
+          "name": "Ерден Смагулулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a88",
+            "a89"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a45": {
+          "id": "a45",
+          "name": "Жанар Касымкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a90",
+            "a91"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a46": {
+          "id": "a46",
+          "name": "Алтынбек Баймуратулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a92",
+            "a93"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a47": {
+          "id": "a47",
+          "name": "Шолпан Толегенкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a94",
+            "a95"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a48": {
+          "id": "a48",
+          "name": "Смагул Мухтарулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a96",
+            "a97"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a49": {
+          "id": "a49",
+          "name": "Ботагоз Бекжанкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a98",
+            "a99"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a50": {
+          "id": "a50",
+          "name": "Касым Абайулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a100",
+            "a101"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a51": {
+          "id": "a51",
+          "name": "Камшат Сарыбайкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a102",
+            "a103"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a52": {
+          "id": "a52",
+          "name": "Баймурат Ерденулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a104",
+            "a105"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a53": {
+          "id": "a53",
+          "name": "Айжан Алтынбеккызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a106",
+            "a107"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a54": {
+          "id": "a54",
+          "name": "Толеген Смагулулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a108",
+            "a109"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a55": {
+          "id": "a55",
+          "name": "Меруерт Касымкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a110",
+            "a111"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a56": {
+          "id": "a56",
+          "name": "Мухтар Баймуратулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a112",
+            "a113"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a57": {
+          "id": "a57",
+          "name": "Майра Толегенкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a114",
+            "a115"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a58": {
+          "id": "a58",
+          "name": "Бекжан Мухтарулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a116",
+            "a117"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a59": {
+          "id": "a59",
+          "name": "Гульнара Бекжанкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a118",
+            "a119"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a60": {
+          "id": "a60",
+          "name": "Абай Абайулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a120",
+            "a121"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a61": {
+          "id": "a61",
+          "name": "Салтанат Сарыбайкызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a122",
+            "a123"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a62": {
+          "id": "a62",
+          "name": "Сарыбай Ерденулы",
+          "sex": "M",
+          "born": "1863",
+          "died": "1931",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a124",
+            "a125"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a63": {
+          "id": "a63",
+          "name": "Сауле Алтынбеккызы",
+          "sex": "F",
+          "born": "1865",
+          "died": "1933",
+          "birthPlace": "Сарыарқа",
+          "parents": [
+            "a126",
+            "a127"
+          ],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a64": {
+          "id": "a64",
+          "name": "Ерден",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a65": {
+          "id": "a65",
+          "name": "Жанар",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a66": {
+          "id": "a66",
+          "name": "Алтынбек",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a67": {
+          "id": "a67",
+          "name": "Шолпан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a68": {
+          "id": "a68",
+          "name": "Смагул",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a69": {
+          "id": "a69",
+          "name": "Ботагоз",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a70": {
+          "id": "a70",
+          "name": "Касым",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a71": {
+          "id": "a71",
+          "name": "Камшат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a72": {
+          "id": "a72",
+          "name": "Баймурат",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a73": {
+          "id": "a73",
+          "name": "Айжан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a74": {
+          "id": "a74",
+          "name": "Толеген",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a75": {
+          "id": "a75",
+          "name": "Меруерт",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a76": {
+          "id": "a76",
+          "name": "Мухтар",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a77": {
+          "id": "a77",
+          "name": "Майра",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a78": {
+          "id": "a78",
+          "name": "Бекжан",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a79": {
+          "id": "a79",
+          "name": "Гульнара",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a80": {
+          "id": "a80",
+          "name": "Абай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a81": {
+          "id": "a81",
+          "name": "Салтанат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a82": {
+          "id": "a82",
+          "name": "Сарыбай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a83": {
+          "id": "a83",
+          "name": "Сауле",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a84": {
+          "id": "a84",
+          "name": "Ерден",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a85": {
+          "id": "a85",
+          "name": "Жанар",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a86": {
+          "id": "a86",
+          "name": "Алтынбек",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a87": {
+          "id": "a87",
+          "name": "Шолпан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a88": {
+          "id": "a88",
+          "name": "Смагул",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a89": {
+          "id": "a89",
+          "name": "Ботагоз",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a90": {
+          "id": "a90",
+          "name": "Касым",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a91": {
+          "id": "a91",
+          "name": "Камшат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a92": {
+          "id": "a92",
+          "name": "Баймурат",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a93": {
+          "id": "a93",
+          "name": "Айжан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a94": {
+          "id": "a94",
+          "name": "Толеген",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a95": {
+          "id": "a95",
+          "name": "Меруерт",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a96": {
+          "id": "a96",
+          "name": "Мухтар",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a97": {
+          "id": "a97",
+          "name": "Майра",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a98": {
+          "id": "a98",
+          "name": "Бекжан",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a99": {
+          "id": "a99",
+          "name": "Гульнара",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a100": {
+          "id": "a100",
+          "name": "Абай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a101": {
+          "id": "a101",
+          "name": "Салтанат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a102": {
+          "id": "a102",
+          "name": "Сарыбай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a103": {
+          "id": "a103",
+          "name": "Сауле",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a104": {
+          "id": "a104",
+          "name": "Ерден",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a105": {
+          "id": "a105",
+          "name": "Жанар",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a106": {
+          "id": "a106",
+          "name": "Алтынбек",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a107": {
+          "id": "a107",
+          "name": "Шолпан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a108": {
+          "id": "a108",
+          "name": "Смагул",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a109": {
+          "id": "a109",
+          "name": "Ботагоз",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a110": {
+          "id": "a110",
+          "name": "Касым",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a111": {
+          "id": "a111",
+          "name": "Камшат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a112": {
+          "id": "a112",
+          "name": "Баймурат",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a113": {
+          "id": "a113",
+          "name": "Айжан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a114": {
+          "id": "a114",
+          "name": "Толеген",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a115": {
+          "id": "a115",
+          "name": "Меруерт",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a116": {
+          "id": "a116",
+          "name": "Мухтар",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a117": {
+          "id": "a117",
+          "name": "Майра",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a118": {
+          "id": "a118",
+          "name": "Бекжан",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a119": {
+          "id": "a119",
+          "name": "Гульнара",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a120": {
+          "id": "a120",
+          "name": "Абай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a121": {
+          "id": "a121",
+          "name": "Салтанат",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a122": {
+          "id": "a122",
+          "name": "Сарыбай",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a123": {
+          "id": "a123",
+          "name": "Сауле",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a124": {
+          "id": "a124",
+          "name": "Ерден",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a125": {
+          "id": "a125",
+          "name": "Жанар",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a126": {
+          "id": "a126",
+          "name": "Алтынбек",
+          "sex": "M",
+          "born": "1836",
+          "died": "1904",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        },
+        "a127": {
+          "id": "a127",
+          "name": "Шолпан",
+          "sex": "F",
+          "born": "1838",
+          "died": "1906",
+          "birthPlace": "Сарыарқа",
+          "parents": [],
+          "media": [],
+          "notes": "",
+          "tombstone": false
+        }
+      }
+    },
+    "dirty": true
+  },
+  "guide": {
+    "step": "done",
+    "selfId": "a1",
+    "motherId": null,
+    "fatherId": null,
+    "maternalGrandmotherId": null,
+    "maternalGrandfatherId": null,
+    "paternalGrandmotherId": null,
+    "paternalGrandfatherId": null
+  }
+}

@@ -1,0 +1,268 @@
+{
+  "schema": "sejire/tree-export/v1",
+  "exported_at": "2026-08-21T11:11:14.607Z",
+  "app": "SEJIRE",
+  "protocol": "sejire/v0.3",
+  "store": {
+    "meta": {
+      "id": "tree_qa_13",
+      "title": "Беков — 13 колен",
+      "head": null,
+      "next_version": 1,
+      "created_at": "2026-08-21T00:00:00.000Z",
+      "author": "local:qa",
+      "zhuz": "orta",
+      "clanName": "Арғын · Беков",
+      "tamgaUrl": null
+    },
+    "commits": {},
+    "versions": {},
+    "draft": {
+      "persons": {
+        "g00": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g01",
+            "w00"
+          ],
+          "id": "g00",
+          "name": "Ерлан Бекжанулы Беков",
+          "sex": "M",
+          "born": "1998",
+          "died": null,
+          "birthPlace": "Астана"
+        },
+        "g01": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g02",
+            "w01"
+          ],
+          "id": "g01",
+          "name": "Бекжан Ерланулы Беков",
+          "sex": "M",
+          "born": "1972",
+          "died": null,
+          "birthPlace": "Астана"
+        },
+        "g02": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g03",
+            "w02"
+          ],
+          "id": "g02",
+          "name": "Ерлан Бекжанулы Беков",
+          "sex": "M",
+          "born": "1948",
+          "died": "2020",
+          "birthPlace": "Целиноград"
+        },
+        "g03": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g04",
+            "w03"
+          ],
+          "id": "g03",
+          "name": "Бекжан Смагулулы Беков",
+          "sex": "M",
+          "born": "1924",
+          "died": "1999",
+          "birthPlace": "Акмолинск"
+        },
+        "g04": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g05"
+          ],
+          "id": "g04",
+          "name": "Смагул Алтынбекулы",
+          "sex": "M",
+          "born": "1901",
+          "died": "1978",
+          "birthPlace": "Акмолинский уезд"
+        },
+        "g05": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g06"
+          ],
+          "id": "g05",
+          "name": "Алтынбек Нурланулы",
+          "sex": "M",
+          "born": "1876",
+          "died": "1952",
+          "birthPlace": "Сарыарқа"
+        },
+        "g06": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g07"
+          ],
+          "id": "g06",
+          "name": "Нурлан Касымулы",
+          "sex": "M",
+          "born": "1852",
+          "died": "1931",
+          "birthPlace": "Сарыарқа"
+        },
+        "g07": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g08"
+          ],
+          "id": "g07",
+          "name": "Касым Толегенулы",
+          "sex": "M",
+          "born": "1828",
+          "died": "1905",
+          "birthPlace": "Сарыарқа"
+        },
+        "g08": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g09"
+          ],
+          "id": "g08",
+          "name": "Толеген Баймуратулы",
+          "sex": "M",
+          "born": "1804",
+          "died": "1882",
+          "birthPlace": "Сарыарқа"
+        },
+        "g09": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g10"
+          ],
+          "id": "g09",
+          "name": "Баймурат Кожакулулы",
+          "sex": "M",
+          "born": "1779",
+          "died": "1856",
+          "birthPlace": "Сарыарқа"
+        },
+        "g10": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g11"
+          ],
+          "id": "g10",
+          "name": "Кожакул Сарыбаюлы",
+          "sex": "M",
+          "born": "1755",
+          "died": "1833",
+          "birthPlace": "Сарыарқа"
+        },
+        "g11": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [
+            "g12"
+          ],
+          "id": "g11",
+          "name": "Сарыбай Есенкулулы",
+          "sex": "M",
+          "born": "1731",
+          "died": "1808",
+          "birthPlace": "Сарыарқа"
+        },
+        "g12": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [],
+          "id": "g12",
+          "name": "Есенкул",
+          "sex": "M",
+          "born": "1705",
+          "died": "1780",
+          "birthPlace": "Сарыарқа"
+        },
+        "w00": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [],
+          "id": "w00",
+          "name": "Айгуль Сериковна Бекова",
+          "sex": "F",
+          "born": "1974",
+          "died": null,
+          "birthPlace": "Сарыарқа"
+        },
+        "w01": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [],
+          "id": "w01",
+          "name": "Гульнара Касымовна Бекова",
+          "sex": "F",
+          "born": "1950",
+          "died": null,
+          "birthPlace": "Сарыарқа"
+        },
+        "w02": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [],
+          "id": "w02",
+          "name": "Баян Смагуловна",
+          "sex": "F",
+          "born": "1926",
+          "died": "2004",
+          "birthPlace": "Сарыарқа"
+        },
+        "w03": {
+          "media": [],
+          "notes": "",
+          "tombstone": false,
+          "parents": [],
+          "id": "w03",
+          "name": "Зейнеп Алтынбековна",
+          "sex": "F",
+          "born": "1904",
+          "died": "1981",
+          "birthPlace": "Сарыарқа"
+        }
+      }
+    },
+    "dirty": true
+  },
+  "guide": {
+    "step": "done",
+    "selfId": "g00",
+    "motherId": null,
+    "fatherId": null,
+    "maternalGrandmotherId": null,
+    "maternalGrandfatherId": null,
+    "paternalGrandmotherId": null,
+    "paternalGrandfatherId": null
+  }
+}
