@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
 import { isPagesTestMirror } from "../lib/siteMirror";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { LanguageSwitch } from "./LanguageSwitch";
 
 type Props = {
   onStartNew: (title: string) => void;
@@ -17,15 +19,14 @@ type Step = "brand" | "menu";
 export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
   const [step, setStep] = useState<Step>("brand");
   const hasDraft = Boolean(loadDraftTree());
+  const { t } = useI18n();
 
   function startFresh() {
     if (hasDraft) {
-      const ok = window.confirm(
-        "Текущий черновик будет удалён. Сначала можно продолжить его и выгрузить JSON. Создать новое древо?"
-      );
+      const ok = window.confirm(t.welcome.replaceDraftConfirm);
       if (!ok) return;
     }
-    onStartNew("Мой род");
+    onStartNew(t.defaultTreeTitle);
   }
 
   if (step === "brand") {
@@ -35,10 +36,11 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
           type="button"
           className="welcome-brand"
           onClick={() => setStep("menu")}
-          aria-label="SEJIRE — открыть меню"
+          aria-label={t.welcome.openMenu}
         >
           SEJIRE
         </button>
+        <LanguageSwitch placement="welcome" />
       </div>
     );
   }
@@ -49,40 +51,33 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
         <button type="button" className="welcome-menu-brand" onClick={() => setStep("brand")}>
           SEJIRE
         </button>
-        {isPagesTestMirror() ? (
-          <p className="welcome-menu-sub">
-            Это тестовое зеркало GitHub Pages. Канон{" "}
-            <a href="https://sejire.ar.io" target="_blank" rel="noreferrer">
-              sejire.ar.io
-            </a>{" "}
-            пока со старым паком.
-          </p>
-        ) : null}
+        {isPagesTestMirror() ? <p className="welcome-menu-sub">{t.welcome.pagesMirror}</p> : null}
 
         <div className="welcome-menu-actions">
           {hasDraft ? (
             <>
               <button type="button" className="btn welcome-menu-btn" onClick={onContinueDraft}>
-                Продолжить
+                {t.welcome.continueDraft}
               </button>
               <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
-                Открыть по 12 словам
+                {t.welcome.restoreSeed}
               </button>
               <button type="button" className="welcome-link-quiet" onClick={startFresh}>
-                Новое древо
+                {t.welcome.newTree}
               </button>
             </>
           ) : (
             <>
               <button type="button" className="btn welcome-menu-btn" onClick={startFresh}>
-                Начать
+                {t.welcome.start}
               </button>
               <button type="button" className="btn ghost welcome-menu-btn" onClick={onRestoreSeed}>
-                Открыть по 12 словам
+                {t.welcome.restoreSeed}
               </button>
             </>
           )}
         </div>
+        <LanguageSwitch placement="welcome" />
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ export function DateTextInput({
   value,
   onChange,
   id,
-  placeholder = "1990 или 15.03.1990",
+  placeholder = "1990 / 15.03.1990",
   "aria-label": ariaLabel,
 }: Props) {
   function handleChange(e: ChangeEvent<HTMLInputElement>) {

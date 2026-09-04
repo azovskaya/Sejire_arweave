@@ -7,6 +7,8 @@ import {
   type PersonProtocolView,
 } from "../lib/ao/protocolKinship";
 import { DateTextInput } from "./DateTextInput";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import type { KinshipCode } from "../lib/kinship";
 
 export type PersonPanelHandle = {
   flush: () => void;
@@ -14,7 +16,7 @@ export type PersonPanelHandle = {
 
 type Props = {
   person: Person | null;
-  relatives: { id: string; name: string; relation: string }[];
+  relatives: { id: string; name: string; kind: "father" | "mother" | "child" }[];
   open?: boolean;
   hasFather?: boolean;
   hasMother?: boolean;
@@ -106,6 +108,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
 }: Props,
   ref
 ) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<Person>(person ?? emptyPerson());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const ready = useRef(false);
@@ -120,10 +123,10 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
     setDraft(person ?? emptyPerson());
     setConfirmDelete(false);
     ready.current = false;
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       ready.current = true;
     }, 0);
-    return () => window.clearTimeout(t);
+    return () => window.clearTimeout(timer);
   }, [person]);
 
   useEffect(() => {
@@ -178,7 +181,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
   if (!person) {
     return (
       <aside className="person-panel is-empty" aria-hidden="true">
-        <p>Нажмите карточку на схеме, чтобы открыть форму сведений.</p>
+        <p>{t.person.empty}</p>
       </aside>
     );
   }
@@ -195,15 +198,18 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
       className={panelClass}
       role="dialog"
       aria-modal={open ? "true" : undefined}
-      aria-label={`Профиль: ${draft.name || "без имени"}`}
+      aria-label={t.person.profile(draft.name || t.person.unnamed)}
     >
       <div className="person-sheet-handle" aria-hidden />
       <header className="person-panel-head">
         <div className="person-panel-head-text">
-          <h2 className="clamp-2">{draft.name || "Без имени"}</h2>
-          <p className="sub mono">{lifespan(draft) || "даты не указаны"}</p>
+          <h2 className="clamp-2">{draft.name || t.person.unnamed}</h2>
+          <p className="sub mono">
+            {lifespan(draft, { born: t.pedigree.bornAbbr, died: t.pedigree.diedAbbr }) ||
+              t.person.noDates}
+          </p>
         </div>
-        <button type="button" className="tool-btn" onClick={handleClose} aria-label="Закрыть">
+        <button type="button" className="tool-btn" onClick={handleClose} aria-label={t.person.close}>
           ×
         </button>
       </header>
@@ -215,7 +221,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
           }`}
         >
           <button type="button" className="btn ghost" onClick={onFocusAncestors}>
-            Показать предков на схеме
+            {t.person.showAncestors}
           </button>
         </div>
       ) : null}
@@ -223,7 +229,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
       <div className="person-panel-form">
         <section className="field-block">
           <label>
-            Имя
+            {t.person.name}
             <input
               value={draft.name}
               onChange={(e) => setField("name", e.target.value)}
@@ -234,125 +240,128 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
             />
           </label>
           <label>
-            Пол
+            {t.person.sex}
             <select
               value={draft.sex ?? "U"}
               onChange={(e) => setField("sex", e.target.value as Person["sex"])}
             >
-              <option value="U">не указан</option>
-              <option value="F">женский</option>
-              <option value="M">мужской</option>
+              <option value="U">{t.person.sexUnknown}</option>
+              <option value="F">{t.person.sexF}</option>
+              <option value="M">{t.person.sexM}</option>
             </select>
           </label>
         </section>
 
         <section className="field-block">
-          <h3>Рождение</h3>
+          <h3>{t.person.birth}</h3>
           <label>
-            Дата
+            {t.person.date}
             <DateTextInput
               value={draft.born ?? ""}
               onChange={(v) => setField("born", v || null)}
-              aria-label="Дата рождения"
+              placeholder={t.datePh}
+              aria-label={t.person.birthDateAria}
             />
           </label>
           <label>
-            Место
+            {t.person.place}
             <input
               value={draft.birthPlace ?? ""}
               onChange={(e) => setField("birthPlace", e.target.value || null)}
-              placeholder="город, страна"
+              placeholder={t.person.placePh}
             />
           </label>
         </section>
 
         <section className="field-block">
-          <h3>Смерть</h3>
+          <h3>{t.person.death}</h3>
           <label>
-            Дата
+            {t.person.date}
             <DateTextInput
               value={draft.died ?? ""}
               onChange={(v) => setField("died", v || null)}
-              aria-label="Дата смерти"
+              placeholder={t.datePh}
+              aria-label={t.person.deathDateAria}
             />
           </label>
           <label>
-            Место
+            {t.person.place}
             <input
               value={draft.deathPlace ?? ""}
               onChange={(e) => setField("deathPlace", e.target.value || null)}
-              placeholder="город, страна"
+              placeholder={t.person.placePh}
             />
           </label>
         </section>
 
         <section className="field-block">
-          <h3>Заметки</h3>
+          <h3>{t.person.notes}</h3>
           <label>
             <textarea
               rows={3}
               value={draft.notes ?? ""}
               onChange={(e) => setField("notes", e.target.value)}
-              placeholder="Кратко о человеке"
+              placeholder={t.person.notesPh}
             />
           </label>
         </section>
 
         <details className="field-block more-fields">
-          <summary>Ещё сведения</summary>
+          <summary>{t.person.moreFacts}</summary>
           <label>
-            Девичья фамилия
+            {t.person.maiden}
             <input
               value={draft.maidenName ?? ""}
               onChange={(e) => setField("maidenName", e.target.value || null)}
-              placeholder="если применимо"
+              placeholder={t.person.maidenPh}
             />
           </label>
           <label>
-            Род занятий
+            {t.person.occupation}
             <input
               value={draft.occupation ?? ""}
               onChange={(e) => setField("occupation", e.target.value || null)}
             />
           </label>
           <label>
-            Дата захоронения
+            {t.person.burialDate}
             <DateTextInput
               value={draft.burialDate ?? ""}
               onChange={(v) => setField("burialDate", v || null)}
-              aria-label="Дата захоронения"
+              placeholder={t.datePh}
+              aria-label={t.person.burialDateAria}
             />
           </label>
           <label>
-            Место захоронения
+            {t.person.burialPlace}
             <input
               value={draft.burialPlace ?? ""}
               onChange={(e) => setField("burialPlace", e.target.value || null)}
-              placeholder="кладбище, город"
+              placeholder={t.person.burialPlacePh}
             />
           </label>
         </details>
       </div>
 
       <div className="panel-section">
-        <h3>Родственники</h3>
+        <h3>{t.person.relatives}</h3>
         <div className="rel-actions">
           {!hasFather ? (
             <button type="button" className="btn ghost" onClick={() => onAdd("father")}>
-              + Папа
+              {t.person.addFather}
             </button>
           ) : null}
           {!hasMother ? (
             <button type="button" className="btn ghost" onClick={() => onAdd("mother")}>
-              + Мама
+              {t.person.addMother}
             </button>
           ) : null}
         </div>
         {relatives.length > 0 && (
           <ul className="rel-list">
             {relatives.map((r) => (
-              <li key={`${r.relation}-${r.id}`}>
-                <span>{r.relation}</span>
+              <li key={`${r.kind}-${r.id}`}>
+                <span>{t.relation[r.kind]}</span>
                 <button type="button" className="rel-link clamp-1" onClick={() => onSelectRelative(r.id)}>
                   {r.name}
                 </button>
@@ -364,14 +373,14 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
 
       {protocolLoading || protocolViewHasKin(protocolView) ? (
         <div className="panel-section protocol-kinship">
-          <h3>Родство по протоколу</h3>
-          <p className="hint">Локальный снимок процесса · сеть AO не вызывается</p>
-          {protocolLoading ? <p className="hint">Считаем жеті ата и связи…</p> : null}
+          <h3>{t.person.protocol}</h3>
+          <p className="hint">{t.person.protocolHint}</p>
+          {protocolLoading ? <p className="hint">{t.person.protocolLoading}</p> : null}
           {protocolViewHasKin(protocolView) && protocolView ? (
             <>
               {protocolView.jetiAta.some((x) => x.generation > 0) ? (
                 <div>
-                  <h4>Жеті ата</h4>
+                  <h4>{t.person.jetiAta}</h4>
                   <ol className="jeti-line">
                     {protocolView.jetiAta.map((row) => (
                       <li key={`jeti-${row.id}`}>
@@ -393,13 +402,13 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
               ) : null}
               {protocolView.ancestors.some((x) => x.distance > 0) ? (
                 <div>
-                  <h4>Предки</h4>
+                  <h4>{t.person.ancestors}</h4>
                   <ul className="rel-list">
                     {protocolView.ancestors
                       .filter((row) => row.distance > 0)
                       .map((row) => (
                         <li key={`anc-${row.id}`}>
-                          <span>колено {row.distance}</span>
+                          <span>{t.person.knee(row.distance)}</span>
                           <button
                             type="button"
                             className="rel-link clamp-1"
@@ -414,11 +423,11 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
               ) : null}
               {protocolView.relatives.length > 0 ? (
                 <div>
-                  <h4>Связи Relate</h4>
+                  <h4>{t.person.relate}</h4>
                   <ul className="rel-list">
                     {protocolView.relatives.map((r) => (
                       <li key={`proto-${r.code}-${r.id}`}>
-                        <span>{r.label}</span>
+                        <span>{t.kinship[r.code as KinshipCode] ?? r.label}</span>
                         <button
                           type="button"
                           className="rel-link clamp-1"
@@ -439,17 +448,18 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
       <div className="panel-section delete-zone">
         {!confirmDelete ? (
           <button type="button" className="btn ghost danger-text" onClick={() => setConfirmDelete(true)}>
-            Удалить с древа
+            {t.person.delete}
           </button>
         ) : (
           <div className="delete-confirm">
             <p>
-              Убрать <strong>{draft.name || "этого человека"}</strong> со схемы? Сразу после этого можно
-              нажать «Вернуть».
+              {t.person.deleteConfirm(
+                draft.name ? `«${draft.name}»` : t.person.thisPerson
+              )}
             </p>
             <div className="actions">
               <button type="button" className="btn ghost" onClick={() => setConfirmDelete(false)}>
-                Отмена
+                {t.cancel}
               </button>
               <button
                 type="button"
@@ -460,7 +470,7 @@ export const PersonPanel = forwardRef<PersonPanelHandle, Props>(function PersonP
                   onDelete();
                 }}
               >
-                Удалить
+                {t.person.delete}
               </button>
             </div>
           </div>

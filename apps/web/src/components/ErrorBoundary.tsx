@@ -3,6 +3,8 @@ import { loadDraftTree } from "../lib/draftStorage";
 import { rememberScreen } from "../lib/lastScreen";
 import { defaultGuide, loadGuide } from "../lib/guide";
 import { downloadTreeJson } from "../lib/treeJson";
+import { resolveUiLocale } from "../lib/i18n/locale";
+import { uiT } from "../lib/i18n/messages";
 
 type Props = { children: ReactNode };
 type State = { error: Error | null; exportHint: string | null };
@@ -23,31 +25,30 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   private exportDraft = () => {
+    const t = uiT(resolveUiLocale());
     try {
       const store = loadDraftTree();
       if (!store) {
-        this.setState({ exportHint: "Черновик в браузере не найден." });
+        this.setState({ exportHint: t.crash.noDraft });
         return;
       }
       downloadTreeJson(store, loadGuide() ?? defaultGuide());
-      this.setState({ exportHint: "JSON скачан." });
+      this.setState({ exportHint: t.crash.jsonDownloaded });
     } catch (e) {
       this.setState({
-        exportHint: e instanceof Error ? e.message : "Не удалось выгрузить JSON",
+        exportHint: e instanceof Error ? e.message : t.crash.jsonFailed,
       });
     }
   };
 
   render() {
     if (!this.state.error) return this.props.children;
+    const t = uiT(resolveUiLocale());
     return (
       <div className="crash-screen">
         <p className="crash-brand">SEJIRE</p>
-        <h1>Приложение остановилось</h1>
-        <p className="sub">
-          Черновик в браузере обычно цел. Откройте его — схема должна вернуться.
-          Если ошибка повторяется, выгрузите JSON, пока вкладка ещё открыта.
-        </p>
+        <h1>{t.crash.title}</h1>
+        <p className="sub">{t.crash.body}</p>
         <pre className="crash-detail">{this.state.error.message}</pre>
         {this.state.exportHint ? <p className="sub">{this.state.exportHint}</p> : null}
         <button
@@ -58,10 +59,10 @@ export class AppErrorBoundary extends Component<Props, State> {
             window.location.reload();
           }}
         >
-          {loadDraftTree() ? "Открыть черновик" : "Обновить"}
+          {loadDraftTree() ? t.crash.openDraft : t.crash.reload}
         </button>
         <button type="button" className="btn ghost" onClick={this.exportDraft}>
-          Выгрузить JSON
+          {t.crash.exportJson}
         </button>
       </div>
     );

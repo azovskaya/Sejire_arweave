@@ -37,6 +37,7 @@ import {
   archiveLocalVaultVersion,
   makeLocalVersionId,
 } from "../lib/vaultSession/localArchive";
+import { useI18n } from "../lib/i18n/I18nProvider";
 
 type Props = {
   store: TreeStore;
@@ -65,12 +66,6 @@ type Mode =
   | "fund-wait"
   | "pay";
 
-function confirmDiscardSeed() {
-  return window.confirm(
-    "Сгенерированные 12 слов будут потеряны с экрана. Вы уже записали их на бумагу?"
-  );
-}
-
 function formatPrice(amountMinor: number, currency: string): string {
   const cur = currency.toUpperCase();
   if (cur === "KZT" || cur === "₸") return `${amountMinor} ₸`;
@@ -85,6 +80,7 @@ export function PublishSeedModal({
   parentTxId: parentTxProp,
   knownMnemonic: knownMnemonicProp,
 }: Props) {
+  const { t } = useI18n();
   const sponsorOn = isSponsorPublishEnabled();
   const demoOn = isDemoPublishEnabled();
   const session = getVaultSession();
@@ -105,6 +101,10 @@ export function PublishSeedModal({
   const [priceHint, setPriceHint] = useState<string | null>(null);
   const [publishParentTx, setPublishParentTx] = useState<string | null>(parentTxId);
   const words = useMemo(() => (mnemonic ? splitWords(mnemonic) : []), [mnemonic]);
+
+  function confirmDiscardSeed() {
+    return window.confirm(t.publish.discardConfirm);
+  }
 
   const seedLocked =
     mode === "create-show" ||
@@ -135,7 +135,7 @@ export function PublishSeedModal({
       try {
         const st = await sponsorSessionStatus(checkout.sessionId);
         if (!cancelled && st.paid) {
-          setStatus("Kaspi подтвердил оплату. Можно сохранить.");
+          setStatus(t.publish.kaspiPaid);
         }
       } catch {
         /* сеть кассира могла моргнуть — следующая попытка */
@@ -192,11 +192,11 @@ export function PublishSeedModal({
     parentTx: string | null;
   }> {
     const keys = deriveKeysFromMnemonic(phrase);
-    setStatus(`Сейф ${fingerprintVaultId(keys.vaultId)}…`);
+    setStatus(t.publish.vaultFp(fingerprintVaultId(keys.vaultId)));
     const loaded = await loadVaultForPublish(keys, { parentTxId: publishParentTx });
     setPublishParentTx(loaded.parentTxId);
     const vault = putTree(loaded.vault, store);
-    setStatus("Шифруем сейф ключом из 12 слов…");
+    setStatus(t.publish.encrypting);
     const envelope = await sealVault(keys, vault);
     return { keys, envelope, parentTx: loaded.parentTxId };
   }
@@ -239,7 +239,7 @@ export function PublishSeedModal({
     setWalletAddress(null);
     try {
       const { keys, envelope, parentTx } = await sealForPhrase(phrase);
-      setStatus("Сохраняем демо-версию в этом браузере…");
+      setStatus(t.publish.demoSaving);
       const id = makeLocalVersionId("demo");
       archiveVersion(keys, envelope, id, parentTx, "demo");
       rememberSession(keys, phrase, id);
@@ -260,12 +260,12 @@ export function PublishSeedModal({
     setWalletAddress(null);
     try {
       const { keys, envelope, parentTx } = await sealForPhrase(phrase);
-      setStatus("Из 12 слов создаём адрес Arweave (без стороннего кошелька, 10–40 сек)…");
+      setStatus(t.publish.makingAddress);
       const jwk = await jwkFromSeed(keys.seed);
       const address = await addressFromJwk(jwk);
       setWalletAddress(address);
       const balance = await getWalletBalanceAr(jwk);
-      setStatus(`Адрес из фразы ${address.slice(0, 8)}… · баланс ${balance} AR. Отправляем…`);
+      setStatus(t.publish.sending(address.slice(0, 8), balance));
       const result = await publishEnvelope(jwk, envelope, {
         parentTxId: parentTx,
         updatedAt: new Date().toISOString(),
@@ -273,7 +273,7 @@ export function PublishSeedModal({
       if (!result.ok) {
         downloadEnvelope(envelope);
         const fundHint = result.needsFunds
-          ? " Переведите AR на адрес ниже, затем нажмите «Отправить»."
+          ? t.publish.fundHint
           : "";
         setError(`${result.error}${fundHint}`);
         setMnemonic(phrase);
@@ -322,7 +322,7 @@ export function PublishSeedModal({
       const { keys, envelope, parentTx } = await sealForPhrase(phrase);
       setSealedEnvelope(envelope);
       setPublishParentTx(parentTx);
-      setStatus("Создаём сессию оплаты…");
+      setStatus(t.publish.checkout);
       const sessionPay = await sponsorCheckout({
         vaultId: envelope.vault_id,
         successUrl: typeof window !== "undefined" ? window.location.href : undefined,
@@ -341,17 +341,17 @@ export function PublishSeedModal({
 
   async function confirmPaidAndPublish() {
     if (!checkout || !sealedEnvelope) {
-      setError("Нет сессии оплаты или шифра.");
+      setError(t.publish.noSession);
       return;
     }
     setMode("busy");
     setError(null);
     try {
       if (checkout.mockPayable) {
-        setStatus("Подтверждаем mock-оплату…");
+        setStatus(t.publish.mockConfirm);
         await sponsorMockPay(checkout.sessionId);
       } else {
-        setStatus("Спрашиваем Kaspi, прошла ли оплата…");
+        setStatus(t.publish.kaspiAsk);
         let paid = false;
         for (let i = 0; i < 8; i += 1) {
           const st = await sponsorSessionStatus(checkout.sessionId);
@@ -363,11 +363,11 @@ export function PublishSeedModal({
         }
         if (!paid) {
           throw new Error(
-            "Kaspi ещё не подтвердил оплату. Откройте ссылку Kaspi, оплатите, затем нажмите кнопку снова."
+            t.publish.kaspiWait
           );
         }
       }
-      setStatus("Отправляем только шифр в сеть…");
+      setStatus(t.publish.uploading);
       const result = await sponsorPublish(checkout.sessionId, sealedEnvelope, {
         parentTxId: publishParentTx,
       });
@@ -402,7 +402,7 @@ export function PublishSeedModal({
   function onConfirmCreate(e: FormEvent) {
     e.preventDefault();
     if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
-      setError("Фраза не совпадает.");
+      setError(t.publish.mismatch);
       return;
     }
     setError(null);
@@ -412,13 +412,13 @@ export function PublishSeedModal({
 
   function saveSeedFile() {
     if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
-      setError("Сначала повторите 12 слов.");
+      setError(t.publish.repeatFirst);
       return;
     }
     try {
       downloadSeedBackup(mnemonic);
       setSeedFileSaved(true);
-      setStatus("Файл sejire-12-words….json (схема sejire/seed/v1) скачан");
+      setStatus(t.publish.seedDownloaded);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -428,7 +428,7 @@ export function PublishSeedModal({
     e.preventDefault();
     const phrase = normalizeMnemonic(existing);
     if (!isValidMnemonic(phrase)) {
-      setError("Нужна корректная BIP-39 фраза из 12 слов.");
+      setError(t.publish.badMnemonic);
       return;
     }
     setMnemonic(phrase);
@@ -439,7 +439,7 @@ export function PublishSeedModal({
 
   async function exportFileOnly() {
     if (normalizeMnemonic(confirm) !== normalizeMnemonic(mnemonic)) {
-      setError("Сначала повторите 12 слов — так мы убедимся, что вы их записали.");
+      setError(t.publish.repeatRecord);
       return;
     }
     await runLocalExport(mnemonic);
@@ -449,9 +449,9 @@ export function PublishSeedModal({
     if (!walletAddress) return;
     try {
       await navigator.clipboard.writeText(walletAddress);
-      setStatus("Адрес скопирован");
+      setStatus(t.publish.copiedStatus);
     } catch {
-      setStatus("Скопируйте адрес вручную");
+      setStatus(t.publish.copyManual);
     }
   }
 
@@ -464,27 +464,22 @@ export function PublishSeedModal({
   }
 
   const primarySaveLabel = demoOn
-    ? "Демо · новая версия в браузере"
+    ? t.publish.demoNew
     : sponsorOn
-      ? `Новая версия · оплата${priceHint ? ` ~${priceHint}` : ""}`
-      : "Новая версия в сеть";
+      ? t.publish.payNew(priceHint ? ` ~${priceHint}` : "")
+      : t.publish.networkNew;
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal panel">
-        <h2>Сохранить</h2>
+        <h2>{t.publish.title}</h2>
         <p className="sub">
-          <strong>12 слов</strong> — ваш ключ. Каждое сохранение —{" "}
-          <strong>новая версия</strong> под теми же словами; прошлые остаются.
-          {demoOn && (
-            <> Сейчас на сайте включён <strong>демо-режим</strong>: версии хранятся в этом браузере
-            (без оплаты и без Arweave), чтобы проверить сценарий.</>
-          )}
+          {t.publish.lead}
+          {demoOn && t.publish.leadDemo}
           {sponsorOn && (
             <>
-              {" "}
-              Вечность — через кассир
-              {priceHint ? ` (~${priceHint})` : ""}: на сервер уходит только шифр.
+              {t.publish.leadSponsor}
+              {priceHint ? ` (~${priceHint})` : ""}.
             </>
           )}
         </p>
@@ -492,11 +487,11 @@ export function PublishSeedModal({
         {mode === "new-version" && (
           <div>
             <p className="sub">
-              Сохранить текущее древо как <strong>новую версию</strong> теми же 12 словами
-              {session?.vaultId ? ` (сейф ${fingerprintVaultId(session.vaultId)})` : ""}.
+              {t.publish.newVersionHint}
+              {session?.vaultId ? ` (${fingerprintVaultId(session.vaultId)})` : ""}.
               {publishParentTx
-                ? ` Предыдущая версия останется (${publishParentTx.slice(0, 8)}…).`
-                : " Если сейф уже сохраняли — старые версии останутся."}
+                ? t.publish.prevKept(publishParentTx.slice(0, 8))
+                : t.publish.oldKept}
             </p>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               {demoOn && (
@@ -519,11 +514,11 @@ export function PublishSeedModal({
                   type="button"
                   onClick={() => void runSelfFundPublish(mnemonic)}
                 >
-                  {sponsorOn ? "Новая версия за свой AR" : "Новая версия в сеть"}
+                  {sponsorOn ? t.publish.selfArNew : t.publish.networkNew}
                 </button>
               )}
               <button className="btn ghost" type="button" onClick={() => void runLocalExport(mnemonic)}>
-                Только локальный шифр / файл
+                {t.publish.localCipher}
               </button>
               <button
                 className="btn ghost"
@@ -533,10 +528,10 @@ export function PublishSeedModal({
                   setMnemonic("");
                 }}
               >
-                Другие 12 слов
+                {t.publish.otherWords}
               </button>
               <button className="btn ghost" type="button" onClick={requestClose}>
-                Отмена
+                {t.cancel}
               </button>
             </div>
           </div>
@@ -545,13 +540,13 @@ export function PublishSeedModal({
         {mode === "intro" && (
           <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
             <button className="btn" type="button" onClick={startCreate}>
-              Создать 12 слов
+              {t.publish.createWords}
             </button>
             <button className="btn ghost" type="button" onClick={() => setMode("existing")}>
-              У меня уже есть слова (новая версия)
+              {t.publish.haveWords}
             </button>
             <button className="btn ghost" type="button" onClick={requestClose}>
-              Отмена
+              {t.cancel}
             </button>
           </div>
         )}
@@ -559,7 +554,7 @@ export function PublishSeedModal({
         {mode === "create-show" && (
           <div>
             <p className="sub">
-              Запишите эти слова на бумаге <strong>сейчас</strong>.
+              {t.publish.writeNow}
             </p>
             <ol className="seed-grid">
               {words.map((w, i) => (
@@ -578,10 +573,10 @@ export function PublishSeedModal({
                   setMode("intro");
                 }}
               >
-                Назад
+                {t.back}
               </button>
               <button className="btn" type="button" onClick={() => setMode("create-confirm")}>
-                Я записал(а)
+                {t.publish.iWrote}
               </button>
             </div>
           </div>
@@ -589,7 +584,7 @@ export function PublishSeedModal({
 
         {mode === "create-confirm" && (
           <form onSubmit={onConfirmCreate}>
-            <p className="sub">Повторите 12 слов.</p>
+            <p className="sub">{t.publish.repeat}</p>
             <textarea
               rows={3}
               value={confirm}
@@ -601,10 +596,10 @@ export function PublishSeedModal({
             />
             <div className="actions">
               <button className="btn ghost" type="button" onClick={() => setMode("create-show")}>
-                Назад
+                {t.back}
               </button>
               <button className="btn" type="submit">
-                Далее
+                {t.next}
               </button>
             </div>
           </form>
@@ -612,17 +607,14 @@ export function PublishSeedModal({
 
         {mode === "create-ready" && (
           <div>
-            <p className="sub">
-              Слова совпали. Ключ — на бумагу или JSON. Дальше сохраните версию; позже можно снова
-              сохранить под этими словами — это будет новая версия.
-            </p>
+            <p className="sub">{t.publish.matched}</p>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={saveSeedFile}>
-                {seedFileSaved ? "12 слов · JSON ещё раз" : "12 слов · JSON"}
+                {seedFileSaved ? t.publish.seedJsonAgain : t.publish.seedJson}
               </button>
               {demoOn && (
                 <button className="btn" type="button" onClick={() => void runDemoPublish(mnemonic)}>
-                  Демо · сохранить версию в браузере
+                  {t.publish.demoSave}
                 </button>
               )}
               {sponsorOn && (
@@ -631,7 +623,7 @@ export function PublishSeedModal({
                   type="button"
                   onClick={() => void startSponsorFlow(mnemonic)}
                 >
-                  Навсегда · оплата{priceHint ? ` ~${priceHint}` : ""}
+                  {t.publish.foreverPay(priceHint ? ` ~${priceHint}` : "")}
                 </button>
               )}
               {!demoOn && (
@@ -640,14 +632,14 @@ export function PublishSeedModal({
                   type="button"
                   onClick={() => void runSelfFundPublish(mnemonic)}
                 >
-                  {sponsorOn ? "В сеть за свой AR (fallback)" : "Древо в децентрализованную сеть"}
+                  {sponsorOn ? t.publish.selfArFallback : t.publish.selfArMain}
                 </button>
               )}
               <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
-                Зашифрованное древо · локально
+                {t.publish.localTree}
               </button>
               <button className="btn ghost" type="button" onClick={() => setMode("create-confirm")}>
-                Назад
+                {t.back}
               </button>
             </div>
             {seedFileSaved && status && <p className="sub">{status}</p>}
@@ -657,24 +649,22 @@ export function PublishSeedModal({
         {mode === "pay" && checkout && (
           <div>
             <p className="sub">
-              Оплата{" "}
-              <strong>{formatPrice(checkout.amountMinor, checkout.currency)}</strong>
-              {checkout.provider === "mock" ? " (mock-кассир, без банка)" : " через Kaspi"}
-              {publishParentTx ? " · новая версия" : ""}. На кассир уходит только зашифрованный сейф —
-              не 12 слов.
+              {t.publish.payLine(
+                formatPrice(checkout.amountMinor, checkout.currency),
+                checkout.provider === "mock" ? t.publish.viaMock : t.publish.viaKaspi,
+                publishParentTx ? t.publish.newVerShort : ""
+              )}
             </p>
             {checkout.payUrl && (
               <p className="sub">
                 <a href={checkout.payUrl} target="_blank" rel="noopener noreferrer">
-                  Открыть оплату Kaspi ↗
+                  {t.publish.openKaspi}
                 </a>
               </p>
             )}
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={() => void confirmPaidAndPublish()}>
-                {checkout.mockPayable
-                  ? "Оплачено (mock) · сохранить навсегда"
-                  : "Я оплатил(а) · сохранить"}
+                {checkout.mockPayable ? t.publish.paidMock : t.publish.paidLive}
               </button>
               <button
                 className="btn ghost"
@@ -685,7 +675,7 @@ export function PublishSeedModal({
                   setMode(hasSessionKey ? "new-version" : "create-ready");
                 }}
               >
-                Назад
+                {t.back}
               </button>
             </div>
           </div>
@@ -693,10 +683,7 @@ export function PublishSeedModal({
 
         {mode === "existing" && (
           <form onSubmit={(e) => void onExisting(e)}>
-            <p className="sub">
-              Те же 12 слов → тот же сейф. Сохранение создаст <strong>новую</strong> версию; старые
-              версии останутся.
-            </p>
+            <p className="sub">{t.publish.existingHint}</p>
             <textarea
               rows={3}
               value={existing}
@@ -709,14 +696,14 @@ export function PublishSeedModal({
             />
             <div className="actions">
               <button className="btn ghost" type="button" onClick={() => setMode("intro")}>
-                Назад
+                {t.back}
               </button>
               <button className="btn" type="submit">
                 {demoOn
-                  ? "Сохранить демо-версию"
+                  ? t.publish.demoSaveBtn
                   : sponsorOn
-                    ? "Зашифровать и оплатить"
-                    : "Зашифровать и отправить"}
+                    ? t.publish.encryptPay
+                    : t.publish.encryptSend}
               </button>
             </div>
           </form>
@@ -724,47 +711,41 @@ export function PublishSeedModal({
 
         {mode === "busy" && (
           <div>
-            <p className="sub">{status || "Работаем… Не закрывайте окно."}</p>
+            <p className="sub">{status || t.publish.busy}</p>
             {walletAddress && (
-              <p className="sub mono publish-meta">Адрес из 12 слов: {walletAddress}</p>
+              <p className="sub mono publish-meta">
+                {t.publish.addressFromWords} {walletAddress}
+              </p>
             )}
           </div>
         )}
 
         {mode === "fund-wait" && (
           <div>
-            <p className="sub">
-              На адресе из <strong>ваших 12 слов</strong> нет AR, поэтому сеть не принимает сейф.
-              Новые слова создавать не нужно.
-            </p>
+            <p className="sub">{t.publish.fundLead}</p>
             {walletAddress && (
               <button
                 type="button"
                 className="publish-address"
                 onClick={() => void copyAddress()}
-                title="Нажмите, чтобы скопировать"
+                title={t.publish.copyTitle}
               >
                 {walletAddress}
                 <span className="publish-address-hint">
-                  {status === "Адрес скопирован" ? "Скопировано" : "Нажмите, чтобы скопировать адрес"}
+                  {status === t.publish.copiedStatus ? t.publish.copied : t.publish.copyHint}
                 </span>
               </button>
             )}
             <ol className="fund-steps">
-              <li>Скопируйте адрес выше.</li>
-              <li>
-                Binance → Вывод → монета <strong>AR</strong> → сеть только <strong>Arweave</strong>{" "}
-                (не ERC-20, не BNB).
-              </li>
-              <li>Вставьте этот адрес. Хватит <strong>0.05–0.1 AR</strong>.</li>
-              <li>
-                Не импортируйте 12 слов в ArConnect — получится другой адрес, деньги не дойдут сюда.
-              </li>
-              <li>Когда перевод пройдёт (обычно несколько минут), нажмите «Отправить».</li>
+              <li>{t.publish.fund1}</li>
+              <li>{t.publish.fund2}</li>
+              <li>{t.publish.fund3}</li>
+              <li>{t.publish.fund4}</li>
+              <li>{t.publish.fund5}</li>
             </ol>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
               <button className="btn" type="button" onClick={() => void runSelfFundPublish(mnemonic)}>
-                Отправить
+                {t.publish.send}
               </button>
               {sponsorOn && (
                 <button
@@ -772,16 +753,16 @@ export function PublishSeedModal({
                   type="button"
                   onClick={() => void startSponsorFlow(mnemonic)}
                 >
-                  Оплатить через кассир вместо AR
+                  {t.publish.payInstead}
                 </button>
               )}
               {demoOn && (
                 <button className="btn ghost" type="button" onClick={() => void runDemoPublish(mnemonic)}>
-                  Сохранить демо-версию в браузере
+                  {t.publish.demoInstead}
                 </button>
               )}
               <button className="welcome-link-quiet" type="button" onClick={requestClose}>
-                Закрыть
+                {t.close}
               </button>
             </div>
           </div>
@@ -791,7 +772,9 @@ export function PublishSeedModal({
           <div className="form-error-block">
             <p className="form-error">{error}</p>
             {walletAddress && mode !== "fund-wait" && (
-              <p className="sub mono publish-meta">Адрес из ваших 12 слов: {walletAddress}</p>
+              <p className="sub mono publish-meta">
+                {t.publish.addressLabel} {walletAddress}
+              </p>
             )}
           </div>
         )}

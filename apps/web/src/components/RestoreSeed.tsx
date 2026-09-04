@@ -25,6 +25,9 @@ import {
   type LocalVaultVersion,
 } from "../lib/vaultSession/localArchive";
 
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { formatUiDateTime } from "../lib/i18n/messages";
+
 type Props = {
   onRestored: (store?: TreeStore) => void;
   onBack: () => void;
@@ -35,19 +38,8 @@ type PickerItem =
   | { kind: "archive"; entry: LocalVaultVersion }
   | { kind: "local" };
 
-function formatArchiveWhen(iso: string): string {
-  const d = Date.parse(iso);
-  if (Number.isNaN(d)) return "время неизвестно";
-  return new Date(d).toLocaleString("ru-RU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function RestoreSeed({ onRestored, onBack }: Props) {
+  const { locale, t } = useI18n();
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,12 +56,10 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
   ) {
     const treeId = vault.active_tree_id;
     const store = coerceTreeStore(treeId ? vault.trees[treeId] : Object.values(vault.trees)[0]);
-    if (!store) throw new Error("В сейфе нет деревьев");
+    if (!store) throw new Error(t.restore.noTrees);
     const existing = loadDraftTree();
     if (existing && activePersons(existing.draft).length > 0) {
-      const ok = window.confirm(
-        "Текущий черновик в браузере будет заменён восстановленным деревом. Продолжить?"
-      );
+      const ok = window.confirm(t.restore.replaceDraft);
       if (!ok) return;
     }
     const selfId = pickHomeFocus(store.draft, null);
@@ -86,7 +76,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
     e.preventDefault();
     const normalized = normalizeMnemonic(input);
     if (!isValidMnemonic(normalized)) {
-      setError("Нужны 12 корректных английских слов.");
+      setError(t.restore.needWords);
       return;
     }
     setBusy(true);
@@ -95,7 +85,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const keys = deriveKeysFromMnemonic(normalized);
       setPhrase(normalized);
       setVaultId(keys.vaultId);
-      setStatus(`Ищем версии (${fingerprintVaultId(keys.vaultId)})…`);
+      setStatus(t.restore.looking(fingerprintVaultId(keys.vaultId)));
 
       let versions: VaultVersionMeta[] = [];
       let networkError: string | null = null;
@@ -105,8 +95,8 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
         networkError = isGatewayUnavailable(e)
           ? e instanceof Error
             ? e.message
-            : "Сеть Arweave недоступна."
-          : "Не удалось связаться с Arweave. Проверьте сеть и попробуйте снова.";
+            : t.restore.arweaveDown
+          : t.restore.arweaveFail;
       }
       const archive = listLocalVaultVersions(keys.vaultId);
       const networkIds = new Set(versions.map((v) => v.txId));
@@ -121,13 +111,13 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       if (items.length === 0) {
         throw new Error(
           networkError
-            ? `${networkError} Локальных копий этого сейфа в браузере тоже нет.`
-            : "Сейф не найден ни в сети, ни в этом браузере."
+            ? `${networkError} ${t.restore.noneLocal}`
+            : t.restore.noneAnywhere
         );
       }
 
       if (networkError) {
-        setError(`${networkError} Показаны копии из этого браузера.`);
+        setError(`${networkError} ${t.restore.shownLocal}`);
       }
 
       if (items.length === 1 && !networkError) {
@@ -141,7 +131,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(
         /mismatch|decrypt|JSON/i.test(msg)
-          ? "Не удалось открыть: проверьте 12 слов или файл."
+          ? t.restore.decryptFail
           : msg
       );
     } finally {
@@ -166,7 +156,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const keys = deriveKeysFromMnemonic(usePhrase);
       if (item.kind === "local") {
         const local = await openLocalVault(keys);
-        if (!local) throw new Error("Локальной копии нет");
+        if (!local) throw new Error(t.restore.noLocal);
         await finishWithVault(local, {
           vaultId: useVaultId,
           headTxId: null,
@@ -190,7 +180,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       if (remote) vault = await openEnvelope(keys, remote.envelope);
       if (!vault) {
         const archived = getLocalVaultVersion(useVaultId, item.meta.txId);
-        if (!archived) throw new Error("Не удалось скачать версию");
+        if (!archived) throw new Error(t.restore.decryptFail);
         vault = await openEnvelope(keys, archived.envelope);
       }
       await finishWithVault(vault, {
@@ -203,7 +193,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(
         /mismatch|decrypt|JSON/i.test(msg)
-          ? "Не удалось открыть: проверьте 12 слов или файл."
+          ? t.restore.decryptFail
           : msg
       );
     } finally {
@@ -219,16 +209,16 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const fromSeed = parseSeedBackup(raw);
       if (fromSeed) {
         setInput(fromSeed);
-        setStatus("12 слов загружены из sejire/seed/v1 — нажмите «Открыть»");
+        setStatus(t.restore.fileReady);
         return;
       }
       if (raw.schema !== "sejire/envelope/v1") {
-        setError("Нужен файл sejire/seed/v1 (12 слов) или sejire/envelope/v1 (сейф).");
+        setError(t.restore.badFile);
         return;
       }
       const normalized = normalizeMnemonic(input);
       if (!isValidMnemonic(normalized)) {
-        setError("Для сейфа сначала введите 12 слов (или загрузите seed JSON).");
+        setError(t.restore.needWords);
         return;
       }
       const keys = deriveKeysFromMnemonic(normalized);
@@ -243,7 +233,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(
         /mismatch|decrypt|JSON/i.test(msg)
-          ? "Не удалось открыть: проверьте 12 слов или файл."
+          ? t.restore.decryptFail
           : msg
       );
     } finally {
@@ -259,10 +249,8 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
           SEJIRE
         </button>
         <div className="panel" style={{ textAlign: "left", width: "100%" }}>
-          <h2>Выберите версию</h2>
-          <p className="sub">
-            Сейф {fingerprintVaultId(vaultId)}: найдено несколько сохранений. Можно открыть любое.
-          </p>
+          <h2>{t.restore.pickTitle}</h2>
+          <p className="sub">{t.restore.pickHint(fingerprintVaultId(vaultId))}</p>
           <ul className="vault-version-list">
             {picker.map((item) => {
               if (item.kind === "local") {
@@ -275,9 +263,10 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
                       onClick={() => void openPickerItem(item)}
                     >
                       <span className="vault-version-title">
-                        Текущая локальная копия{openingId === "local" ? "…" : ""}
+                        {t.restore.localCopy}
+                        {openingId === "local" ? "…" : ""}
                       </span>
-                      <span className="vault-version-meta">в этом браузере</span>
+                      <span className="vault-version-meta">{t.restore.inBrowser}</span>
                     </button>
                   </li>
                 );
@@ -292,11 +281,12 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
                       onClick={() => void openPickerItem(item)}
                     >
                       <span className="vault-version-title">
-                        {item.entry.source === "demo" ? "Демо-версия" : "Версия в браузере"}
+                        {item.entry.source === "demo" ? t.restore.demoVersion : t.restore.browserVersion}
                         {openingId === item.entry.id ? "…" : ""}
                       </span>
                       <span className="vault-version-meta">
-                        {formatArchiveWhen(item.entry.savedAt)} · {item.entry.id.slice(0, 10)}…
+                        {formatUiDateTime(item.entry.savedAt, locale, t.restore.unknownTime)} ·{" "}
+                        {item.entry.id.slice(0, 10)}…
                       </span>
                     </button>
                   </li>
@@ -312,7 +302,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
                     onClick={() => void openPickerItem(item)}
                   >
                     <span className="vault-version-title">
-                      {item.index === 0 ? "Последняя в сети" : `Сеть · версия ${n}`}
+                      {item.index === 0 ? t.restore.latestNetwork : t.restore.networkVersion(n)}
                       {openingId === item.meta.txId ? "…" : ""}
                     </span>
                     <span className="vault-version-meta">
@@ -333,7 +323,7 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
                 setVaultId(null);
               }}
             >
-              Назад
+              {t.back}
             </button>
           </div>
           {error && <p className="form-error">{error}</p>}
@@ -348,10 +338,8 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
         SEJIRE
       </button>
       <form className="panel" style={{ textAlign: "left", width: "100%" }} onSubmit={(e) => void onSubmit(e)}>
-        <h2>Открыть по словам</h2>
-        <p className="sub">
-          Введите 12 слов. Если сейф сохраняли несколько раз — увидите все версии и выберете нужную.
-        </p>
+        <h2>{t.restore.title}</h2>
+        <p className="sub">{t.restore.hint}</p>
         <textarea
           rows={3}
           value={input}
@@ -361,10 +349,10 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
         />
         <div className="actions">
           <button className="btn ghost" type="button" onClick={onBack}>
-            Назад
+            {t.back}
           </button>
           <button className="btn" type="submit" disabled={busy}>
-            {busy ? status || "Ищем…" : "Открыть"}
+            {busy ? status || t.restore.searching : t.restore.open}
           </button>
         </div>
         <button
@@ -373,11 +361,11 @@ export function RestoreSeed({ onRestored, onBack }: Props) {
           style={{ marginTop: "0.85rem" }}
           onClick={() => setShowFile((v) => !v)}
         >
-          {showFile ? "Скрыть файл" : "Открыть из файла"}
+          {showFile ? t.restore.hideFile : t.restore.openFile}
         </button>
         {showFile ? (
           <label className="full" style={{ marginTop: "0.55rem" }}>
-            JSON: 12 слов (seed) или сейф (envelope)
+            {t.restore.fileLabel}
             <input
               type="file"
               accept="application/json,.json"

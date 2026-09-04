@@ -6,7 +6,7 @@
  * - Жеті ата — the duty to know seven paternal ancestors (concept, not the document title).
  * Generation names from self upward follow common printed шежіре usage.
  */
-export type PdfLocale = "ru";
+export type PdfLocale = "ru" | "kk" | "en";
 
 type PdfMessages = {
   classicTitle: string;
@@ -67,7 +67,27 @@ const ru: PdfMessages = {
   kneeRange: (from, to) => (from === to ? `колено ${from}` : `колена ${from}–${to}`),
 };
 
-const catalogs: Record<PdfLocale, PdfMessages> = { ru };
+const kk: PdfMessages = {
+  ...ru,
+  classicTitle: "Шежіре",
+  noPeople: "Шежіреде экспортқа адам жоқ",
+  noMaleLine: "Шежіре үшін ер жолы жоқ (әке керек немесе ер адамды таңдаңыз)",
+  ancestorsOf: (name) => `Ата-баба: ${name}`,
+  pageOf: (page, total) => `бет ${page} / ${total}`,
+  kneeRange: (from, to) => (from === to ? `${from}-ата` : `${from}–${to}-ата`),
+};
+
+const en: PdfMessages = {
+  ...ru,
+  classicTitle: "Family tree",
+  noPeople: "No people in the tree to export",
+  noMaleLine: "No male line for shezhire (need a father, or select a man)",
+  ancestorsOf: (name) => `Ancestors: ${name}`,
+  pageOf: (page, total) => `sheet ${page} / ${total}`,
+  kneeRange: (from, to) => (from === to ? `generation ${from}` : `generations ${from}–${to}`),
+};
+
+const catalogs: Record<PdfLocale, PdfMessages> = { ru, kk, en };
 
 export function pdfT(locale: PdfLocale = "ru"): PdfMessages {
   return catalogs[locale] ?? catalogs.ru;

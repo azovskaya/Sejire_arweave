@@ -7,6 +7,7 @@ import {
   ruSuggestions,
   type ZhuzId,
 } from "../lib/zhuzRu";
+import { useI18n } from "../lib/i18n/I18nProvider";
 
 type Props = {
   meta: TreeMeta;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function ShezhireMetaModal({ meta, onSave, onClose }: Props) {
+  const { t } = useI18n();
   const [zhuz, setZhuz] = useState<ZhuzId | "">(() => meta.zhuz ?? "");
   const [clanName, setClanName] = useState(() => meta.clanName ?? "");
 
@@ -53,13 +55,11 @@ export function ShezhireMetaModal({ meta, onSave, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2>Жүз и ру</h2>
-        <p className="sub">
-          Для казахского шежіре. Если вы не казахи — просто закройте: на древе ничего не появится.
-        </p>
+        <h2>{t.zhuz.title}</h2>
+        <p className="sub">{t.zhuz.hint}</p>
 
         <label>
-          Жүз
+          {t.zhuz.zhuz}
           <select
             value={zhuz}
             onChange={(e) => {
@@ -67,7 +67,7 @@ export function ShezhireMetaModal({ meta, onSave, onClose }: Props) {
               setZhuz(v === "" || isZhuzId(v) ? v : "");
             }}
           >
-            <option value="">не указан</option>
+            <option value="">{t.zhuz.unspecified}</option>
             {ZHUZ_OPTIONS.map((z) => (
               <option key={z.id} value={z.id}>
                 {z.fullLabel}
@@ -77,12 +77,12 @@ export function ShezhireMetaModal({ meta, onSave, onClose }: Props) {
         </label>
 
         <label>
-          Ру
+          {t.zhuz.ru}
           <input
             list="sejire-ru-suggestions"
             value={clanName}
             onChange={(e) => setClanName(e.target.value)}
-            placeholder="например, Арғын"
+            placeholder={t.zhuz.ruPh}
             autoComplete="off"
           />
           <datalist id="sejire-ru-suggestions">
@@ -94,14 +94,14 @@ export function ShezhireMetaModal({ meta, onSave, onClose }: Props) {
 
         <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
           <button className="btn" type="submit">
-            Готово
+            {t.done}
           </button>
           <button className="btn ghost" type="button" onClick={onClose}>
-            Отмена
+            {t.cancel}
           </button>
           {(zhuz || clanName.trim()) && (
             <button className="welcome-link-quiet" type="button" onClick={clearAll}>
-              Очистить
+              {t.zhuz.clear}
             </button>
           )}
         </div>

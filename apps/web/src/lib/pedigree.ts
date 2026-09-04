@@ -50,12 +50,14 @@ function yearOf(iso?: string | null) {
   return yearFromDate(iso);
 }
 
-export function lifespan(p: Person) {
+export function lifespan(p: Person, labels?: { born: string; died: string }) {
+  const born = labels?.born ?? "род.";
+  const died = labels?.died ?? "ум.";
   const b = yearOf(p.born);
   const d = yearOf(p.died);
   if (b && d) return `${b}–${d}`;
-  if (b) return `род. ${b}`;
-  if (d) return `ум. ${d}`;
+  if (b) return `${born} ${b}`;
+  if (d) return `${died} ${d}`;
   return "";
 }
 
@@ -70,19 +72,30 @@ export function cardSubtitle(p: Person) {
   return life || place || "даты не указаны";
 }
 
+export type CardFactLabels = {
+  years: string;
+  birth: string;
+  death: string;
+  burial: string;
+  job: string;
+};
+
 /** Compact lines for pedigree cards — order matters for overflow budget. */
-export function cardFactLines(p: Person): { label: string; value: string }[] {
+export function cardFactLines(
+  p: Person,
+  labels: CardFactLabels = { years: "годы", birth: "род.", death: "ум.", burial: "погр.", job: "зан." }
+): { label: string; value: string }[] {
   const lines: { label: string; value: string }[] = [];
   const life = lifespan(p);
-  if (life) lines.push({ label: "годы", value: life });
+  if (life) lines.push({ label: labels.years, value: life });
   const birth = birthPlaceLabel(p);
-  if (birth) lines.push({ label: "род.", value: birth });
+  if (birth) lines.push({ label: labels.birth, value: birth });
   const death = (p.deathPlace || "").trim();
-  if (death) lines.push({ label: "ум.", value: death });
+  if (death) lines.push({ label: labels.death, value: death });
   const burial = (p.burialPlace || "").trim();
-  if (burial) lines.push({ label: "погр.", value: burial });
+  if (burial) lines.push({ label: labels.burial, value: burial });
   const job = (p.occupation || "").trim();
-  if (job && lines.length < 4) lines.push({ label: "зан.", value: job });
+  if (job && lines.length < 4) lines.push({ label: labels.job, value: job });
   return lines.slice(0, 4);
 }
 

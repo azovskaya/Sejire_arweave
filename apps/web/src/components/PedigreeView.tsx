@@ -9,6 +9,8 @@ import {
   type AddMeSlot,
 } from "../lib/pedigree";
 import { clampPedigreeScale, fitPedigreeView } from "../lib/pedigreeFit";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import type { UiMessages } from "../lib/i18n/messages";
 
 type Props = {
   snapshot: Snapshot;
@@ -21,33 +23,36 @@ type Props = {
   onEmptyStart?: () => void;
 };
 
-function cardTooltip(person: {
-  name: string;
-  maidenName?: string | null;
-  born?: string | null;
-  died?: string | null;
-  birthPlace?: string | null;
-  deathPlace?: string | null;
-  burialDate?: string | null;
-  burialPlace?: string | null;
-  occupation?: string | null;
-  place?: { label?: string } | null;
-  notes?: string;
-}) {
+function cardTooltip(
+  person: {
+    name: string;
+    maidenName?: string | null;
+    born?: string | null;
+    died?: string | null;
+    birthPlace?: string | null;
+    deathPlace?: string | null;
+    burialDate?: string | null;
+    burialPlace?: string | null;
+    occupation?: string | null;
+    place?: { label?: string } | null;
+    notes?: string;
+  },
+  t: UiMessages
+) {
   return [
     person.name,
-    "Клик — открыть профиль",
-    "Двойной клик / кнопка в профиле — показать предков на схеме",
-    person.maidenName ? `девичья: ${person.maidenName}` : "",
-    person.born ? `рождение: ${person.born}` : "",
+    t.pedigree.clickProfile,
+    t.pedigree.dblclickAncestors,
+    person.maidenName ? `${t.pedigree.maiden}: ${person.maidenName}` : "",
+    person.born ? `${t.pedigree.birth}: ${person.born}` : "",
     person.birthPlace || person.place?.label
-      ? `место рождения: ${person.birthPlace || person.place?.label}`
+      ? `${t.pedigree.birthPlace}: ${person.birthPlace || person.place?.label}`
       : "",
-    person.died ? `смерть: ${person.died}` : "",
-    person.deathPlace ? `место смерти: ${person.deathPlace}` : "",
-    person.burialDate ? `захоронение: ${person.burialDate}` : "",
-    person.burialPlace ? `место захоронения: ${person.burialPlace}` : "",
-    person.occupation ? `занятие: ${person.occupation}` : "",
+    person.died ? `${t.pedigree.death}: ${person.died}` : "",
+    person.deathPlace ? `${t.pedigree.deathPlace}: ${person.deathPlace}` : "",
+    person.burialDate ? `${t.pedigree.burial}: ${person.burialDate}` : "",
+    person.burialPlace ? `${t.pedigree.burialPlace}: ${person.burialPlace}` : "",
+    person.occupation ? `${t.pedigree.occupation}: ${person.occupation}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -63,6 +68,7 @@ export function PedigreeView({
   onAddRelative,
   onEmptyStart,
 }: Props) {
+  const { t } = useI18n();
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 28, y: 28 });
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
@@ -208,9 +214,9 @@ export function PedigreeView({
       <div className="pedigree-empty">
         <div className="pedigree-empty-card">
           <p className="eyebrow">SEJIRE</p>
-          <h2>Начните с себя</h2>
+          <h2>{t.pedigree.startWithSelf}</h2>
           <button className="btn" type="button" onClick={onEmptyStart}>
-            Добавить себя
+            {t.pedigree.addSelf}
           </button>
         </div>
       </div>
@@ -233,8 +239,8 @@ export function PedigreeView({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="focus-chip" title="Схема строится от этого человека к предкам">
-          <span className="focus-chip-label">От</span>
+        <div className="focus-chip" title={t.pedigree.focusChipTitle}>
+          <span className="focus-chip-label">{t.pedigree.from}</span>
           <strong className="clamp-1">{focusPerson?.name || "—"}</strong>
           {showHome && homeFocusId ? (
             <button
@@ -246,21 +252,21 @@ export function PedigreeView({
                 e.stopPropagation();
                 onSetFocus(homeFocusId);
               }}
-              title="Вернуть схему к вам"
+              title={t.pedigree.toSelfTitle}
             >
-              К себе
+              {t.pedigree.toSelf}
             </button>
           ) : null}
         </div>
-        <div className="pedigree-toolbar" aria-label="Вид">
+        <div className="pedigree-toolbar" aria-label={t.pedigree.view}>
           <button
             type="button"
             className="tool-btn wide"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => fitView()}
-            title="Уменьшить, чтобы всё древо было видно. Карточки сами не сжимаются."
+            title={t.pedigree.fitTitle}
           >
-            Вместить
+            {t.pedigree.fit}
           </button>
           {(scale !== 1 ||
             Math.abs(pan.x - 28) > 2 ||
@@ -272,7 +278,7 @@ export function PedigreeView({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => resetView()}
             >
-              Сброс вида
+              {t.pedigree.resetView}
             </button>
           )}
         </div>
@@ -315,7 +321,7 @@ export function PedigreeView({
                 <span className="card-inner">
                   <span className="add-plus">+</span>
                   <span className="card-title">
-                    {item.role === "father" ? "Добавить папу" : "Добавить маму"}
+                    {item.role === "father" ? t.pedigree.addFather : t.pedigree.addMother}
                   </span>
                 </span>
               </button>
@@ -324,13 +330,19 @@ export function PedigreeView({
 
           const selected = selectedId === item.id;
           const sex = item.person.sex ?? "U";
-          const facts = cardFactLines(item.person);
+          const facts = cardFactLines(item.person, {
+            years: t.pedigree.years,
+            birth: t.pedigree.birthAbbr,
+            death: t.pedigree.deathAbbr,
+            burial: t.pedigree.burialAbbr,
+            job: t.pedigree.jobAbbr,
+          });
           return (
             <button
               key={item.id}
               type="button"
               data-card
-              title={cardTooltip(item.person)}
+              title={cardTooltip(item.person, t)}
               className={`person-card sex-${sex} ${selected ? "is-selected" : ""} ${
                 item.id === focusId ? "is-focus" : ""
               }`}
@@ -341,7 +353,7 @@ export function PedigreeView({
               <span className="card-inner">
                 <span className="card-title">{item.person.name}</span>
                 {facts.length === 0 ? (
-                  <span className="card-meta muted">нет сведений</span>
+                  <span className="card-meta muted">{t.pedigree.noFacts}</span>
                 ) : (
                   facts.map((f) => (
                     <span className="card-row" key={`${item.id}-${f.label}-${f.value}`}>

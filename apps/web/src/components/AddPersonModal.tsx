@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { Person } from "../lib/types";
+import { useI18n } from "../lib/i18n/I18nProvider";
 
 export type AddPersonPayload = {
   name: string;
@@ -48,6 +49,7 @@ export function AddPersonModal({
   onCancel,
   onSave,
 }: Props) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [sex, setSex] = useState<Person["sex"]>(defaultSex);
 
@@ -73,36 +75,36 @@ export function AddPersonModal({
     >
       <form className="modal add-modal add-modal-simple" onSubmit={submit}>
         <h2>{title}</h2>
-        <p className="sub">Достаточно имени — остальное можно дописать на карточке.</p>
+        <p className="sub">{t.addModal.hint}</p>
 
         <label>
-          Имя
+          {t.addModal.name}
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus={typeof window !== "undefined" && !window.matchMedia("(pointer: coarse)").matches}
             required
-            placeholder="Как зовут"
+            placeholder={t.addModal.namePh}
           />
         </label>
 
         {askSex ? (
           <label>
-            Пол
+            {t.addModal.sex}
             <select value={sex} onChange={(e) => setSex(e.target.value as Person["sex"])}>
-              <option value="U">не указан</option>
-              <option value="F">женский</option>
-              <option value="M">мужской</option>
+              <option value="U">{t.person.sexUnknown}</option>
+              <option value="F">{t.person.sexF}</option>
+              <option value="M">{t.person.sexM}</option>
             </select>
           </label>
         ) : null}
 
         <div className="actions">
           <button type="button" className="btn ghost" onClick={onCancel}>
-            Отмена
+            {t.cancel}
           </button>
           <button type="submit" className="btn">
-            Добавить
+            {t.add}
           </button>
         </div>
       </form>

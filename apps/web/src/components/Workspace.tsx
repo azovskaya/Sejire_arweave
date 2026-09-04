@@ -16,7 +16,7 @@ import {
   restoreDraftPerson,
   setDraftPerson,
 } from "../lib/treeEngine";
-import { SHEZHIRE_MAX_GENERATIONS } from "../lib/i18n/pdf";
+import { SHEZHIRE_MAX_GENERATIONS, type PdfLocale } from "../lib/i18n/pdf";
 import type { ShezhireTemplateId } from "../lib/pdf/shezhireTemplates";
 import { downloadTreeJson, readTreeJsonFile, coerceTreeStore } from "../lib/treeJson";
 import { formatShezhireAffiliation } from "../lib/zhuzRu";
@@ -28,7 +28,6 @@ import {
   getVaultSession,
 } from "../lib/vaultSession/session";
 import type { VaultV1 } from "../lib/crypto/vault";
-import { STORAGE_QUOTA_HINT } from "../lib/storageQuota";
 import { isPagesTestMirror } from "../lib/siteMirror";
 import { pickPdfRootId } from "../lib/pdfRoot";
 import { mirrorStoreToProtocol } from "../lib/ao/protocolMirror";
@@ -36,6 +35,8 @@ import {
   queryPersonFromDraft,
   type PersonProtocolView,
 } from "../lib/ao/protocolKinship";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { LanguageSwitch } from "./LanguageSwitch";
 
 function uid() {
   return `p_${Math.random().toString(36).slice(2, 9)}`;
@@ -60,6 +61,8 @@ type ToastState = {
 };
 
 export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }: Props) {
+  const { locale, t } = useI18n();
+  const pdfLocale = locale as PdfLocale;
   const [focusId, setFocusId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -91,14 +94,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   function confirmReplaceDraft(action: string) {
     const count = Object.keys(store.draft.persons).length;
     if (count === 0) return true;
-    return window.confirm(
-      `Текущий черновик (${count} чел.) будет заменён: ${action}. Сначала можно выгрузить JSON в меню «Ещё». Продолжить?`
-    );
+    return window.confirm(t.workspace.replaceDraft(count, action));
   }
 
   useEffect(() => {
     if (!saveDraftTree(store)) {
-      setToast({ message: STORAGE_QUOTA_HINT });
+      setToast({ message: t.quota });
     }
   }, [store]);
 
@@ -161,13 +162,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   const relatives = useMemo(() => {
     if (!selected) return [];
-    const list: { id: string; name: string; relation: string }[] = [];
+    const list: { id: string; name: string; kind: "father" | "mother" | "child" }[] = [];
     const { fatherId, motherId } = splitParents(store.draft, selected.id);
-    if (fatherId) list.push({ id: fatherId, name: store.draft.persons[fatherId].name, relation: "Папа" });
-    if (motherId) list.push({ id: motherId, name: store.draft.persons[motherId].name, relation: "Мама" });
+    if (fatherId) list.push({ id: fatherId, name: store.draft.persons[fatherId].name, kind: "father" });
+    if (motherId) list.push({ id: motherId, name: store.draft.persons[motherId].name, kind: "mother" });
     for (const p of people) {
       if (p.parents.includes(selected.id)) {
-        list.push({ id: p.id, name: p.name, relation: "Ребёнок" });
+        list.push({ id: p.id, name: p.name, kind: "child" });
       }
     }
     return list;
@@ -262,7 +263,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       setFocusId(id);
       setSelectedId(id);
       setProfileOpen(false);
-      flash("Добавьте маму или папу карточками «+» на схеме");
+      flash(t.workspace.flashAddParents);
     } else if (pending.type === "parent") {
       person.sex = pending.role === "father" ? "M" : "F";
       next = setDraftPerson(store, person);
@@ -279,7 +280,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
       if (pending.role === "father") nextGuide.fatherId = id;
       setSelectedId(id);
       setProfileOpen(true);
-      flash(pending.role === "mother" ? "Мама добавлена" : "Папа добавлен");
+      flash(pending.role === "mother" ? t.workspace.flashMotherAdded : t.workspace.flashFatherAdded);
     }
 
     persist(next);
@@ -289,12 +290,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   function openPublish() {
     if (!people.length) {
-      flash("Сначала добавьте хотя бы одного человека");
+      flash(t.workspace.flashNeedPerson);
       return;
     }
     let next = store;
     if (store.dirty) {
-      next = commitDraft(store, "Снимок перед сохранением");
+      next = commitDraft(store, t.workspace.commitBeforeSave);
       persist(next);
     }
     void mirrorStoreToProtocol(next).catch(() => {
@@ -311,13 +312,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     setProfileOpen(false);
     setAncestorsHint(false);
     const name = store.draft.persons[id]?.name;
-    flash(name ? `На схеме предки «${name}»` : "Схема перестроена");
+    flash(name ? t.workspace.flashFocus(name) : t.workspace.flashReflow);
   }
 
   async function exportClassicPdf() {
     const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
-      flash("Сначала добавьте человека на древо");
+      flash(t.workspace.flashNeedPerson);
       return;
     }
     try {
@@ -326,9 +327,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         snapshot: store.draft,
         focusId: id,
         meta: store.meta,
-        locale: "ru",
+        locale: pdfLocale,
       });
-      flash(`PDF древа скачан · ${paper}`);
+      flash(t.workspace.flashPdfTree(paper));
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }
@@ -337,7 +338,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   function openShezhirePdfPicker() {
     const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
-      flash("Сначала добавьте человека на древо");
+      flash(t.workspace.flashNeedPerson);
       return;
     }
     setShowShezhireTemplate(true);
@@ -346,7 +347,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   async function exportShezhirePdf(template: ShezhireTemplateId) {
     const id = pickPdfRootId({ selectedId: selectedId, focusId, homeId: homeFocusId });
     if (!id || !people.length) {
-      flash("Сначала добавьте человека на древо");
+      flash(t.workspace.flashNeedPerson);
       return;
     }
     setShowShezhireTemplate(false);
@@ -356,11 +357,11 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
         snapshot: store.draft,
         startId: id,
         meta: store.meta,
-        locale: "ru",
+        locale: pdfLocale,
         maxGenerations: SHEZHIRE_MAX_GENERATIONS,
         template,
       });
-      flash("Шежіре PDF скачан");
+      flash(t.workspace.flashPdfShezhire);
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }
@@ -369,7 +370,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
   function exportJson() {
     try {
       downloadTreeJson(store, guide);
-      flash("JSON скачан — все данные древа");
+      flash(t.workspace.flashJson);
     } catch (e) {
       flash(e instanceof Error ? e.message : String(e));
     }
@@ -379,13 +380,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     const treeId = vault.active_tree_id;
     const next = coerceTreeStore(treeId ? vault.trees[treeId] : Object.values(vault.trees)[0]);
     if (!next) {
-      flash("В этой версии нет деревьев");
+      flash(t.workspace.flashNoTrees);
       return;
     }
-    if (!confirmReplaceDraft("открытие другой версии сейфа")) return;
+    if (!confirmReplaceDraft(t.workspace.replaceOpenVersion)) return;
     const selfId = pickHomeFocus(next.draft, null);
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId };
-    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
+    if (!saveDraftTree(next)) flash(t.quota);
     saveGuide(nextGuide);
     onStoreChange(next);
     onGuideChange(nextGuide);
@@ -393,9 +394,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     setSelectedId(selfId);
     setProfileOpen(false);
     setShowVersions(false);
-    flash(
-      `Открыта версия · ${vaultPersonCount(vault)} чел. Можно править и снова сохранить (новая оплата).`
-    );
+    flash(t.workspace.flashVersionOpened(vaultPersonCount(vault)));
   }
 
   function goHome() {
@@ -405,24 +404,24 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
 
   async function importJsonFile(file: File | null) {
     if (!file) return;
-    if (!confirmReplaceDraft("загрузка JSON")) return;
+    if (!confirmReplaceDraft(t.workspace.replaceJson)) return;
     const result = await readTreeJsonFile(file);
     if (!result.ok) {
       flash(result.error);
       return;
     }
-    if (!saveDraftTree(result.store)) flash(STORAGE_QUOTA_HINT);
+    if (!saveDraftTree(result.store)) flash(t.quota);
     saveGuide(result.guide);
     onStoreChange(result.store);
     onGuideChange(result.guide);
     setFocusId(pickHomeFocus(result.store.draft, result.guide.selfId));
     setSelectedId(result.guide.selfId ?? pickDefaultFocus(result.store.draft, null));
     setProfileOpen(false);
-    flash(`Загружено: ${Object.keys(result.store.draft.persons).length} чел.`);
+    flash(t.workspace.flashImported(Object.keys(result.store.draft.persons).length));
   }
 
   async function loadDemoThirteen() {
-    if (!confirmReplaceDraft("пример линии ата на 13 колен")) return;
+    if (!confirmReplaceDraft(t.workspace.replaceDemo13)) return;
     const {
       QA_13_FOCUS_ID,
       qaPaternalLineMeta,
@@ -433,20 +432,18 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     const meta = qaPaternalLineMeta(13);
     const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
+    if (!saveDraftTree(next)) flash(t.quota);
     saveGuide(nextGuide);
     onStoreChange(next);
     onGuideChange(nextGuide);
     setFocusId(QA_13_FOCUS_ID);
     setSelectedId(QA_13_FOCUS_ID);
     setProfileOpen(false);
-    flash(
-      `Пример: линия ата на 13 колен · ${qaPaternalLinePersonCount(13)} чел. (полное двоичное на схему не грузим)`
-    );
+    flash(t.workspace.flashDemo13(qaPaternalLinePersonCount(13)));
   }
 
   async function loadDemoSeven() {
-    if (!confirmReplaceDraft("пример полного древа на 7 колен")) return;
+    if (!confirmReplaceDraft(t.workspace.replaceDemo7)) return;
     const { QA_13_FOCUS_ID, qaCompleteAncestryMeta, qaCompleteAncestrySnapshot } = await import(
       "../lib/pdf/thirteenLineage.fixture"
     );
@@ -454,23 +451,23 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     const meta = qaCompleteAncestryMeta(7);
     const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
     const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-    if (!saveDraftTree(next)) flash(STORAGE_QUOTA_HINT);
+    if (!saveDraftTree(next)) flash(t.quota);
     saveGuide(nextGuide);
     onStoreChange(next);
     onGuideChange(nextGuide);
     setFocusId(QA_13_FOCUS_ID);
     setSelectedId(QA_13_FOCUS_ID);
     setProfileOpen(false);
-    flash("Пример: 127 чел., полное древо на 7 колен");
+    flash(t.workspace.flashDemo7);
   }
 
   const modalTitle =
     pending?.type === "self"
-      ? "Добавить себя"
+      ? t.workspace.addSelf
       : pending?.type === "parent"
         ? pending.role === "mother"
-          ? "Добавить маму"
-          : "Добавить папу"
+          ? t.workspace.addMother
+          : t.workspace.addFather
         : "";
 
   return (
@@ -481,14 +478,14 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <div>
             <strong>SEJIRE</strong>
             {isPagesTestMirror() ? (
-              <span className="brand-mirror">Тестовое зеркало · sejire.ar.io пока старый пак</span>
+              <span className="brand-mirror">{t.workspace.pagesMirror}</span>
             ) : null}
             {shezhireLine ? (
               <button
                 type="button"
                 className="tree-shezhire is-set"
                 onClick={() => setShowShezhireMeta(true)}
-                title="Изменить жүз и ру"
+                title={t.workspace.zhuzRuTitle}
               >
                 {shezhireLine}
               </button>
@@ -496,11 +493,12 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           </div>
         </div>
         <nav className="top-actions">
+          <LanguageSwitch placement="chrome" />
           <button type="button" className="btn" onClick={openPublish}>
-            Сохранить
+            {t.workspace.save}
           </button>
           <details className="top-more" ref={moreRef}>
-            <summary className="btn ghost" aria-label="Ещё">
+            <summary className="btn ghost" aria-label={t.workspace.moreMenu}>
               ⋯
             </summary>
             <div className="top-more-menu" role="menu">
@@ -511,9 +509,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   closeMoreMenu();
                   setShowShezhireMeta(true);
                 }}
-                title="Для казахского шежіре. Можно не заполнять"
+                title={t.workspace.zhuzRuTitle}
               >
-                Жүз и ру
+                {t.workspace.zhuzRu}
               </button>
               {people.length >= 1 && (
                 <>
@@ -525,7 +523,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       void exportClassicPdf();
                     }}
                   >
-                    Древо в PDF
+                    {t.workspace.pdfTree}
                   </button>
                   <button
                     type="button"
@@ -535,7 +533,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       openShezhirePdfPicker();
                     }}
                   >
-                    Шежіре PDF
+                    {t.workspace.pdfShezhire}
                   </button>
                 </>
               )}
@@ -546,9 +544,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   closeMoreMenu();
                   exportJson();
                 }}
-                title="Скачать все данные древа в JSON"
+                title={t.workspace.exportJsonTitle}
               >
-                Выгрузить JSON
+                {t.workspace.exportJson}
               </button>
               <button
                 type="button"
@@ -557,9 +555,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   closeMoreMenu();
                   jsonInputRef.current?.click();
                 }}
-                title="Загрузить древо из JSON-файла"
+                title={t.workspace.importJsonTitle}
               >
-                Загрузить JSON
+                {t.workspace.importJson}
               </button>
               {import.meta.env.VITE_QA_TOOLS === "1" ? (
                 <>
@@ -570,9 +568,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       closeMoreMenu();
                       void loadDemoSeven();
                     }}
-                    title="Полное двоичное древо: отец и мать у каждого до 7-го колена"
+                    title={t.workspace.demo7Title}
                   >
-                    Пример: 7 колен
+                    {t.workspace.demo7}
                   </button>
                   <button
                     type="button"
@@ -581,9 +579,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                       closeMoreMenu();
                       void loadDemoThirteen();
                     }}
-                    title="Мужская линия и жёны на 13 колен. Полные 8191 карточек на схему не грузим — телефон не выдержит."
+                    title={t.workspace.demo13Title}
                   >
-                    Пример: 13 колен (линия ата)
+                    {t.workspace.demo13}
                   </button>
                 </>
               ) : null}
@@ -595,9 +593,9 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                     closeMoreMenu();
                     setShowVersions(true);
                   }}
-                  title="Все сохранения под теми же 12 словами"
+                  title={t.workspace.versionsTitle}
                 >
-                  Версии сейфа
+                  {t.workspace.versions}
                 </button>
               ) : null}
               <button
@@ -608,7 +606,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                   goHome();
                 }}
               >
-                На главную
+                {t.workspace.home}
               </button>
             </div>
           </details>
@@ -638,7 +636,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
                 setToast(null);
               }}
             >
-              {toast.actionLabel ?? "Вернуть"}
+              {toast.actionLabel ?? t.undo}
             </button>
           ) : null}
         </div>
@@ -662,7 +660,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <button
             type="button"
             className="person-sheet-backdrop"
-            aria-label="Закрыть профиль"
+            aria-label={t.workspace.closeProfile}
             onClick={closeProfile}
           />
         ) : null}
@@ -674,8 +672,8 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           protocolView={protocolView}
           protocolLoading={protocolLoading}
           open={profileOpen}
-          hasFather={Boolean(selected && relatives.some((r) => r.relation === "Папа"))}
-          hasMother={Boolean(selected && relatives.some((r) => r.relation === "Мама"))}
+          hasFather={Boolean(selected && relatives.some((r) => r.kind === "father"))}
+          hasMother={Boolean(selected && relatives.some((r) => r.kind === "mother"))}
           highlightAncestors={ancestorsHint}
           onClose={closeProfile}
           onChange={onPersonChange}
@@ -698,13 +696,13 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
             if (wasFocus) {
               setFocusId(pickDefaultFocus(afterRemove.draft, homeFocusId));
             }
-            flash(`«${removedName}» убран(а) с древа`, () => {
+            flash(t.workspace.flashRemoved(removedName), () => {
               const restored = restoreDraftPerson(afterRemove, removedId);
               persist(restored);
               setSelectedId(removedId);
               setProfileOpen(true);
               if (wasFocus) setFocusId(removedId);
-              flash("Человек возвращён на древо");
+              flash(t.workspace.flashRestored);
             });
           }}
           onAdd={(role) => {
@@ -738,21 +736,21 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           onPublished={({ mode, txId, mock, isNewVersion }) => {
             setShowPublish(false);
             setPublishStore(null);
-            const ver = isNewVersion ? " Новая версия; прошлые — в «Версии сейфа»." : "";
+            const ver = isNewVersion ? t.workspace.publishedNewVersion : "";
+            const short = txId?.slice(0, 10) ?? "";
+            const shorter = txId?.slice(0, 8) ?? "";
             if (mode === "demo") {
-              flash(
-                `Демо-версия сохранена в этом браузере (${txId?.slice(0, 10)}…). Храните 12 слов.${ver}`
-              );
+              flash(t.workspace.publishedDemo(short, ver));
             } else if (mode === "sponsor") {
               flash(
                 mock
-                  ? `Mock-кассир: сейф принят (${txId?.slice(0, 10)}…). Когда будет Turbo — это станет реальным TX. Храните 12 слов.${ver}`
-                  : `Навсегда в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.${ver}`
+                  ? t.workspace.publishedSponsorMock(short, ver)
+                  : t.workspace.publishedForever(shorter, ver)
               );
             } else if (mode === "arweave") {
-              flash(`Сохранено в Arweave (${txId?.slice(0, 8)}…). Храните 12 слов.${ver}`);
+              flash(t.workspace.publishedArweave(shorter, ver));
             } else {
-              flash(`Файл сейфа скачан${txId ? ` · версия ${txId.slice(0, 10)}…` : ""}. Храните 12 слов.${ver}`);
+              flash(t.workspace.publishedFile(short, ver));
             }
           }}
         />
@@ -787,11 +785,7 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               },
             }));
             setShowShezhireMeta(false);
-            flash(
-              zhuz || clanName
-                ? "Жүз и ру сохранены для этого древа"
-                : "Жүз и ру очищены"
-            );
+            flash(zhuz || clanName ? t.workspace.flashZhuzSaved : t.workspace.flashZhuzCleared);
           }}
         />
       )}
