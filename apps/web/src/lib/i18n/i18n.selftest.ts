@@ -32,8 +32,8 @@ assert(uiT("en").welcome.start === "Start", "en start");
 assert(uiT("ru").welcome.start === "Начать", "ru start");
 assert(uiT("kk").relation.father === "Әке", "kk father");
 assert(uiT("en").publish.title === "Save", "en save title");
-assert(uiT("en").localeShort.kk === "KK", "en shorts latin");
-assert(uiT("kk").localeShort.kk === "ҚАЗ", "kk shorts cyrillic");
+assert(uiT("en").localeShort.kk === "ҚАЗ", "shorts stay stable");
+assert(uiT("kk").localeShort.en === "ENG", "kk shorts eng");
 assert(uiT("ru").restore.fileReady.length > 0, "fileReady");
 
 const before = typeof localStorage !== "undefined" ? localStorage.getItem("sejire.locale") : null;

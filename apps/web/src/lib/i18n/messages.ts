@@ -1039,7 +1039,7 @@ const en: UiMessages = {
   docDescription: "A versioned genealogy vault. Each save is a new immutable commit.",
   language: "Language",
   localeName: { kk: "Қазақша", ru: "Русский", en: "English" },
-  localeShort: { kk: "KK", ru: "RU", en: "EN" },
+  localeShort: { kk: "ҚАЗ", ru: "РУС", en: "ENG" },
   defaultTreeTitle: "My family",
   cancel: "Cancel",
   close: "Close",
