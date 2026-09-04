@@ -20,6 +20,12 @@ import { addressFromJwk, jwkFromSeed } from "../lib/arweave/wallet";
 import { getWalletBalanceAr, publishEnvelope } from "../lib/arweave/publish";
 import { isDemoPublishEnabled, isSponsorPublishEnabled } from "../lib/sponsor/config";
 import {
+  getHotTreasury,
+  getOpsSettings,
+  isTreasuryPublishEnabled,
+  recordOpsMovement,
+} from "../lib/opsDesk/store";
+import {
   sponsorCheckout,
   sponsorHealth,
   sponsorMockPay,
@@ -83,6 +89,7 @@ export function PublishSeedModal({
   const { t } = useI18n();
   const sponsorOn = isSponsorPublishEnabled();
   const demoOn = isDemoPublishEnabled();
+  const treasuryOn = isTreasuryPublishEnabled();
   const session = getVaultSession();
   const knownMnemonic = knownMnemonicProp ?? getSessionMnemonic();
   const parentTxId = parentTxProp ?? session?.headTxId ?? null;
@@ -294,6 +301,55 @@ export function PublishSeedModal({
     }
   }
 
+  async function runTreasuryPublish(phrase: string) {
+    const hot = getHotTreasury();
+    if (!hot) {
+      await runSelfFundPublish(phrase);
+      return;
+    }
+    setMode("busy");
+    setError(null);
+    setWalletAddress(hot.address);
+    try {
+      const { keys, envelope, parentTx } = await sealForPhrase(phrase);
+      const jwk = JSON.parse(hot.jwk) as Awaited<ReturnType<typeof jwkFromSeed>>;
+      const balance = await getWalletBalanceAr(jwk);
+      setStatus(t.publish.sendingTreasury(hot.address.slice(0, 8), balance));
+      const result = await publishEnvelope(jwk, envelope, {
+        parentTxId: parentTx,
+        updatedAt: new Date().toISOString(),
+      });
+      if (!result.ok) {
+        downloadEnvelope(envelope);
+        const fundHint = result.needsFunds ? t.publish.fundHint : "";
+        setError(`${result.error}${fundHint}`);
+        setMnemonic(phrase);
+        setMode(result.needsFunds ? "fund-wait" : "intro");
+        return;
+      }
+      const settings = getOpsSettings();
+      recordOpsMovement({
+        kind: "saved",
+        amountMinor: Number(settings.publishPriceMinor) || 0,
+        currency: settings.publishCurrency,
+        provider: "treasury",
+        txId: result.txId,
+        vaultId: keys.vaultId,
+      });
+      archiveVersion(keys, envelope, result.txId, parentTx, "network");
+      rememberSession(keys, phrase, result.txId);
+      onPublished({
+        mode: "arweave",
+        txId: result.txId,
+        address: hot.address,
+        isNewVersion: Boolean(parentTx),
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setMode(mnemonic ? "fund-wait" : hasSessionKey ? "new-version" : "intro");
+    }
+  }
+
   async function runLocalExport(phrase: string) {
     setMode("busy");
     setError(null);
@@ -434,6 +490,7 @@ export function PublishSeedModal({
     setMnemonic(phrase);
     if (sponsorOn) await startSponsorFlow(phrase);
     else if (demoOn) await runDemoPublish(phrase);
+    else if (treasuryOn) await runTreasuryPublish(phrase);
     else await runSelfFundPublish(phrase);
   }
 
@@ -467,7 +524,9 @@ export function PublishSeedModal({
     ? t.publish.demoNew
     : sponsorOn
       ? t.publish.payNew(priceHint ? ` ~${priceHint}` : "")
-      : t.publish.networkNew;
+      : treasuryOn
+        ? t.publish.treasuryNew
+        : t.publish.networkNew;
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
@@ -482,6 +541,7 @@ export function PublishSeedModal({
               {priceHint ? ` (~${priceHint})` : ""}.
             </>
           )}
+          {!demoOn && !sponsorOn && treasuryOn && t.publish.leadTreasury}
         </p>
 
         {mode === "new-version" && (
@@ -508,13 +568,22 @@ export function PublishSeedModal({
                   {primarySaveLabel}
                 </button>
               )}
+              {treasuryOn && !demoOn && !sponsorOn && (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => void runTreasuryPublish(mnemonic)}
+                >
+                  {primarySaveLabel}
+                </button>
+              )}
               {!demoOn && (
                 <button
                   className="btn ghost"
                   type="button"
                   onClick={() => void runSelfFundPublish(mnemonic)}
                 >
-                  {sponsorOn ? t.publish.selfArNew : t.publish.networkNew}
+                  {sponsorOn || treasuryOn ? t.publish.selfArNew : t.publish.networkNew}
                 </button>
               )}
               <button className="btn ghost" type="button" onClick={() => void runLocalExport(mnemonic)}>
@@ -626,13 +695,22 @@ export function PublishSeedModal({
                   {t.publish.foreverPay(priceHint ? ` ~${priceHint}` : "")}
                 </button>
               )}
+              {treasuryOn && !demoOn && !sponsorOn && (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => void runTreasuryPublish(mnemonic)}
+                >
+                  {t.publish.treasurySave}
+                </button>
+              )}
               {!demoOn && (
                 <button
                   className="btn ghost"
                   type="button"
                   onClick={() => void runSelfFundPublish(mnemonic)}
                 >
-                  {sponsorOn ? t.publish.selfArFallback : t.publish.selfArMain}
+                  {sponsorOn || treasuryOn ? t.publish.selfArFallback : t.publish.selfArMain}
                 </button>
               )}
               <button className="btn ghost" type="button" onClick={() => void exportFileOnly()}>
@@ -703,7 +781,9 @@ export function PublishSeedModal({
                   ? t.publish.demoSaveBtn
                   : sponsorOn
                     ? t.publish.encryptPay
-                    : t.publish.encryptSend}
+                    : treasuryOn
+                      ? t.publish.treasurySave
+                      : t.publish.encryptSend}
               </button>
             </div>
           </form>
@@ -744,7 +824,13 @@ export function PublishSeedModal({
               <li>{t.publish.fund5}</li>
             </ol>
             <div className="actions" style={{ flexDirection: "column", alignItems: "stretch" }}>
-              <button className="btn" type="button" onClick={() => void runSelfFundPublish(mnemonic)}>
+              <button
+                className="btn"
+                type="button"
+                onClick={() =>
+                  void (treasuryOn ? runTreasuryPublish(mnemonic) : runSelfFundPublish(mnemonic))
+                }
+              >
                 {t.publish.send}
               </button>
               {sponsorOn && (

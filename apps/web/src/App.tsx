@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Welcome } from "./components/Welcome";
 import { Workspace } from "./components/Workspace";
 import { RestoreSeed } from "./components/RestoreSeed";
+import { AdminDesk } from "./components/AdminDesk";
+import { closeOpsHash, isOpsHash, openOpsHash } from "./lib/opsDesk/route";
 import type { TreeStore } from "./lib/types";
 import { clearDraftTree, loadDraftTree, saveDraftTree } from "./lib/draftStorage";
 import { coerceTreeStore } from "./lib/treeJson";
@@ -20,9 +22,12 @@ import {
   shouldResumeDraft,
 } from "./lib/lastScreen";
 
-type Screen = "welcome" | "work" | "restore";
+type Screen = "welcome" | "work" | "restore" | "admin";
 
 function bootApp(): { screen: Screen; store: TreeStore | null; guide: GuideState } {
+  if (typeof location !== "undefined" && isOpsHash(location.hash)) {
+    return { screen: "admin", store: null, guide: defaultGuide() };
+  }
   const draft = loadDraftTree();
   if (shouldResumeDraft(readLastScreen(), Boolean(draft)) && draft) {
     return {
@@ -41,9 +46,24 @@ export default function App() {
   const [guide, setGuide] = useState<GuideState>(boot.guide);
 
   function go(next: Screen) {
-    rememberScreen(next);
+    if (next === "admin") {
+      openOpsHash();
+      setScreen("admin");
+      return;
+    }
+    if (screen === "admin") closeOpsHash();
+    rememberScreen(next === "work" || next === "welcome" || next === "restore" ? next : "welcome");
     setScreen(next);
   }
+
+  useEffect(() => {
+    function onHash() {
+      if (isOpsHash(location.hash)) setScreen("admin");
+      else if (screen === "admin") setScreen("welcome");
+    }
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [screen]);
 
   function startNew(title: string) {
     clearDraftTree();
@@ -73,8 +93,11 @@ export default function App() {
           onStartNew={startNew}
           onContinueDraft={continueDraft}
           onRestoreSeed={() => go("restore")}
+          onCashier={() => go("admin")}
         />
       )}
+
+      {screen === "admin" && <AdminDesk onHome={() => go("welcome")} />}
 
       {screen === "restore" && (
         <RestoreSeed

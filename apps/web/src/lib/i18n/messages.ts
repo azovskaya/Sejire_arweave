@@ -24,6 +24,7 @@ export type UiMessages = {
     continueDraft: string;
     restoreSeed: string;
     newTree: string;
+    cashier: string;
     replaceDraftConfirm: string;
   };
   crash: {
@@ -238,12 +239,16 @@ export type UiMessages = {
     lead: string;
     leadDemo: string;
     leadSponsor: string;
+    leadTreasury: string;
     newVersionHint: string;
     prevKept: (id: string) => string;
     oldKept: string;
     demoNew: string;
     payNew: (hint: string) => string;
     networkNew: string;
+    treasuryNew: string;
+    treasurySave: string;
+    sendingTreasury: (addr: string, balance: string) => string;
     selfArNew: string;
     localCipher: string;
     otherWords: string;
@@ -308,6 +313,72 @@ export type UiMessages = {
     kaspiPaid: string;
     addressLabel: string;
   };
+  admin: {
+    title: string;
+    sub: string;
+    pagesHint: string;
+    setupHint: string;
+    password: string;
+    passwordAgain: string;
+    create: string;
+    enter: string;
+    wrong: string;
+    short: string;
+    mismatch: string;
+    failed: string;
+    tabOverview: string;
+    tabKeys: string;
+    tabPassword: string;
+    trees: string;
+    saves: string;
+    payments: string;
+    sum: string;
+    whenTrees: string;
+    pays: string;
+    when: string;
+    vault: string;
+    path: string;
+    emptyTrees: string;
+    emptyPays: string;
+    treasury: string;
+    none: string;
+    has: string;
+    keysHint: string;
+    mockWarn: string;
+    createTreasury: string;
+    generating: string;
+    generated: string;
+    pasteJwk: string;
+    siteJwk: string;
+    kaspiToken: string;
+    tradePoint: string;
+    api: string;
+    payPath: string;
+    mock: string;
+    kaspiPay: string;
+    price: string;
+    currency: string;
+    saveKeys: string;
+    savedKeys: string;
+    clearTreasury: string;
+    clearSite: string;
+    clearKaspi: string;
+    once: string;
+    onceHint: string;
+    copyJson: string;
+    copyAddr: string;
+    alreadyTreasury: string;
+    replaceConfirm: string;
+    invalidJwk: string;
+    newPass: string;
+    changePass: string;
+    changed: string;
+    logout: string;
+    fundHint: string;
+    arweaveLag: string;
+    savedNet: string;
+    paid: string;
+  };
   kinship: Record<KinshipCode, string>;
   kinshipRelatedSteps: (da: number, db: number) => string;
   relation: {
@@ -340,6 +411,7 @@ const ru: UiMessages = {
     continueDraft: "Продолжить",
     restoreSeed: "Открыть по 12 словам",
     newTree: "Новое древо",
+    cashier: "Касса",
     replaceDraftConfirm:
       "Текущий черновик будет удалён. Сначала можно продолжить его и выгрузить JSON. Создать новое древо?",
   },
@@ -565,12 +637,16 @@ const ru: UiMessages = {
     leadDemo:
       " Сейчас на сайте включён демо-режим: версии хранятся в этом браузере (без оплаты и без Arweave), чтобы проверить сценарий.",
     leadSponsor: " Вечность — через кассир",
+    leadTreasury: " Сеть оплачивает казна проекта из кассы. 12 слов только шифруют сейф.",
     newVersionHint: "Сохранить текущее древо как новую версию теми же 12 словами",
     prevKept: (id) => ` Предыдущая версия останется (${id}…).`,
     oldKept: " Если сейф уже сохраняли — старые версии останутся.",
     demoNew: "Демо · новая версия в браузере",
     payNew: (hint) => `Новая версия · оплата${hint}`,
     networkNew: "Новая версия в сеть",
+    treasuryNew: "Новая версия · казна проекта",
+    treasurySave: "Сохранить казной проекта",
+    sendingTreasury: (addr, balance) => `Казна ${addr}… · ${balance} AR`,
     selfArNew: "Новая версия за свой AR",
     localCipher: "Только локальный шифр / файл",
     otherWords: "Другие 12 слов",
@@ -640,6 +716,75 @@ const ru: UiMessages = {
     kaspiPaid: "Kaspi подтвердил оплату. Можно сохранить.",
     addressLabel: "Адрес из ваших 12 слов:",
   },
+  admin: {
+    title: "Касса",
+    sub: "Ключи, казна и движения по сети. Имена и 12 слов сюда не попадают.",
+    pagesHint:
+      "Сейчас касса на GitHub Pages, в этом браузере. Потом тот же экран переедет на sejire.ar.io.",
+    setupHint: "Первый вход: пароль только у вас. В git и в чат его не класть.",
+    password: "Пароль (от 12 символов)",
+    passwordAgain: "Ещё раз",
+    create: "Создать кассу",
+    enter: "Войти",
+    wrong: "Неверный пароль.",
+    short: "Пароль — минимум 12 символов.",
+    mismatch: "Пароли не совпали.",
+    failed: "Не вышло.",
+    tabOverview: "Обзор",
+    tabKeys: "Ключи",
+    tabPassword: "Пароль",
+    trees: "Деревьев",
+    saves: "Сохранений",
+    payments: "Оплат",
+    sum: "Сумма",
+    whenTrees: "Сохранения в Arweave",
+    pays: "Оплаты в этой кассе",
+    when: "Время",
+    vault: "Сейф",
+    path: "Путь",
+    emptyTrees: "В сети пока нет сейфов SEJIRE",
+    emptyPays: "Оплат пока нет",
+    treasury: "Казна",
+    none: "ещё нет",
+    has: "есть",
+    keysHint:
+      "Пустое поле = не менять. JSON казны покажется один раз — сразу в 1Password. На бумагу только адрес.",
+    mockWarn:
+      "Казна есть, Kaspi ещё нет: сохранения в сеть идут из казны этого браузера, без живой оплаты.",
+    createTreasury: "Создать казну здесь",
+    generating: "Создаём казну…",
+    generated: "Казна создана. Скопируйте JSON сейчас.",
+    pasteJwk: "Вставить JWK казны",
+    siteJwk: "JWK сайта / permaweb",
+    kaspiToken: "Токен Kaspi",
+    tradePoint: "Trade Point Id",
+    api: "Kaspi API",
+    payPath: "Путь оплаты",
+    mock: "mock — пока нет ИП",
+    kaspiPay: "kaspi",
+    price: "Цена (тиын)",
+    currency: "Валюта",
+    saveKeys: "Сохранить",
+    savedKeys: "Сохранено в этом браузере.",
+    clearTreasury: "Удалить казну из браузера",
+    clearSite: "Удалить ключ сайта",
+    clearKaspi: "Удалить токен Kaspi",
+    once: "Покажите один раз. Адрес:",
+    onceHint: "Весь JSON — в 1Password и на флешку. В чат агенту не слать.",
+    copyJson: "Скопировать JSON",
+    copyAddr: "Скопировать адрес",
+    alreadyTreasury: "Казна уже сохранена в этом браузере.",
+    replaceConfirm: "Казна уже есть. Создать новую и заменить?",
+    invalidJwk: "Это не JWK.",
+    newPass: "Новый пароль",
+    changePass: "Сменить пароль",
+    changed: "Пароль сменён.",
+    logout: "Выйти",
+    fundHint: "Пополните казну AR на этот адрес (Binance → сеть Arweave).",
+    arweaveLag: "Новые TX появляются в обзоре после индексации сети — обычно минуты.",
+    savedNet: "сейф в сети",
+    paid: "оплачено",
+  },
   kinship: {
     self: "тот же человек",
     child: "ребёнок",
@@ -681,6 +826,7 @@ const kk: UiMessages = {
     continueDraft: "Жалғастыру",
     restoreSeed: "12 сөзбен ашу",
     newTree: "Жаңа шежіре",
+    cashier: "Касса",
     replaceDraftConfirm:
       "Қазіргі жоба өшеді. Алдымен жалғастырып, JSON түсіруге болады. Жаңа шежіре бастайық па?",
   },
@@ -906,12 +1052,16 @@ const kk: UiMessages = {
     leadDemo:
       " Қазір сайтта демо-режим: нұсқалар осы браузерде сақталады (төлемсіз, Arweave-сіз) — сценарийді тексеру үшін.",
     leadSponsor: " Мәңгілік — кассир арқылы",
+    leadTreasury: " Желіні жоба қазынасы төлейді. 12 сөз тек сейфті шифрлайды.",
     newVersionHint: "Қазіргі шежірені сол 12 сөзбен жаңа нұсқа ретінде сақтау",
     prevKept: (id) => ` Алдыңғы нұсқа қалады (${id}…).`,
     oldKept: " Егер сейф бұрын сақталса — ескі нұсқалар қалады.",
     demoNew: "Демо · браузердегі жаңа нұсқа",
     payNew: (hint) => `Жаңа нұсқа · төлем${hint}`,
     networkNew: "Жаңа нұсқа желіге",
+    treasuryNew: "Жаңа нұсқа · жоба қазынасы",
+    treasurySave: "Қазынамен сақтау",
+    sendingTreasury: (addr, balance) => `Қазына ${addr}… · ${balance} AR`,
     selfArNew: "Жаңа нұсқа өз AR-ыңызбен",
     localCipher: "Тек жергілікті шифр / файл",
     otherWords: "Басқа 12 сөз",
@@ -981,6 +1131,75 @@ const kk: UiMessages = {
     kaspiPaid: "Kaspi төлемді растады. Сақтауға болады.",
     addressLabel: "12 сөзіңізден адрес:",
   },
+  admin: {
+    title: "Касса",
+    sub: "Кілттер, қазына және желі қозғалысы. Аттары мен 12 сөз мұнда жоқ.",
+    pagesHint:
+      "Қазір касса GitHub Pages-те, осы браузерде. Кейін сол экран sejire.ar.io-ға көшеді.",
+    setupHint: "Алғашқы кіру: құпия сөз тек сізде. git пен чатқа салмаңыз.",
+    password: "Құпия сөз (кемі 12 таңба)",
+    passwordAgain: "Тағы бір рет",
+    create: "Кассаны құру",
+    enter: "Кіру",
+    wrong: "Құпия сөз қате.",
+    short: "Құпия сөз — кемі 12 таңба.",
+    mismatch: "Құпия сөздер сәйкес емес.",
+    failed: "Болмады.",
+    tabOverview: "Шолу",
+    tabKeys: "Кілттер",
+    tabPassword: "Құпия сөз",
+    trees: "Шежіре",
+    saves: "Сақтау",
+    payments: "Төлем",
+    sum: "Сома",
+    whenTrees: "Arweave-тегі сақтаулар",
+    pays: "Осы кассадағы төлемдер",
+    when: "Уақыт",
+    vault: "Сейф",
+    path: "Жол",
+    emptyTrees: "Желіде SEJIRE сейфі әлі жоқ",
+    emptyPays: "Төлем әлі жоқ",
+    treasury: "Қазына",
+    none: "әлі жоқ",
+    has: "бар",
+    keysHint:
+      "Бос өріс = өзгертпеу. Қазына JSON бір рет көрінеді — бірден 1Password-қа. Қағазға тек адрес.",
+    mockWarn:
+      "Қазына бар, Kaspi жоқ: желіге сақтау осы браузер қазынасынан, тірі төлемсіз.",
+    createTreasury: "Қазынаны осында құру",
+    generating: "Қазына жасалуда…",
+    generated: "Қазына құрылды. JSON-ды қазір көшіріңіз.",
+    pasteJwk: "Қазына JWK қою",
+    siteJwk: "Сайт / permaweb JWK",
+    kaspiToken: "Kaspi токені",
+    tradePoint: "Trade Point Id",
+    api: "Kaspi API",
+    payPath: "Төлем жолы",
+    mock: "mock — ЖК әлі жоқ",
+    kaspiPay: "kaspi",
+    price: "Баға (тиын)",
+    currency: "Валюта",
+    saveKeys: "Сақтау",
+    savedKeys: "Осы браузерге сақталды.",
+    clearTreasury: "Қазынаны браузерден өшіру",
+    clearSite: "Сайт кілтін өшіру",
+    clearKaspi: "Kaspi токенін өшіру",
+    once: "Бір рет көрсетіледі. Адрес:",
+    onceHint: "Бүкіл JSON — 1Password пен флешкаға. Агентке чатқа жібермеңіз.",
+    copyJson: "JSON көшіру",
+    copyAddr: "Адрессті көшіру",
+    alreadyTreasury: "Қазына осы браузерде сақталған.",
+    replaceConfirm: "Қазына бар. Жаңасын жасап алмастырамыз ба?",
+    invalidJwk: "Бұл JWK емес.",
+    newPass: "Жаңа құпия сөз",
+    changePass: "Құпия сөзді ауыстыру",
+    changed: "Құпия сөз ауысты.",
+    logout: "Шығу",
+    fundHint: "Осы адреске AR құйыңыз (Binance → Arweave желісі).",
+    arweaveLag: "Жаңа TX шолуда желі индекстеген соң пайда болады — әдетте минуттар.",
+    savedNet: "сейф желіде",
+    paid: "төленді",
+  },
   kinship: {
     self: "сол адам",
     child: "бала",
@@ -1022,6 +1241,7 @@ const en: UiMessages = {
     continueDraft: "Continue",
     restoreSeed: "Open with 12 words",
     newTree: "New tree",
+    cashier: "Cashier",
     replaceDraftConfirm:
       "The current draft will be deleted. You can continue it first and export JSON. Create a new tree?",
   },
@@ -1248,12 +1468,16 @@ const en: UiMessages = {
     leadDemo:
       " Demo mode is on: versions stay in this browser (no payment, no Arweave) so you can try the flow.",
     leadSponsor: " Forever — through the cashier",
+    leadTreasury: " The project treasury pays the network. The 12 words only encrypt the vault.",
     newVersionHint: "Save the current tree as a new version with the same 12 words",
     prevKept: (id) => ` The previous version will remain (${id}…).`,
     oldKept: " If this vault was saved before, older versions stay.",
     demoNew: "Demo · new version in browser",
     payNew: (hint) => `New version · pay${hint}`,
     networkNew: "New version to the network",
+    treasuryNew: "New version · project treasury",
+    treasurySave: "Save with project treasury",
+    sendingTreasury: (addr, balance) => `Treasury ${addr}… · ${balance} AR`,
     selfArNew: "New version with your own AR",
     localCipher: "Local ciphertext / file only",
     otherWords: "Different 12 words",
@@ -1322,6 +1546,75 @@ const en: UiMessages = {
     copyManual: "Copy the address manually",
     kaspiPaid: "Kaspi confirmed payment. You can save.",
     addressLabel: "Address from your 12 words:",
+  },
+  admin: {
+    title: "Cashier",
+    sub: "Keys, treasury, and network activity. Names and 12 words never appear here.",
+    pagesHint:
+      "The cashier is on GitHub Pages in this browser for now. The same screen will move to sejire.ar.io later.",
+    setupHint: "First visit: the password stays with you. Do not put it in git or chat.",
+    password: "Password (12+ characters)",
+    passwordAgain: "Again",
+    create: "Create cashier",
+    enter: "Log in",
+    wrong: "Wrong password.",
+    short: "Password must be at least 12 characters.",
+    mismatch: "Passwords do not match.",
+    failed: "That did not work.",
+    tabOverview: "Overview",
+    tabKeys: "Keys",
+    tabPassword: "Password",
+    trees: "Trees",
+    saves: "Saves",
+    payments: "Payments",
+    sum: "Total",
+    whenTrees: "Saves on Arweave",
+    pays: "Payments in this cashier",
+    when: "Time",
+    vault: "Vault",
+    path: "Path",
+    emptyTrees: "No SEJIRE vaults on the network yet",
+    emptyPays: "No payments yet",
+    treasury: "Treasury",
+    none: "not yet",
+    has: "ready",
+    keysHint:
+      "Empty field = leave unchanged. Treasury JSON is shown once — put it in 1Password immediately. Paper: address only.",
+    mockWarn:
+      "Treasury is set, Kaspi is not: network saves use this browser’s treasury, without live payment.",
+    createTreasury: "Create treasury here",
+    generating: "Creating treasury…",
+    generated: "Treasury created. Copy the JSON now.",
+    pasteJwk: "Paste treasury JWK",
+    siteJwk: "Site / permaweb JWK",
+    kaspiToken: "Kaspi token",
+    tradePoint: "Trade Point Id",
+    api: "Kaspi API",
+    payPath: "Payment path",
+    mock: "mock — no merchant yet",
+    kaspiPay: "kaspi",
+    price: "Price (tiyn)",
+    currency: "Currency",
+    saveKeys: "Save",
+    savedKeys: "Saved in this browser.",
+    clearTreasury: "Remove treasury from this browser",
+    clearSite: "Remove site key",
+    clearKaspi: "Remove Kaspi token",
+    once: "Shown once. Address:",
+    onceHint: "Put the full JSON in 1Password and on a drive. Do not send it in chat.",
+    copyJson: "Copy JSON",
+    copyAddr: "Copy address",
+    alreadyTreasury: "Treasury is already stored in this browser.",
+    replaceConfirm: "Treasury already exists. Create a new one and replace it?",
+    invalidJwk: "That is not a JWK.",
+    newPass: "New password",
+    changePass: "Change password",
+    changed: "Password changed.",
+    logout: "Log out",
+    fundHint: "Send AR to this address (Binance → Arweave network).",
+    arweaveLag: "New TXs show up in the overview after the network indexes them — usually minutes.",
+    savedNet: "vault on network",
+    paid: "paid",
   },
   kinship: {
     self: "same person",

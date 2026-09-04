@@ -7,6 +7,7 @@ type Props = {
   onStartNew: (title: string) => void;
   onContinueDraft: () => void;
   onRestoreSeed: () => void;
+  onCashier: () => void;
 };
 
 type Step = "brand" | "menu";
@@ -15,7 +16,7 @@ type Step = "brand" | "menu";
  * Step 1: only SEJIRE.
  * Step 2: start choices — same mental model on phone and desktop.
  */
-export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
+export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed, onCashier }: Props) {
   const [step, setStep] = useState<Step>("brand");
   const hasDraft = Boolean(loadDraftTree());
   const { t } = useI18n();
@@ -75,6 +76,9 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
             </>
           )}
         </div>
+        <button type="button" className="welcome-link-quiet" onClick={onCashier}>
+          {t.welcome.cashier}
+        </button>
         <LanguageSwitch placement="welcome" />
       </div>
     </div>

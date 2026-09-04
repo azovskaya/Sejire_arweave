@@ -35,6 +35,9 @@ assert(uiT("en").publish.title === "Save", "en save title");
 assert(uiT("en").localeShort.kk === "ҚАЗ", "shorts stay stable");
 assert(uiT("kk").localeShort.en === "ENG", "kk shorts eng");
 assert(uiT("ru").restore.fileReady.length > 0, "fileReady");
+assert(uiT("ru").welcome.cashier === "Касса", "cashier link");
+assert(uiT("en").admin.title === "Cashier", "en admin");
+assert(uiT("kk").admin.tabKeys.length > 0, "kk keys tab");
 
 const before = typeof localStorage !== "undefined" ? localStorage.getItem("sejire.locale") : null;
 try {
