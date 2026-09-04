@@ -6,20 +6,19 @@
  *  - Verify payment and upload sealed vault envelopes via Turbo (treasury)
  *  - NEVER accept or handle BIP-39 mnemonics / plaintext trees
  *
- * Secrets (wrangler secret put …):
- *  - KASPI_MERCHANT_TOKEN   (when merchant exists)
- *  - TURBO_JWK              (project treasury JWK JSON)
- *  - ADMIN_TOKEN            (ops desk at /admin)
- *
- * Vars:
- *  - PAYMENT_PROVIDER     = "mock" | "kaspi"
- *  - PUBLISH_PRICE_MINOR  = "1500" (e.g. 1500 ₸) or cents
- *  - PUBLISH_CURRENCY     = "KZT" | "USD"
- *  - MAX_ENVELOPE_BYTES   = "524288"
- *  - APP_ORIGIN           = comma-separated allowed origins
+ * Owner keys live in /admin (KV). Optional env fallbacks:
+ *  - SETUP_PIN             (claim-guard for first visit)
+ *  - TURBO_JWK / ADMIN_TOKEN / KASPI_MERCHANT_TOKEN (legacy wrangler secrets)
  */
 import { adminPageHtml } from "./adminPage";
-import { adminConfigured, authorizeAdmin } from "./adminAuth";
+import {
+  adminNeedsSetup,
+  authorizeAdmin,
+  hashAdminPassword,
+  passwordTooShort,
+  setupPinMatches,
+  setupPinRequired,
+} from "./adminAuth";
 import { cashierGuardError } from "./cashierGuard";
 import { assertSafeEnvelope, envelopeByteLength } from "./envelope";
 import { mapKaspiStatus, verifyKaspiWebhook } from "./kaspi";
@@ -31,6 +30,20 @@ import {
   toPublicOps,
   type OpsStore,
 } from "./opsLedger";
+import {
+  applySecretPatch,
+  assertJwkJson,
+  deriveTreasuryAddress,
+  generateTreasuryJwk,
+  kvBound,
+  loadOpsSecrets,
+  mergeRuntime,
+  randomOpsSalt,
+  redactSecrets,
+  runtimeOpsSalt,
+  saveOpsSecrets,
+  type StoredOpsSecrets,
+} from "./opsSecrets";
 import {
   assertSessionPaid,
   createCheckoutSession,
@@ -50,6 +63,7 @@ import { uploadEnvelope } from "./upload";
 export interface Env {
   KASPI_MERCHANT_TOKEN?: string;
   TURBO_JWK?: string;
+  SITE_JWK?: string;
   PAYMENT_PROVIDER: string;
   PUBLISH_PRICE_MINOR: string;
   PUBLISH_CURRENCY: string;
@@ -60,12 +74,14 @@ export interface Env {
   IDEMPOTENCY?: KVNamespace;
   KASPI_API_BASE?: string;
   KASPI_TRADE_POINT_ID?: string;
-  /** Owner-only. wrangler secret put ADMIN_TOKEN */
+  /** Legacy wrangler secret — admin password in KV is preferred. */
   ADMIN_TOKEN?: string;
-  /** Optional HMAC salt for ops uniqueness; falls back to ADMIN_TOKEN. */
+  /** Optional HMAC salt for ops uniqueness; falls back to stored opsSalt. */
   OPS_SALT?: string;
   /** Public Arweave address of the treasury (safe to show in admin). */
   TREASURY_ADDRESS?: string;
+  /** If set, first /admin setup must include this PIN. */
+  SETUP_PIN?: string;
 }
 
 type Json = Record<string, unknown>;
@@ -84,8 +100,8 @@ function allowedOrigin(env: Env, request: Request): string {
 function cors(origin: string): HeadersInit {
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Content-Type": "application/json",
     Vary: "Origin",
   };
@@ -121,12 +137,8 @@ function getOps(env: Env): OpsStore {
   return memoryOps;
 }
 
-function opsSalt(env: Env): string {
-  return (env.OPS_SALT || env.ADMIN_TOKEN || "sejire-ops-dev").trim();
-}
-
-async function notePaid(env: Env, session: PaymentSession) {
-  await recordPaid(getOps(env), opsSalt(env), {
+async function notePaid(env: Env, secrets: StoredOpsSecrets, session: PaymentSession) {
+  await recordPaid(getOps(env), runtimeOpsSalt(env, secrets), {
     sessionId: session.id,
     amountMinor: session.amountMinor,
     currency: session.currency,
@@ -135,8 +147,8 @@ async function notePaid(env: Env, session: PaymentSession) {
   });
 }
 
-async function noteSaved(env: Env, session: PaymentSession, vaultId: string) {
-  await recordSaved(getOps(env), opsSalt(env), {
+async function noteSaved(env: Env, secrets: StoredOpsSecrets, session: PaymentSession, vaultId: string) {
+  await recordSaved(getOps(env), runtimeOpsSalt(env, secrets), {
     sessionId: session.id,
     vaultId,
   });
@@ -144,7 +156,7 @@ async function noteSaved(env: Env, session: PaymentSession, vaultId: string) {
 
 function kaspiRuntime(
   env: Env,
-  urls?: { successUrl?: string; cancelUrl?: string }
+  urls?: { successUrl?: string; cancelUrl?: string },
 ): KaspiRuntime | undefined {
   const apiKey = env.KASPI_MERCHANT_TOKEN;
   if (!apiKey) return undefined;
@@ -158,45 +170,59 @@ function kaspiRuntime(
   };
 }
 
+async function readJson(request: Request): Promise<Record<string, unknown>> {
+  try {
+    const body = (await request.json()) as unknown;
+    if (body && typeof body === "object" && !Array.isArray(body)) {
+      return body as Record<string, unknown>;
+    }
+  } catch {
+    /* empty */
+  }
+  return {};
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const origin = allowedOrigin(env, request);
+    const secrets = await loadOpsSecrets(env);
+    const rt = mergeRuntime(env, secrets);
+    const origin = allowedOrigin(rt, request);
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors(origin) });
     }
 
     const url = new URL(request.url);
-    const store = getStore(env);
+    const store = getStore(rt);
 
     try {
       if (url.pathname === "/v1/health" && request.method === "GET") {
         return json(origin, 200, {
           ok: true,
           service: "sejire-sponsor",
-          provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
-          currency: env.PUBLISH_CURRENCY || "KZT",
-          priceMinor: priceMinor(env),
-          kaspiReady: Boolean(env.KASPI_MERCHANT_TOKEN),
-          treasuryReady: Boolean(env.TURBO_JWK),
+          provider: (rt.PAYMENT_PROVIDER || "mock").toLowerCase(),
+          currency: rt.PUBLISH_CURRENCY || "KZT",
+          priceMinor: priceMinor(rt),
+          kaspiReady: Boolean(rt.KASPI_MERCHANT_TOKEN),
+          treasuryReady: Boolean(rt.TURBO_JWK),
         });
       }
       if (url.pathname === "/v1/checkout" && request.method === "POST") {
-        return createCheckout(request, env, store, origin);
+        return createCheckout(request, rt, secrets, store, origin);
       }
       if (url.pathname === "/v1/mock-pay" && request.method === "POST") {
-        return mockPay(request, env, store, origin);
+        return mockPay(request, rt, secrets, store, origin);
       }
       if (url.pathname === "/v1/publish" && request.method === "POST") {
-        return publishEnvelope(request, env, store, origin);
+        return publishEnvelope(request, rt, secrets, store, origin);
       }
       if (url.pathname === "/v1/session" && request.method === "GET") {
-        return readSession(url, env, store, origin);
+        return readSession(url, rt, secrets, store, origin);
       }
       if (url.pathname === "/v1/kaspi-webhook" && request.method === "POST") {
-        return kaspiWebhook(request, env, store, origin);
+        return kaspiWebhook(request, rt, secrets, store, origin);
       }
       if ((url.pathname === "/admin" || url.pathname === "/admin/") && request.method === "GET") {
-        return new Response(adminPageHtml({ configured: adminConfigured(env) }), {
+        return new Response(adminPageHtml(), {
           headers: {
             "Content-Type": "text/html; charset=utf-8",
             "Cache-Control": "no-store",
@@ -204,8 +230,31 @@ export default {
           },
         });
       }
+      if (url.pathname === "/v1/admin/status" && request.method === "GET") {
+        return json(origin, 200, {
+          ok: true,
+          needsSetup: adminNeedsSetup(env, secrets),
+          pinRequired: setupPinRequired(env),
+          kvBound: kvBound(env),
+        });
+      }
+      if (url.pathname === "/v1/admin/setup" && request.method === "POST") {
+        return adminSetup(request, env, secrets, origin);
+      }
       if (url.pathname === "/v1/admin/overview" && request.method === "GET") {
-        return adminOverview(request, env, origin);
+        return adminOverview(request, rt, secrets, origin);
+      }
+      if (url.pathname === "/v1/admin/keys" && request.method === "GET") {
+        return adminGetKeys(request, rt, secrets, origin);
+      }
+      if (url.pathname === "/v1/admin/keys" && request.method === "PUT") {
+        return adminPutKeys(request, env, secrets, origin);
+      }
+      if (url.pathname === "/v1/admin/treasury/generate" && request.method === "POST") {
+        return adminGenerateTreasury(request, env, secrets, origin);
+      }
+      if (url.pathname === "/v1/admin/password" && request.method === "POST") {
+        return adminPassword(request, env, secrets, origin);
       }
       return json(origin, 404, { ok: false, error: "not_found" });
     } catch (e) {
@@ -227,11 +276,24 @@ export default {
   },
 };
 
+async function gated(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response | null> {
+  const auth = await authorizeAdmin(request, env, secrets);
+  if (auth === "off") return json(origin, 503, { ok: false, error: "admin_off" });
+  if (auth !== "ok") return json(origin, 401, { ok: false, error: "unauthorized" });
+  return null;
+}
+
 async function createCheckout(
   request: Request,
   env: Env,
+  secrets: StoredOpsSecrets,
   store: SessionStore,
-  origin: string
+  origin: string,
 ): Promise<Response> {
   const blocked = cashierGuardError(env);
   if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
@@ -280,8 +342,9 @@ async function createCheckout(
 async function mockPay(
   request: Request,
   env: Env,
+  secrets: StoredOpsSecrets,
   store: SessionStore,
-  origin: string
+  origin: string,
 ): Promise<Response> {
   const blocked = cashierGuardError(env);
   if (blocked) return json(origin, blocked.status, { ok: false, error: blocked.error });
@@ -296,7 +359,7 @@ async function mockPay(
     allowMock: true,
     provider: "mock",
   });
-  await notePaid(env, session);
+  await notePaid(env, secrets, session);
   return json(origin, 200, {
     ok: true,
     sessionId: session.id,
@@ -307,8 +370,9 @@ async function mockPay(
 async function publishEnvelope(
   request: Request,
   env: Env,
+  secrets: StoredOpsSecrets,
   store: SessionStore,
-  origin: string
+  origin: string,
 ): Promise<Response> {
   const body = (await request.json()) as {
     sessionId?: string;
@@ -348,7 +412,7 @@ async function publishEnvelope(
     await syncKaspiSession(store, sessionId, kaspi).catch(() => undefined);
   }
   const session = await assertSessionPaid(store, sessionId, amount, envelope.vault_id);
-  await notePaid(env, session);
+  await notePaid(env, secrets, session);
   if (session.txId) {
     return json(origin, 200, { ok: true, txId: session.txId, idempotent: true });
   }
@@ -367,7 +431,7 @@ async function publishEnvelope(
     txId: uploaded.txId,
   };
   await store.put(next);
-  await noteSaved(env, next, String(envelope.vault_id));
+  await noteSaved(env, secrets, next, String(envelope.vault_id));
 
   return json(origin, 200, {
     ok: true,
@@ -380,8 +444,9 @@ async function publishEnvelope(
 async function readSession(
   url: URL,
   env: Env,
+  secrets: StoredOpsSecrets,
   store: SessionStore,
-  origin: string
+  origin: string,
 ): Promise<Response> {
   const sessionId = url.searchParams.get("sessionId") || "";
   if (!sessionId) return json(origin, 400, { ok: false, error: "missing_session" });
@@ -392,7 +457,7 @@ async function readSession(
   const session = await store.get(sessionId);
   if (!session) return json(origin, 404, { ok: false, error: "session_not_found" });
   if (session.status === "paid" || session.status === "consumed") {
-    await notePaid(env, session);
+    await notePaid(env, secrets, session);
   }
   return json(origin, 200, {
     ok: true,
@@ -406,8 +471,9 @@ async function readSession(
 async function kaspiWebhook(
   request: Request,
   env: Env,
+  secrets: StoredOpsSecrets,
   store: SessionStore,
-  origin: string
+  origin: string,
 ): Promise<Response> {
   const token = env.KASPI_MERCHANT_TOKEN;
   if (!token) return json(origin, 503, { ok: false, error: "kaspi_merchant_not_configured" });
@@ -430,7 +496,7 @@ async function kaspiWebhook(
   }
   if (mapKaspiStatus(body.status) === "paid") {
     const paid = await markSessionPaid(store, session.id, { allowMock: false, provider: "kaspi" });
-    await notePaid(env, paid);
+    await notePaid(env, secrets, paid);
   } else {
     const kaspi = kaspiRuntime(env);
     if (kaspi) {
@@ -440,18 +506,146 @@ async function kaspiWebhook(
   return json(origin, 200, { ok: true, received: true });
 }
 
-async function adminOverview(request: Request, env: Env, origin: string): Promise<Response> {
-  const auth = authorizeAdmin(request, env);
-  if (auth === "off") return json(origin, 503, { ok: false, error: "admin_off" });
-  if (auth !== "ok") return json(origin, 401, { ok: false, error: "unauthorized" });
+async function adminOverview(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  const deny = await gated(request, env, secrets, origin);
+  if (deny) return deny;
   const state = await getOps(env).load();
   const pub = toPublicOps(state, env.PUBLISH_CURRENCY || "KZT");
+  const address =
+    (await deriveTreasuryAddress(env.TURBO_JWK)) || (env.TREASURY_ADDRESS || "").trim() || null;
   return json(origin, 200, {
     ok: true,
     ...pub,
     kaspiReady: Boolean(env.KASPI_MERCHANT_TOKEN),
     treasuryReady: Boolean(env.TURBO_JWK),
-    treasuryAddress: (env.TREASURY_ADDRESS || "").trim() || null,
+    treasuryAddress: address,
     provider: (env.PAYMENT_PROVIDER || "mock").toLowerCase(),
   });
+}
+
+async function adminSetup(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  if (!adminNeedsSetup(env, secrets)) {
+    return json(origin, 409, { ok: false, error: "already_setup" });
+  }
+  const body = await readJson(request);
+  const password = typeof body.password === "string" ? body.password : "";
+  const pin = typeof body.pin === "string" ? body.pin : "";
+  if (passwordTooShort(password)) {
+    return json(origin, 400, { ok: false, error: "password_too_short" });
+  }
+  if (!setupPinMatches(env, pin)) {
+    return json(origin, 403, { ok: false, error: "bad_pin" });
+  }
+  const next: StoredOpsSecrets = {
+    ...secrets,
+    passwordHash: await hashAdminPassword(password),
+    opsSalt: secrets.opsSalt || randomOpsSalt(),
+  };
+  await saveOpsSecrets(env, next);
+  return json(origin, 200, { ok: true, persisted: kvBound(env) });
+}
+
+async function adminGetKeys(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  const deny = await gated(request, env, secrets, origin);
+  if (deny) return deny;
+  const redacted = await redactSecrets(env, secrets);
+  const dumped = JSON.stringify(redacted);
+  if (secrets.turboJwk && dumped.includes(secrets.turboJwk)) {
+    return json(origin, 500, { ok: false, error: "redact_failed" });
+  }
+  return json(origin, 200, { ok: true, ...redacted });
+}
+
+async function adminPutKeys(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  const deny = await gated(request, env, secrets, origin);
+  if (deny) return deny;
+  const patch = await readJson(request);
+  const next = applySecretPatch(secrets, patch);
+  if (next.turboJwk && next.turboJwk !== secrets.turboJwk) {
+    try {
+      assertJwkJson(next.turboJwk, "turbo_jwk");
+    } catch (e) {
+      return json(origin, 400, { ok: false, error: e instanceof Error ? e.message : "turbo_jwk_invalid" });
+    }
+  }
+  if (next.siteJwk && next.siteJwk !== secrets.siteJwk) {
+    try {
+      assertJwkJson(next.siteJwk, "site_jwk");
+    } catch (e) {
+      return json(origin, 400, { ok: false, error: e instanceof Error ? e.message : "site_jwk_invalid" });
+    }
+  }
+  if (!next.opsSalt) next.opsSalt = randomOpsSalt();
+  await saveOpsSecrets(env, next);
+  const redacted = await redactSecrets(mergeRuntime(env, next), next);
+  return json(origin, 200, { ok: true, ...redacted });
+}
+
+async function adminGenerateTreasury(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  const deny = await gated(request, env, secrets, origin);
+  if (deny) return deny;
+  const body = await readJson(request);
+  if ((secrets.turboJwk || env.TURBO_JWK) && body.replace !== true) {
+    return json(origin, 409, { ok: false, error: "treasury_exists" });
+  }
+  const generated = await generateTreasuryJwk();
+  const next: StoredOpsSecrets = {
+    ...secrets,
+    turboJwk: generated.jwk,
+    opsSalt: secrets.opsSalt || randomOpsSalt(),
+  };
+  await saveOpsSecrets(env, next);
+  return json(origin, 200, {
+    ok: true,
+    address: generated.address,
+    jwk: generated.jwk,
+    persisted: kvBound(env),
+  });
+}
+
+async function adminPassword(
+  request: Request,
+  env: Env,
+  secrets: StoredOpsSecrets,
+  origin: string,
+): Promise<Response> {
+  const deny = await gated(request, env, secrets, origin);
+  if (deny) return deny;
+  const body = await readJson(request);
+  const password = typeof body.password === "string" ? body.password : "";
+  if (passwordTooShort(password)) {
+    return json(origin, 400, { ok: false, error: "password_too_short" });
+  }
+  const next: StoredOpsSecrets = {
+    ...secrets,
+    passwordHash: await hashAdminPassword(password),
+    opsSalt: secrets.opsSalt || randomOpsSalt(),
+  };
+  await saveOpsSecrets(env, next);
+  return json(origin, 200, { ok: true });
 }

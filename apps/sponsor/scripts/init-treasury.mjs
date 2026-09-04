@@ -34,7 +34,7 @@ if (existsSync("/opt/cursor") && process.env.SEJIRE_ALLOW_CLOUD_TREASURY !== "1"
 Потом:
   1. Файл treasury.local.json — в 1Password / зашифрованный диск. В git не класть.
   2. Адрес из файла — можно записать на бумагу.
-  3. Ключ админки и JWK — в секреты Cloudflare (wrangler secret put).
+  3. JWK — во вкладку «Ключи» на /admin (не в чат и не в git).
 `);
   process.exit(1);
 }
@@ -78,20 +78,14 @@ SEJIRE казна создана на этом компьютере.
   2. Зашифрованная флешка или сейф — копия того же файла
   3. Бумага — только адрес казны (не JSON)
 
-В кассир (на своём компьютере, один раз):
+Дальше на своём компьютере:
   cd apps/sponsor
-  npx wrangler secret put TURBO_JWK
-      → вставить поле jwk (весь JSON объекта jwk)
-  npx wrangler secret put ADMIN_TOKEN
-      → вставить adminToken
-  В wrangler.toml в [vars] прописать:
-      TREASURY_ADDRESS = "${address}"
+  npx wrangler deploy
+  открыть https://<ваш-worker>.workers.dev/admin
+      → вкладка «Ключи» → вставить поле jwk из этого файла
+      → JSON с экрана больше не читается; копия — в 1Password
 
-GitHub (Actions, не в репозиторий файлом):
-  Settings → Secrets → TURBO_JWK и ADMIN_TOKEN — те же значения.
-
-Админка после деплоя кассира:
-  https://<ваш-worker>.workers.dev/admin
+adminToken в файле больше не обязателен: пароль задаётся при первом входе в /admin.
 
 Не присылайте этот JSON в чат агенту и не кладите в git.
 `);

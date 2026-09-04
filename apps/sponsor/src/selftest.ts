@@ -280,21 +280,91 @@ async function main() {
   assert(!dumped.includes("sej_aaa"), "no session id in admin payload");
   n += 1;
 
-  const { authorizeAdmin } = await import("./adminAuth");
-  const off = authorizeAdmin(new Request("https://x/v1/admin/overview"), {});
+  const { authorizeAdmin, hashAdminPassword, verifyAdminPassword, adminNeedsSetup } =
+    await import("./adminAuth");
+  const off = await authorizeAdmin(new Request("https://x/v1/admin/overview"), {});
   assert(off === "off", "admin off without token");
   n += 1;
   const env = { ADMIN_TOKEN: "a".repeat(16) };
-  const denied = authorizeAdmin(new Request("https://x/v1/admin/overview"), env);
+  const denied = await authorizeAdmin(new Request("https://x/v1/admin/overview"), env);
   assert(denied === "unauthorized", "admin denied");
   n += 1;
-  const ok = authorizeAdmin(
+  const ok = await authorizeAdmin(
     new Request("https://x/v1/admin/overview", {
       headers: { Authorization: `Bearer ${"a".repeat(16)}` },
     }),
     env
   );
   assert(ok === "ok", "admin bearer");
+  n += 1;
+
+  const password = "owner-password-ok";
+  const hashed = await hashAdminPassword(password);
+  assert(hashed.startsWith("pbkdf2$") && !hashed.includes(password), "password hashed");
+  n += 1;
+  assert(await verifyAdminPassword(password, hashed), "password verifies");
+  n += 1;
+  assert(!(await verifyAdminPassword("wrong-password-xx", hashed)), "wrong password rejected");
+  n += 1;
+  const hashedLogin = await authorizeAdmin(
+    new Request("https://x/v1/admin/overview", {
+      headers: { Authorization: `Bearer ${password}` },
+    }),
+    {},
+    { passwordHash: hashed },
+  );
+  assert(hashedLogin === "ok", "kv password bearer");
+  n += 1;
+  assert(adminNeedsSetup({}, {}) === true, "needs setup");
+  n += 1;
+  assert(adminNeedsSetup({}, { passwordHash: hashed }) === false, "setup done");
+  n += 1;
+
+  const {
+    applySecretPatch,
+    mergeRuntime,
+    parseStoredSecrets,
+    redactSecrets,
+    resetMemorySecrets,
+  } = await import("./opsSecrets");
+  resetMemorySecrets();
+  const jwk = JSON.stringify({
+    kty: "RSA",
+    n: "secret-modulus-value-not-for-admin-json",
+    e: "AQAB",
+    d: "secret-d",
+  });
+  const patched = applySecretPatch({ turboJwk: jwk, kaspiMerchantToken: "kaspi-live-token" }, {
+    turboJwk: "   ",
+    paymentProvider: "kaspi",
+    publishPriceMinor: "2000",
+  });
+  assert(patched.turboJwk === jwk, "empty paste does not wipe treasury");
+  n += 1;
+  assert(patched.paymentProvider === "kaspi" && patched.publishPriceMinor === "2000", "non-secret patch applied");
+  n += 1;
+  const cleared = applySecretPatch(patched, { clearTreasury: true });
+  assert(!cleared.turboJwk, "explicit clear removes treasury");
+  n += 1;
+  const parsed = parseStoredSecrets({ passwordHash: "x", extra: "nope", paymentProvider: "kaspi" });
+  assert(parsed.passwordHash === "x" && parsed.paymentProvider === "kaspi", "parse secrets");
+  n += 1;
+  const redacted = await redactSecrets(
+    { PAYMENT_PROVIDER: "mock", PUBLISH_CURRENCY: "KZT" },
+    { turboJwk: jwk, kaspiMerchantToken: "kaspi-live-token" },
+  );
+  const redactedJson = JSON.stringify(redacted);
+  assert(redacted.treasuryConfigured && redacted.kaspiTokenConfigured, "redact flags");
+  n += 1;
+  assert(!redactedJson.includes("secret-modulus") && !redactedJson.includes("kaspi-live-token"), "no secrets in redact");
+  n += 1;
+  const merged = mergeRuntime(
+    { PAYMENT_PROVIDER: "mock", PUBLISH_PRICE_MINOR: "1500", PUBLISH_CURRENCY: "KZT", APP_ORIGIN: "*", MAX_ENVELOPE_BYTES: "1" },
+    { paymentProvider: "kaspi", publishPriceMinor: "2500", kaspiMerchantToken: "from-admin" },
+  );
+  assert(merged.PAYMENT_PROVIDER === "kaspi" && merged.PUBLISH_PRICE_MINOR === "2500", "runtime prefers admin");
+  n += 1;
+  assert(merged.KASPI_MERCHANT_TOKEN === "from-admin", "kaspi token from admin");
   n += 1;
 
   console.log(`sponsor.selftest: ${n} asserts ok`);
