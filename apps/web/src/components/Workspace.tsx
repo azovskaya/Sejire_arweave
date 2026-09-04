@@ -11,7 +11,6 @@ import { VaultVersionsModal, vaultPersonCount } from "./VaultVersionsModal";
 import {
   activePersons,
   commitDraft,
-  createTree,
   removeDraftPerson,
   restoreDraftPerson,
   setDraftPerson,
@@ -28,7 +27,6 @@ import {
   getVaultSession,
 } from "../lib/vaultSession/session";
 import type { VaultV1 } from "../lib/crypto/vault";
-import { isPagesTestMirror } from "../lib/siteMirror";
 import { pickPdfRootId } from "../lib/pdfRoot";
 import { mirrorStoreToProtocol } from "../lib/ao/protocolMirror";
 import {
@@ -420,47 +418,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
     flash(t.workspace.flashImported(Object.keys(result.store.draft.persons).length));
   }
 
-  async function loadDemoThirteen() {
-    if (!confirmReplaceDraft(t.workspace.replaceDemo13)) return;
-    const {
-      QA_13_FOCUS_ID,
-      qaPaternalLineMeta,
-      qaPaternalLinePersonCount,
-      qaPaternalLineSnapshot,
-    } = await import("../lib/pdf/thirteenLineage.fixture");
-    const snapshot = qaPaternalLineSnapshot(13);
-    const meta = qaPaternalLineMeta(13);
-    const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
-    const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-    if (!saveDraftTree(next)) flash(t.quota);
-    saveGuide(nextGuide);
-    onStoreChange(next);
-    onGuideChange(nextGuide);
-    setFocusId(QA_13_FOCUS_ID);
-    setSelectedId(QA_13_FOCUS_ID);
-    setProfileOpen(false);
-    flash(t.workspace.flashDemo13(qaPaternalLinePersonCount(13)));
-  }
-
-  async function loadDemoSeven() {
-    if (!confirmReplaceDraft(t.workspace.replaceDemo7)) return;
-    const { QA_13_FOCUS_ID, qaCompleteAncestryMeta, qaCompleteAncestrySnapshot } = await import(
-      "../lib/pdf/thirteenLineage.fixture"
-    );
-    const snapshot = qaCompleteAncestrySnapshot(7);
-    const meta = qaCompleteAncestryMeta(7);
-    const next = { ...createTree(meta.title), meta, draft: snapshot, dirty: true };
-    const nextGuide = { ...defaultGuide(), step: "done" as const, selfId: QA_13_FOCUS_ID };
-    if (!saveDraftTree(next)) flash(t.quota);
-    saveGuide(nextGuide);
-    onStoreChange(next);
-    onGuideChange(nextGuide);
-    setFocusId(QA_13_FOCUS_ID);
-    setSelectedId(QA_13_FOCUS_ID);
-    setProfileOpen(false);
-    flash(t.workspace.flashDemo7);
-  }
-
   const modalTitle =
     pending?.type === "self"
       ? t.workspace.addSelf
@@ -477,9 +434,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
           <span className="brand-glyph" aria-hidden />
           <div>
             <strong>SEJIRE</strong>
-            {isPagesTestMirror() ? (
-              <span className="brand-mirror">{t.workspace.pagesMirror}</span>
-            ) : null}
             {shezhireLine ? (
               <button
                 type="button"
@@ -559,32 +513,6 @@ export function Workspace({ store, guide, onStoreChange, onGuideChange, onHome }
               >
                 {t.workspace.importJson}
               </button>
-              {import.meta.env.VITE_QA_TOOLS === "1" ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => {
-                      closeMoreMenu();
-                      void loadDemoSeven();
-                    }}
-                    title={t.workspace.demo7Title}
-                  >
-                    {t.workspace.demo7}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => {
-                      closeMoreMenu();
-                      void loadDemoThirteen();
-                    }}
-                    title={t.workspace.demo13Title}
-                  >
-                    {t.workspace.demo13}
-                  </button>
-                </>
-              ) : null}
               {vaultSession?.vaultId ? (
                 <button
                   type="button"

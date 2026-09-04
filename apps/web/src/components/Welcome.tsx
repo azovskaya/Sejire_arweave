@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { loadDraftTree } from "../lib/draftStorage";
-import { isPagesTestMirror } from "../lib/siteMirror";
 import { useI18n } from "../lib/i18n/I18nProvider";
 import { LanguageSwitch } from "./LanguageSwitch";
 
@@ -51,7 +50,6 @@ export function Welcome({ onStartNew, onContinueDraft, onRestoreSeed }: Props) {
         <button type="button" className="welcome-menu-brand" onClick={() => setStep("brand")}>
           SEJIRE
         </button>
-        {isPagesTestMirror() ? <p className="welcome-menu-sub">{t.welcome.pagesMirror}</p> : null}
 
         <div className="welcome-menu-actions">
           {hasDraft ? (

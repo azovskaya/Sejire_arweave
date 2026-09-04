@@ -254,13 +254,6 @@ a {
   outline: none;
 }
 
-.welcome-menu-sub {
-  margin: 0 0 0.35rem;
-  text-align: center;
-  color: var(--ink-dim);
-  font-size: 0.95rem;
-}
-
 .welcome-menu-actions {
   display: grid;
   gap: 0.65rem;
@@ -498,18 +491,6 @@ a {
   font-size: 0.82rem;
   font-weight: 700;
   display: block;
-}
-
-.brand-mirror {
-  display: block;
-  margin-top: 0.15rem;
-  font-size: 0.68rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  color: var(--ink-dim);
-  max-width: min(52vw, 320px);
-  line-height: 1.35;
-  white-space: normal;
 }
 
 .tree-title {

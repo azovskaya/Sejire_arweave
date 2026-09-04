@@ -25,7 +25,6 @@ export type UiMessages = {
     restoreSeed: string;
     newTree: string;
     replaceDraftConfirm: string;
-    pagesMirror: string;
   };
   crash: {
     title: string;
@@ -48,14 +47,9 @@ export type UiMessages = {
     exportJsonTitle: string;
     importJson: string;
     importJsonTitle: string;
-    demo7: string;
-    demo7Title: string;
-    demo13: string;
-    demo13Title: string;
     versions: string;
     versionsTitle: string;
     home: string;
-    pagesMirror: string;
     closeProfile: string;
     addSelf: string;
     addMother: string;
@@ -73,8 +67,6 @@ export type UiMessages = {
     flashNoTrees: string;
     flashVersionOpened: (count: number) => string;
     flashImported: (count: number) => string;
-    flashDemo13: (count: number) => string;
-    flashDemo7: string;
     flashRemoved: (name: string) => string;
     flashRestored: string;
     flashZhuzSaved: string;
@@ -82,8 +74,6 @@ export type UiMessages = {
     replaceDraft: (count: number, action: string) => string;
     replaceOpenVersion: string;
     replaceJson: string;
-    replaceDemo13: string;
-    replaceDemo7: string;
     publishedDemo: (id: string, ver: string) => string;
     publishedSponsorMock: (id: string, ver: string) => string;
     publishedForever: (id: string, ver: string) => string;
@@ -352,7 +342,6 @@ const ru: UiMessages = {
     newTree: "Новое древо",
     replaceDraftConfirm:
       "Текущий черновик будет удалён. Сначала можно продолжить его и выгрузить JSON. Создать новое древо?",
-    pagesMirror: "Это тестовое зеркало GitHub Pages. Канон sejire.ar.io пока со старым паком.",
   },
   crash: {
     title: "Приложение остановилось",
@@ -375,15 +364,9 @@ const ru: UiMessages = {
     exportJsonTitle: "Скачать все данные древа в JSON",
     importJson: "Загрузить JSON",
     importJsonTitle: "Загрузить древо из JSON-файла",
-    demo7: "Пример: 7 колен",
-    demo7Title: "Полное двоичное древо: отец и мать у каждого до 7-го колена",
-    demo13: "Пример: 13 колен (линия ата)",
-    demo13Title:
-      "Мужская линия и жёны на 13 колен. Полные 8191 карточек на схему не грузим — телефон не выдержит.",
     versions: "Версии сейфа",
     versionsTitle: "Все сохранения под теми же 12 словами",
     home: "На главную",
-    pagesMirror: "Тестовое зеркало · sejire.ar.io пока старый пак",
     closeProfile: "Закрыть профиль",
     addSelf: "Добавить себя",
     addMother: "Добавить маму",
@@ -402,9 +385,6 @@ const ru: UiMessages = {
     flashVersionOpened: (count) =>
       `Открыта версия · ${count} чел. Можно править и снова сохранить (новая оплата).`,
     flashImported: (count) => `Загружено: ${count} чел.`,
-    flashDemo13: (count) =>
-      `Пример: линия ата на 13 колен · ${count} чел. (полное двоичное на схему не грузим)`,
-    flashDemo7: "Пример: 127 чел., полное древо на 7 колен",
     flashRemoved: (name) => `«${name}» убран(а) с древа`,
     flashRestored: "Человек возвращён на древо",
     flashZhuzSaved: "Жүз и ру сохранены для этого древа",
@@ -413,8 +393,6 @@ const ru: UiMessages = {
       `Текущий черновик (${count} чел.) будет заменён: ${action}. Сначала можно выгрузить JSON в меню «Ещё». Продолжить?`,
     replaceOpenVersion: "открытие другой версии сейфа",
     replaceJson: "загрузка JSON",
-    replaceDemo13: "пример линии ата на 13 колен",
-    replaceDemo7: "пример полного древа на 7 колен",
     publishedDemo: (id, ver) =>
       `Демо-версия сохранена в этом браузере (${id}…). Храните 12 слов.${ver}`,
     publishedSponsorMock: (id, ver) =>
@@ -705,7 +683,6 @@ const kk: UiMessages = {
     newTree: "Жаңа шежіре",
     replaceDraftConfirm:
       "Қазіргі жоба өшеді. Алдымен жалғастырып, JSON түсіруге болады. Жаңа шежіре бастайық па?",
-    pagesMirror: "Бұл GitHub Pages сынақ айнасы. sejire.ar.io әзірге ескі жиынтық.",
   },
   crash: {
     title: "Қосымша тоқтады",
@@ -728,15 +705,9 @@ const kk: UiMessages = {
     exportJsonTitle: "Шежіренің барлық деректерін JSON қылып жүктеу",
     importJson: "JSON жүктеу",
     importJsonTitle: "Шежірені JSON файлынан ашу",
-    demo7: "Үлгі: 7 ата",
-    demo7Title: "Толық екілік шежіре: әркімде әке мен ана, 7 атаға дейін",
-    demo13: "Үлгі: 13 ата (ата жолы)",
-    demo13Title:
-      "Ер жолы және әйелдері 13 ата. 8191 карточканы схемаға салмаймыз — телефон көтермейді.",
     versions: "Сейф нұсқалары",
     versionsTitle: "Сол 12 сөзбен жасалған барлық сақтаулар",
     home: "Басты бет",
-    pagesMirror: "Сынақ айна · sejire.ar.io әзірге ескі",
     closeProfile: "Профильді жабу",
     addSelf: "Өзіңізді қосу",
     addMother: "Ананы қосу",
@@ -755,9 +726,6 @@ const kk: UiMessages = {
     flashVersionOpened: (count) =>
       `Нұсқа ашылды · ${count} адам. Түзетіп, қайта сақтауға болады (жаңа төлем).`,
     flashImported: (count) => `Жүктелді: ${count} адам`,
-    flashDemo13: (count) =>
-      `Үлгі: ата жолы 13 ата · ${count} адам (толық екілікті схемаға салмаймыз)`,
-    flashDemo7: "Үлгі: 127 адам, толық шежіре 7 ата",
     flashRemoved: (name) => `«${name}» шежіреден алынды`,
     flashRestored: "Адам шежіреге қайтарылды",
     flashZhuzSaved: "Жүз мен ру осы шежіреге сақталды",
@@ -766,8 +734,6 @@ const kk: UiMessages = {
       `Қазіргі жоба (${count} адам) ауыстырылады: ${action}. Алдымен «Тағы» мәзірінен JSON түсіруге болады. Жалғастырамыз ба?`,
     replaceOpenVersion: "сейфтің басқа нұсқасын ашу",
     replaceJson: "JSON жүктеу",
-    replaceDemo13: "13 аталық ата жолының үлгісі",
-    replaceDemo7: "7 аталық толық шежіре үлгісі",
     publishedDemo: (id, ver) =>
       `Демо-нұсқа осы браузерде сақталды (${id}…). 12 сөзді сақтаңыз.${ver}`,
     publishedSponsorMock: (id, ver) =>
@@ -1058,7 +1024,6 @@ const en: UiMessages = {
     newTree: "New tree",
     replaceDraftConfirm:
       "The current draft will be deleted. You can continue it first and export JSON. Create a new tree?",
-    pagesMirror: "This is a GitHub Pages test mirror. sejire.ar.io still serves an older pack.",
   },
   crash: {
     title: "The app stopped",
@@ -1081,15 +1046,9 @@ const en: UiMessages = {
     exportJsonTitle: "Download all tree data as JSON",
     importJson: "Import JSON",
     importJsonTitle: "Load a tree from a JSON file",
-    demo7: "Sample: 7 generations",
-    demo7Title: "Full binary tree: father and mother for everyone up to 7 generations",
-    demo13: "Sample: 13 generations (ata line)",
-    demo13Title:
-      "Male line and wives across 13 generations. We do not load all 8191 cards — a phone cannot take it.",
     versions: "Vault versions",
     versionsTitle: "Every save under the same 12 words",
     home: "Home",
-    pagesMirror: "Test mirror · sejire.ar.io still an older pack",
     closeProfile: "Close profile",
     addSelf: "Add yourself",
     addMother: "Add mother",
@@ -1108,9 +1067,6 @@ const en: UiMessages = {
     flashVersionOpened: (count) =>
       `Opened version · ${count} people. You can edit and save again (new payment).`,
     flashImported: (count) => `Loaded: ${count} people`,
-    flashDemo13: (count) =>
-      `Sample: ata line, 13 generations · ${count} people (full binary not loaded onto the chart)`,
-    flashDemo7: "Sample: 127 people, full 7-generation tree",
     flashRemoved: (name) => `“${name}” removed from the tree`,
     flashRestored: "Person restored to the tree",
     flashZhuzSaved: "Zhuz and ru saved for this tree",
@@ -1119,8 +1075,6 @@ const en: UiMessages = {
       `The current draft (${count} people) will be replaced: ${action}. You can export JSON from More first. Continue?`,
     replaceOpenVersion: "opening another vault version",
     replaceJson: "loading JSON",
-    replaceDemo13: "13-generation ata-line sample",
-    replaceDemo7: "full 7-generation sample",
     publishedDemo: (id, ver) =>
       `Demo version saved in this browser (${id}…). Keep the 12 words.${ver}`,
     publishedSponsorMock: (id, ver) =>
