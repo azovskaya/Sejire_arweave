@@ -17,7 +17,9 @@
 | Что | URL |
 |-----|-----|
 | Приложение (зеркало Pages) | https://azovskaya.github.io/Sejire_arweave/ |
-| Investor deck (HTML) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
+| Investor deck (HTML RU) | https://azovskaya.github.io/Sejire_arweave/presentation/ |
+| Investor deck (HTML EN) | https://azovskaya.github.io/Sejire_arweave/presentation/en.html |
+| Investor deck PPTX/PDF | RU + EN: см. [`LIVE.md`](./LIVE.md) |
 | Канон (цель) | `https://sejire.ar.io` — **имя куплено (Phantom/ARIO)**; Target ID после `npm run deploy:permaweb` |
 
 Тестовое зеркало: **https://azovskaya.github.io/Sejire_arweave/** (обновляется через `npm run deploy:pages`).  

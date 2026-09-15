@@ -14,9 +14,13 @@
 Сборка с рабочей ветки, режим публикации **self** (12 слов → адрес AR → «Отправить»).  
 **Arweave / `sejire.ar.io` пока не трогаем** — один `npm run deploy:permaweb`, когда зеркало ок.
 
-Презентация (HTML): https://azovskaya.github.io/Sejire_arweave/presentation/  
-PPTX: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx  
-PDF: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf
+Презентация RU (HTML): https://azovskaya.github.io/Sejire_arweave/presentation/  
+PPTX RU: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pptx  
+PDF RU: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck.pdf  
+
+Презентация EN (HTML): https://azovskaya.github.io/Sejire_arweave/presentation/en.html  
+PPTX EN: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck-en.pptx  
+PDF EN: https://azovskaya.github.io/Sejire_arweave/presentation/SEJIRE-investor-deck-en.pdf
 
 Источник деплоя: ветка [`gh-pages`](https://github.com/azovskaya/Sejire_arweave/tree/gh-pages).
 
