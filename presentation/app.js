@@ -41,7 +41,7 @@
       btn.type = "button";
       btn.className = "dot" + (i === index ? " is-active" : "");
       btn.setAttribute("role", "tab");
-      btn.setAttribute("aria-label", slide.dataset.title || `Слайд ${i + 1}`);
+      btn.setAttribute("aria-label", slide.dataset.title || `Slide ${i + 1}`);
       btn.setAttribute("aria-selected", i === index ? "true" : "false");
       btn.addEventListener("click", () => go(i));
       dotsRoot.appendChild(btn);
@@ -67,6 +67,10 @@
     renderDots();
     syncChromeTheme();
     history.replaceState(null, "", `#${index + 1}`);
+    document.querySelectorAll("a[data-lang]").forEach((a) => {
+      const base = (a.getAttribute("href") || "").split("#")[0];
+      if (base) a.setAttribute("href", `${base}#${index + 1}`);
+    });
   }
 
   function next() {

@@ -170,6 +170,34 @@ a:hover {
   color: #fff;
 }
 
+.lang-pair {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.lang-pair .arch-link {
+  border: 0;
+  border-radius: 0;
+  padding: 0.38rem 0.55rem;
+}
+
+.lang-pair .arch-link.is-current {
+  background: var(--ink);
+  color: #fff;
+  pointer-events: none;
+}
+
+body.chrome-on-dark .lang-pair {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.chrome-on-dark .lang-pair .arch-link.is-current {
+  background: var(--on-dark);
+  color: var(--ink);
+}
+
 body.chrome-on-dark .chrome {
   background: rgba(18, 16, 14, 0.72);
   border-bottom-color: rgba(255, 255, 255, 0.1);
@@ -189,6 +217,15 @@ body.chrome-on-dark .arch-link:not(.accent) {
 body.chrome-on-dark .arch-link:not(.accent):hover {
   border-color: var(--orange);
   color: var(--orange);
+}
+
+body.chrome-on-dark .lang-pair .arch-link:not(.accent) {
+  border-color: transparent;
+}
+
+body.chrome-on-dark .lang-pair .arch-link.is-current {
+  background: var(--on-dark);
+  color: var(--ink);
 }
 
 body.chrome-on-dark .nav-btn {
@@ -1126,7 +1163,7 @@ h2.on-dark,
   h2.mega {
     max-width: none;
   }
-  .arch-link:not(.accent) {
+  .chrome-meta > .arch-link:not(.accent) {
     display: none;
   }
   .atmosphere-slash {
