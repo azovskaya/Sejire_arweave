@@ -68,8 +68,9 @@
     syncChromeTheme();
     history.replaceState(null, "", `#${index + 1}`);
     document.querySelectorAll("a[data-lang]").forEach((a) => {
-      const base = (a.getAttribute("href") || "").split("#")[0];
-      if (base) a.setAttribute("href", `${base}#${index + 1}`);
+      const raw = a.getAttribute("href") || "";
+      const base = raw.split("#")[0] || raw;
+      a.setAttribute("href", `${base}#${index + 1}`);
     });
   }
 
