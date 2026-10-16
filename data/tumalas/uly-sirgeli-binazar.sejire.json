@@ -1,0 +1,127 @@
+{
+  "schema": "sejire/tree-export/v1",
+  "app": "SEJIRE",
+  "protocol": "sejire/v0.3",
+  "exported_at": "2026-10-16T12:57:00Z",
+  "guide": {
+    "step": "done",
+    "selfId": "tumalas:912464412",
+    "fatherId": "tumalas:912464411",
+    "motherId": null,
+    "maternalGrandmotherId": null,
+    "maternalGrandfatherId": null,
+    "paternalGrandmotherId": null,
+    "paternalGrandfatherId": null
+  },
+  "store": {
+    "meta": {
+      "id": "tumalas-912464412",
+      "title": "Биназар · Сіргелі",
+      "head": null,
+      "next_version": 1,
+      "created_at": "2026-10-16T12:57:00Z",
+      "author": "tumalas",
+      "zhuz": "uly",
+      "clanName": "Сіргелі",
+      "tamgaUrl": null
+    },
+    "commits": {},
+    "versions": {},
+    "draft": {
+      "persons": {
+        "tumalas:912464412": {
+          "id": "tumalas:912464412",
+          "name": "Биназар",
+          "sex": "M",
+          "parents": ["tumalas:912464411"],
+          "media": []
+        },
+        "tumalas:912464411": {
+          "id": "tumalas:912464411",
+          "name": "Оңал",
+          "sex": "M",
+          "parents": ["tumalas:912464406"],
+          "media": []
+        },
+        "tumalas:912464406": {
+          "id": "tumalas:912464406",
+          "name": "Мәні",
+          "sex": "M",
+          "parents": ["tumalas:911054761"],
+          "media": []
+        },
+        "tumalas:911054761": {
+          "id": "tumalas:911054761",
+          "name": "Мәмбет",
+          "sex": "M",
+          "parents": ["tumalas:910636983"],
+          "media": []
+        },
+        "tumalas:910636983": {
+          "id": "tumalas:910636983",
+          "name": "Тайлақ батыр",
+          "sex": "M",
+          "parents": ["tumalas:910137600"],
+          "media": []
+        },
+        "tumalas:910137600": {
+          "id": "tumalas:910137600",
+          "name": "Тұлпар",
+          "sex": "M",
+          "parents": ["tumalas:910137587"],
+          "media": []
+        },
+        "tumalas:910137587": {
+          "id": "tumalas:910137587",
+          "name": "Жалманбет",
+          "sex": "M",
+          "parents": ["tumalas:1130272"],
+          "media": []
+        },
+        "tumalas:1130272": {
+          "id": "tumalas:1130272",
+          "name": "Жылысай",
+          "sex": "M",
+          "parents": ["tumalas:911303136"],
+          "media": []
+        },
+        "tumalas:911303136": {
+          "id": "tumalas:911303136",
+          "name": "Толыбай",
+          "sex": "M",
+          "parents": ["tumalas:1308"],
+          "media": []
+        },
+        "tumalas:1308": {
+          "id": "tumalas:1308",
+          "name": "Жайдақ",
+          "sex": "M",
+          "parents": ["tumalas:28"],
+          "media": []
+        },
+        "tumalas:28": {
+          "id": "tumalas:28",
+          "name": "Сіргелі",
+          "sex": "M",
+          "parents": ["tumalas:1"],
+          "media": []
+        },
+        "tumalas:1": {
+          "id": "tumalas:1",
+          "name": "Ұлы жүз",
+          "sex": "M",
+          "parents": ["tumalas:alash"],
+          "media": []
+        },
+        "tumalas:alash": {
+          "id": "tumalas:alash",
+          "name": "Алаш",
+          "sex": "M",
+          "parents": [],
+          "media": []
+        }
+      }
+    },
+    "dirty": true
+  }
+}
